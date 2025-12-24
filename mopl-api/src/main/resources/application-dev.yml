@@ -1,0 +1,27 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+    import:
+      - optional:file:./.env[.properties]
+      - optional:file:./mopl-api/.env[.properties]
+  datasource:
+    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${MOPL_DB_USERNAME:app}
+    password: ${MOPL_DB_PASSWORD:app}
+  jpa:
+    hibernate:
+      ddl-auto: ${MOPL_DDL_AUTO:update}
+  data:
+    redis:
+      host: ${MOPL_REDIS_HOST:localhost}
+      port: ${MOPL_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:9092}
+
+server:
+  port: ${MOPL_PORT:8080}
+
+logging:
+  level:
+    org.hibernate.SQL: ${MOPL_SQL_LOG_LEVEL:debug}

@@ -1,0 +1,13 @@
+rootProject.name = 'mopl'
+
+include 'mopl-api'
+include 'mopl-core'
+include 'mopl-batch'
+include 'mopl-monitor'
+include 'mopl-socket'
+include 'mopl-worker'
+include 'mopl-gateway'
+include 'mopl-infrastructure'
+include 'mopl-infrastructure:redis'
+include 'mopl-infrastructure:db'
+include 'mopl-infrastructure:kafka'

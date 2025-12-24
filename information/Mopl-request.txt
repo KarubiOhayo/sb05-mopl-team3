@@ -1,0 +1,263 @@
+- 제목: 모두의 플리
+- 부제: 대규모 트래픽이 예상되는 글로벌 컨텐츠 평점 및 큐레이션 플랫폼
+- 소개: 영화, 드라마, 스포츠 등 다양한 콘텐츠를 **큐레이팅하고 공유**하며, **실시간 같이 보기 기능**까지 제공하는 소셜 서비스로, 사용자들은 자신만의 플레이리스트를 만들고, 다른 사용자와 소통하며 콘텐츠 경험을 확장할 수  있는 서비스
+- 난이도: 고급
+- 디자인 시안
+    - [**링크**](https://www.figma.com/design/8BR4qqocB0CiqqVNuLJOQR/-%EB%AA%A8%EB%91%90%EC%9D%98-%ED%94%8C%EB%A6%AC--%EB%8C%80%EA%B7%9C%EB%AA%A8-%ED%8A%B8%EB%9E%98%ED%94%BD%EC%9D%B4-%EC%98%88%EC%83%81%EB%90%98%EB%8A%94-%EA%B8%80%EB%A1%9C%EB%B2%8C-%EC%BB%A8%ED%85%90%EC%B8%A0-%ED%8F%89%EC%A0%90-%ED%94%8C%EB%9E%AB%ED%8F%BC-v2?t=9orGjg9RCUrD1SPI-1)
+    - 요구사항 이해를 돕기 위한 Figma 디자인입니다.
+- 프로토 타입
+    - [**링크**](https://project.sb.sprint.learn.codeit.kr/sb/mopl/)
+    - 요구사항 이해를 돕기 위한 프로토타입입니다. 데이터는 초기화될 수 있습니다.
+    - 사용자 계정 안내
+        
+        
+        | 닉네임 | 이메일 | 패스워드 | 권한 |
+        | --- | --- | --- | --- |
+        | `system` | `system@mopl.io` | `mopl1!` | `ADMIN` |
+        | 우디 | woody@mopl.io | mopl1! | USER |
+        | 버즈 | buzz@mopl.io | mopl1! | USER |
+        | 제시 | jessie@mopl.io | mopl1! | USER |
+        | 렉스 | rex@mopl.io | mopl1! | USER |
+        | 슬링키 | slinky@mopl.io | mopl1! | USER |
+- 프론트엔드
+    
+    <aside>
+    
+    `1.0.0`
+    
+    </aside>
+    
+    - 정적 리소스
+        
+        [Project Mopl FE Release 1.0.0.zip](attachment:ca16a620-3e48-4fd2-a24f-36267b31ef8c:Project_Mopl_FE_Release_1.0.0.zip)
+        
+    - 소스코드
+        
+        [Project Mopl FE 1.0.0.zip](attachment:4c631c64-e969-45cb-84e7-54ea21b73cac:Project_Mopl_FE_1.0.0.zip)
+        
+    - [**API 명세서**](https://project.sb.sprint.learn.codeit.kr/sb/mopl/api/swagger-ui.html)에 있는 내용을 기준으로 구현된 프론트엔드 코드입니다.
+
+# 기능 요구 사항
+
+### 사용자 관리
+
+- **어드민 기능**
+    - **초기화**: 서버 시작 시 어드민 계정을 자동으로 초기화합니다.
+    - **권한 관리**: 사용자의 권한을 **`ADMIN`** 또는 **`USER`**로 변경할 수 있습니다. 권한 변경 시 해당 사용자는 **자동으로 로그아웃**됩니다.
+    - **계정 잠금**: 사용자 계정을 잠글 수 있으며, 잠긴 계정은 로그인할 수 없습니다. 잠긴 계정은 **자동으로 로그아웃**됩니다.
+- **회원 가입**: 이름, 이메일, 비밀번호를 입력하여 회원 가입할 수 있습니다.
+- **로그인**: 이메일과 비밀번호를 입력하여 로그인할 수 있습니다.
+    - **JWT 기반 인증/인가**를 사용합니다.
+        - csrf 토큰은 쿠키에 저장하는 방식으로 관리하세요.
+            - 쿠키 이름: `XSRF-TOKEN`
+            - 헤더 이름: `X-XSRF-TOKEN`
+    - 기존에 로그인된 계정이 있을 경우, **강제로 로그아웃** 처리합니다.
+        
+        > 💡 **참고**: 프로토타입에서는 원활한 데모 환경을 위해 동시 로그인을 허용하고 있습니다.
+        > 
+- **비밀번호 초기화**
+    - 이메일 주소로 **임시 비밀번호**를 발급합니다.
+        
+        > 💡 **참고**: 프로토타입에서는 원활한 데모 환경을 위해 임시 비밀번호가 `temporary1!!`로 고정되어 있습니다.
+        > 
+    - 임시 비밀번호는 만료시간(3분)을 가지며, 만료되기 전까지 임시 비밀번호로 로그인할 수 있습니다.
+        - 임시 비밀번호 확인은 로그인 API를 그대로 활용합니다.
+    - 사용자가 비밀번호를 재설정하면, **임시 비밀번호는 파기**합니다.
+- **소셜 계정 연동 (심화)**
+    - **Google, Kakao 계정**을 연동할 수 있습니다.
+        
+        > 💡 **참고**: 카카오 로그인 API 제약으로 인해 이메일 정보는 가져올 수 없습니다. 이 경우 `{닉네임}_{회원ID}@kakao.com`과 같은 **가상의 이메일 주소**를 사용합니다.
+        > 
+    - 계정 연동 후 해당 소셜 계정으로 로그인할 수 있습니다.
+        
+        > 💡 **참고**: 프로토타입에 개인 이메일 정보가 저장될 수 있으며, 고급 프로젝트 종료 시 삭제될 예정입니다.
+        > 
+
+### 콘텐츠 데이터 관리
+
+- 관리자만 콘텐츠를 등록/수정/삭제할 수 있습니다.
+- **Open API 연동**: 다양한 분야의 콘텐츠 데이터를 Open API를 통해 수집합니다.
+    - [**TMDB API**](https://www.themoviedb.org/settings/api/request): 영화, 드라마 콘텐츠
+    - [**The Sports DB API**](https://www.thesportsdb.com/free_sports_api): 스포츠 경기 콘텐츠
+- **배치 작업**: **Spring Batch**를 사용하여 콘텐츠 수집 작업을 안정적으로 관리합니다.
+
+### 콘텐츠 평가 및 큐레이팅
+
+- **평가**: 모든 콘텐츠에 의견이나 평점을 남길 수 있어요.
+- **개인 큐레이션**: '보고 싶은 콘텐츠', '재밌게 본 콘텐츠', '비 오는 날 보기 좋은 콘텐츠' 등 개인별로 콘텐츠를 큐레이팅할 수 있습니다.
+- **플레이리스트 구독**: 다른 사용자의 플레이리스트를 구독할 수 있으며, 구독한 플레이리스트에 콘텐츠가 추가되면 알림을 받습니다.
+
+### 실시간 같이 보기
+
+- 사용자들은 같은 콘텐츠를 시청 중인 **사용자 정보를 실시간으로 확인**할 수 있습니다.
+    - 시청 세션 정보는 웹소켓을 통해 주고 받습니다.
+        - 웹소켓 통신 명세는 [**여기**](https://www.notion.so/2cd141c89586815288ceef9121e08676?pvs=21)에서 확인하세요.
+- 사용자들은 같은 콘텐츠의 시청자끼리 실시간으로 채팅할 수 있습니다.
+    - 채팅 메시지는 데이터베이스에 저장하지 않으며, 웹소켓을 통해 주고 받습니다.
+        - 웹소켓 통신 명세는 [**여기](https://www.notion.so/2cd141c89586815288ceef9121e08676?pvs=21)에**서 확인하세요.
+- 사용자 프로필 페이지에서 해당 사용자의 실시간 콘텐츠 시청 정보를 확인할 수 있습니다.
+
+### 프로필 관리
+
+- 사용자의 프로필 정보를 확인할 수 있습니다.
+    - 주요 프로필 정보는 다음과 같습니다.
+        - 프로필 사진, 이름
+        - 현재 시청 중인 콘텐츠
+        - 보유한 플레이리스트, 구독한 플레이리스트
+    - 본인의 프로필인 경우 이름, 프로필 사진을 수정할 수 있습니다.
+- **팔로우**: 취향이 비슷한 사용자를 팔로우할 수 있습니다.
+    - 다른 사용자가 나를 팔로우하면 알림을 받습니다.
+    - 팔로우한 사용자의 주요 활동(플레이리스트 신규 등록, 실시간 콘텐츠 시청 등)에 대한 알림을 받을 수 있습니다.
+- **DM (쪽지)**: 다른 사용자에게 DM을 보낼 수 있습니다.
+    - DM을 받으면 알림을 받습니다.
+    - **실시간 채팅 기능**을 제공합니다.
+        - 활성화된 대화의 DM은 웹소켓을 통해 주고받습니다.
+            - 웹소켓 통신 명세는 [**여기**](https://www.notion.so/2cd141c89586815288ceef9121e08676?pvs=21)에서 확인하세요.
+        - 다른 대화의 DM은 Server Sent Event를 통해 받을 수 있습니다.
+            - SSE 명세는 [**여기**](https://www.notion.so/2cd141c89586815288ceef9121e08676?pvs=21)에서 확인하세요.
+
+### 알림
+
+- 다음 경우에 사용자에게 알림을 보냅니다.
+    - 권한 변경
+    - 내 플레이리스트를 구독
+    - 구독 중인 플레이리스트에 콘텐츠가 추가
+    - 팔로우한 사용자의 주요 활동
+    - 다른 사용자가 나를 팔로우
+    - DM 수신
+- 알림은 Server Sent Event를 통해 받을 수 있습니다.
+    - SSE 명세는 [**여기**](https://www.notion.so/2cd141c89586815288ceef9121e08676?pvs=21)에서 확인하세요.
+
+### WebSocket
+
+- 연결 엔드포인트: `/ws`
+- 클라이언트는 웹 소켓 연결 시 엑세스 토큰을 헤더에 포함합니다. 
+따라서 서버에서는 WebSocket Security를 활용한 인증정보를 활용해 요청자 정보를 가져올 수 있어야 합니다.
+- 콘텐츠 시청 세션
+    - 엔드포인트: `SUBSCRIBE /sub/contents/{contentId}/watch`
+    - 페이로드: `WatchingSessionChange`
+        
+        ```mermaid
+        classDiagram 
+        	class WatchingSessionChange {
+        	  - type: ChangeType
+        	  - watchingSession: WatchingSessionDto
+        		- watcherCount: long
+        	}
+        
+          class ChangeType {
+        		<<Enumeration>>
+            JOIN
+            LEAVE
+          }
+        ```
+        
+        - `WatchingSessionDto`는 API 명세를 참고하세요.
+- 콘텐츠 실시간 채팅
+    - 메시지 수신
+        - 엔드포인트: `SUBSCRIBE /sub/contents/{contentId}/chat`
+        - 페이로드: `ContentChatDto`
+            
+            ```mermaid
+            classDiagram 
+            	class ContentChatDto {
+            	  - sender: UserSummary
+            	  - content: String
+            	}
+            ```
+            
+            - `UserSummary`는 API 명세를 참고하세요.
+    - 메시지 전송
+        - 엔드포인트: `SEND /pub/contents/{contentId}/chat`
+        - 페이로드: `ContentChatSendRequest`
+            
+            ```mermaid
+            classDiagram 
+            	class ContentChatSendRequest {
+            	  - content: String
+            	}
+            ```
+            
+- DM
+    - 메시지 수신
+        - 엔드포인트: `SUBSCRIBE /sub/conversations/{conversationId}/direct-messages`
+        - 페이로드: `DirectMessageDto`
+            - `DirectMessageDto`는 API 명세를 참고하세요.
+    - 메시지 전송
+        - 엔드포인트: `SEND /pub/conversations/{conversationId}/direct-messages`
+        - 페이로드: `DirectMessageSendRequest`
+            
+            ```mermaid
+            classDiagram 
+            	class DirectMessageSendRequest {
+            	  - content: String
+            	}
+            ```
+            
+
+### Server Sent Event
+
+- 연결 엔드포인트: `/api/sse`
+- 알림
+    - **id**: 이벤트 고유 ID
+    - **name**: `notifications`
+    - **data**: `NotificationDto`
+        - `NotificationDto`는 API 명세를 참고하세요.
+- DM
+    - **id**: 이벤트 고유 ID
+    - **name**: `direct-messages`
+    - **data**: `DirectMessageDto`
+        - `DirectMessageDto`는 API 명세를 참고하세요.
+
+# 기술 요구 사항
+
+### 안전성
+
+- **유효성 검사**: **Bean Validation**을 활용하여 입력 데이터의 유효성을 검사하고 관리합니다.
+- **예외 처리**: **커스텀 예외**를 구조적으로 설계하여 애플리케이션의 오류를 체계적으로 처리합니다.
+- **로그 관리**: 시스템의 동작 및 오류를 추적하고 분석할 수 있도록 **로그 시스템**을 효과적으로 관리합니다.
+- **테스트 주도 개발 (TDD)**: **Red-Green-Refactor 사이클**을 준수하여 코드를 구현하고, 각 단계별로 명확한 **커밋 메시지**를 남깁니다.
+- **테스트 커버리지**: 프로젝트 전체의 **테스트 커버리지를 80% 이상** 유지해야 합니다. 또한, 테스트 커버리지 현황을 나타내는 **배지**를 메인 브랜치의 **README.md 파일에 표시**합니다.
+
+### CI/CD
+
+- **Git 브랜치 전략**: 프로젝트에 적합한 **Git 브랜치 전략**을 수립하고 준수합니다.
+- **CI/CD 파이프라인**: **GitHub Actions**를 활용하여 CI/CD 파이프라인을 구축합니다.
+    - **PR(Pull Request) 생성 시** 자동으로 **테스트가 수행**되도록 설정합니다.
+    - 성공적인 빌드 및 테스트 후 **AWS ECS**를 통해 애플리케이션이 **자동으로 배포**되도록 구성합니다.
+
+### Spring Batch
+
+- **배치 작업 관리**: 모든 배치 작업은 **Spring Batch**를 사용하여 안정적으로 관리하고 실행합니다.
+- **배치 작업 모니터링**: **Spring Actuator**를 통해 배치 작업의 **커스텀 메트릭**을 정의하고 모니터링합니다.
+
+### 분산 환경 고려한 확장 가능한 설계
+
+- **기본 설계**: 초기 구현은 **단일 인스턴스 환경**을 우선적으로 고려하되, 향후 **분산 환경으로의 확장성**을 염두에 두고 설계합니다.
+- **핵심 요소**:
+    - **Jwt Session**: JWT 기반 세션 관리를 통해 확장성을 확보합니다.
+    - **캐시**: 데이터 캐싱을 통해 성능을 최적화하고 확장성을 높입니다.
+    - **이벤트 / 메시징**: 이벤트 또는 메시징 시스템을 활용하여 서비스 간의 느슨한 결합을 구현합니다.
+- **환경별 구성**: 프로필 또는 설정을 활용하여 개발, 테스트, 운영 등 **환경 별로 다른 구성**을 적용합니다.
+- **로컬 분산 환경**: **Docker Compose**를 활용하여 로컬 환경에서 다중 서비스로 구성된 **분산 환경을 구축하고 테스트**합니다.
+
+### 분산 환경 구성하기 (심화)
+
+- 클라우드 환경에서 분산 아키텍처를 구현합니다.
+    - **Redis**: 캐시 및 세션 관리를 위해 **AWS ElasticCache**를 활용합니다.
+    - **Kafka**: 이벤트 및 메시징 처리를 위해 **Confluent Cloud**를 활용합니다.
+    - **Reverse Proxy**: **ECS Nginx**를 사용하여 여러 서버 인스턴스 앞에 리버스 프록시를 구성합니다.
+    - **다중 서버**: **AWS ECS 서버 인스턴스 2개 이상**으로 구성하여 로드 밸런싱 및 고가용성을 확보합니다.
+        
+        <aside>
+        ⚠️
+        
+        **주의**: ECS 구성 시 **클라우드 비용이 발생**할 수 있습니다.
+        
+        </aside>
+        
+
+### Elasticsearch를 활용한 고급 검색 (심화)
+
+- **콘텐츠 검색 리팩토링**: 기존 콘텐츠 검색 기능을 **Elasticsearch의 Full Text Search** 기능을 활용하여 개선합니다.
+- **Elasticsearch 배포**: Elasticsearch는 **Docker**를 사용하여 로컬 환경에 구축하거나, **AWS OpenSearch** 서비스를 활용합니다.

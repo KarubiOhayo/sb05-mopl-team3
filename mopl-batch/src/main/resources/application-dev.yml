@@ -1,0 +1,26 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./mopl-batch/.env[.properties]"
+  datasource:
+    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${MOPL_DB_USERNAME:app}
+    password: ${MOPL_DB_PASSWORD:app}
+  jpa:
+    hibernate:
+      ddl-auto: ${MOPL_DDL_AUTO:update}
+  batch:
+    job:
+      enabled: ${MOPL_BATCH_JOB_ENABLED:false}
+    jdbc:
+      initialize-schema: ${MOPL_BATCH_SCHEMA_INIT:always}
+
+server:
+  port: ${MOPL_PORT:8083}
+
+logging:
+  level:
+    org.hibernate.SQL: ${MOPL_SQL_LOG_LEVEL:debug}

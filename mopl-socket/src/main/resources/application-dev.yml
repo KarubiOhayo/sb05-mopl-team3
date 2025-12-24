@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./mopl-socket/.env[.properties]"
+  data:
+    redis:
+      host: ${MOPL_REDIS_HOST:localhost}
+      port: ${MOPL_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:9092}
+
+server:
+  port: ${MOPL_PORT:8081}

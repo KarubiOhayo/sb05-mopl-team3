@@ -1,0 +1,26 @@
+사용 기술 스택
+Redis
+Kafka
+Spring batch
+Spring boot
+Spring Security
+JWT token
+Spring OAuth
+mapstruct
+Sonarqube Cloud
+Prometheus
+Grafana
+k6
+AWS ECS Fargate
+AWS ECR
+AWS S3
+AWS RDS
+AWS ALB
+MySQL
+Docker
+Nginx
+Github Actions
+Elasticsearch
+WebSocket
+SSE
+누락 있을 수 있음
