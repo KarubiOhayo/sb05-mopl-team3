@@ -1,4 +1,4 @@
-package io.mopl.api.config;
+package io.mopl.api.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

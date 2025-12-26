@@ -1,4 +1,4 @@
-package io.mopl.api.config;
+package io.mopl.api.common.config;
 
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -27,7 +27,7 @@ public class DataInitializer implements CommandLineRunner {
   /**
    * 어드민 계정 초기화
    * 이메일: admin@mopl.io
-   * 비밀번호: adminPass!
+   * 비밀번호: 1234
    */
   private void initializeAdmin() {
     String adminEmail = "admin@mopl.io";
@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
     User admin = User.builder()
         .email(adminEmail)
         .name("admin")
-        .passwordHash(passwordEncoder.encode("adminPass!"))
+        .passwordHash(passwordEncoder.encode("1234"))
         .role(UserRole.ADMIN)
         .authProvider(AuthProvider.LOCAL)
         .locked(false)
@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
 
   /**
    * 일반 사용자 계정 초기화
-   * 비밀번호: userPass!
+   * 비밀번호: 1234
    */
   private void initializeTestUsers() {
     createUserIfNotExists("woody@mopl.io", "우디");
@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
     User user = User.builder()
         .email(email)
         .name(name)
-        .passwordHash(passwordEncoder.encode("userPass!"))
+        .passwordHash(passwordEncoder.encode("1234"))
         .role(UserRole.USER)
         .authProvider(AuthProvider.LOCAL)
         .locked(false)

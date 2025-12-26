@@ -1,13 +1,13 @@
 package io.mopl.api.user.domain;
 
+import io.mopl.api.common.UuidV7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -32,7 +32,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class User {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
   @Column(columnDefinition = "CHAR(36)")
   @JdbcTypeCode(SqlTypes.CHAR)
   private UUID id;
@@ -82,4 +81,10 @@ public class User {
   @Column(nullable = false)
   private LocalDateTime updatedAt;
 
+  @PrePersist
+  public void generateId() {
+    if (this.id == null) {
+      this.id = UuidV7Generator.generate();
+    }
+  }
 }
