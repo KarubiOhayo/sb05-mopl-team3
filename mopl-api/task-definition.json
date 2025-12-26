@@ -45,14 +45,11 @@
     }
   ],
   "cpu": "1024",
-  "enableFaultInjection": false,
   "executionRoleArn": "arn:aws:iam::690641653011:role/ecsTaskExecutionRole",
   "family": "mopl-api-task",
   "memory": "3072",
   "networkMode": "awsvpc",
   "placementConstraints": [],
-  "registeredAt": "2025-12-26T02:10:28.012Z",
-  "registeredBy": "arn:aws:iam::690641653011:user/part4-team3",
   "requiresAttributes": [
     {
       "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
@@ -85,13 +82,10 @@
   "requiresCompatibilities": [
     "FARGATE"
   ],
-  "revision": 1,
   "runtimePlatform": {
     "cpuArchitecture": "X86_64",
     "operatingSystemFamily": "LINUX"
   },
-  "status": "ACTIVE",
-  "taskDefinitionArn": "arn:aws:ecs:ap-northeast-2:690641653011:task-definition/mopl-api-task:1",
   "volumes": [],
   "tags": []
 }
