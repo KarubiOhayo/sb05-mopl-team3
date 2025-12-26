@@ -1,27 +1,29 @@
 {
-  "family": "mopl-api-task",
+  "family": "mopl-socket-task",
   "containerDefinitions": [
     {
-      "name": "mopl-api-container",
-      "image": "690641653011.dkr.ecr.ap-northeast-2.amazonaws.com/mopl-api",
+      "name": "mopl-socket-container",
+      "image": "690641653011.dkr.ecr.ap-northeast-2.amazonaws.com/mopl-socket",
       "essential": true,
       "portMappings": [
         {
-          "containerPort": 8080,
-          "hostPort": 8080,
+          "appProtocol": "http",
+          "containerPort": 8081,
+          "hostPort": 8081,
+          "name": "mopl-socket-container-8081-tcp",
           "protocol": "tcp"
         }
       ],
       "environment": [
         {
           "name": "MOPL_PORT",
-          "value": "8080"
+          "value": "8081"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/mopl-api-task",
+          "awslogs-group": "/ecs/mopl-socket-task",
           "awslogs-create-group": "true",
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
