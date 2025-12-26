@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,9 +27,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      FilterChain filterChain) throws ServletException, IOException {
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull FilterChain filterChain)
+      throws ServletException, IOException {
 
     try {
       // 1. Request Header에서 JWT 토큰 추출
@@ -44,10 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 4. Spring Security 인증 객체 생성
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
-                userId,
-                null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-            );
+                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -63,9 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-  /**
-   * Request Header에서 Bearer 토큰 추출
-   */
+  /** Request Header에서 Bearer 토큰 추출 */
   private String getTokenFromRequest(HttpServletRequest request) {
     String bearerToken = request.getHeader("Authorization");
 
