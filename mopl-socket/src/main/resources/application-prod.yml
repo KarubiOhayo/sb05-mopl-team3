@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+
+logging:
+  level:
+    root: INFO
+    io.mopl: INFO

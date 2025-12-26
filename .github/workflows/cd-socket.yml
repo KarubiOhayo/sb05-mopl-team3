@@ -1,37 +1,82 @@
 name: Deploy Socket to Amazon ECS
+
 on:
   push:
     branches: [ "main" ]
-    paths: [ 'mopl-socket/**', 'mopl-core/**', 'mopl-infrastructure/**', 'build.gradle', '.github/workflows/cd-socket.yml' ]
+    paths:
+      - 'mopl-socket/**',
+      - 'mopl-core/**'
+      - 'mopl-infrastructure/**'
+      - 'build.gradle'
+      - '.github/workflows/cd-socket.yml'
+
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: mopl-socket
   ECS_SERVICE: mopl-socket-service
   ECS_CLUSTER: mopl-cluster
-  ECS_TASK_DEFINITION: mopl-socket/task-definition.json
+  ECS_TASK_DEFINITION_NAME: mopl-socket-task
   CONTAINER_NAME: mopl-socket-container
   DOCKERFILE_PATH: mopl-socket/Dockerfile
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-java@v4
-      with: { java-version: '21', distribution: 'temurin' }
-    - uses: gradle/actions/setup-gradle@v3
-    - run: ./gradlew :mopl-socket:bootJar -x test
-    - uses: aws-actions/configure-aws-credentials@v4
-      with: { aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY_ID }}", aws-secret-access-key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}", aws-region: "${{ env.AWS_REGION }}" }
-    - id: login-ecr
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Build with Gradle
+      run: ./gradlew :mopl-socket:bootJar -x test
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
-    - id: build-image
-      env: { ECR_REGISTRY: "${{ steps.login-ecr.outputs.registry }}", IMAGE_TAG: "${{ github.sha }}" }
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
       run: |
         docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ env.DOCKERFILE_PATH }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-    - id: task-def
+
+    - name: Download Task Definition
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with: { task-definition: "${{ env.ECS_TASK_DEFINITION }}", container-name: "${{ env.CONTAINER_NAME }}", image: "${{ steps.build-image.outputs.image }}" }
-    - uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with: { task-definition: "${{ steps.task-def.outputs.task-definition }}", service: "${{ env.ECS_SERVICE }}", cluster: "${{ env.ECS_CLUSTER }}", wait-for-service-stability: true }
+      with:
+        task-definition: task-definition.json
+        container-name: ${{ env.CONTAINER_NAME }}
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
