@@ -14,8 +14,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   // 소셜 로그인용 (심화)
   Optional<User> findByAuthProviderAndProviderUserId(
-      AuthProvider authProvider,
-      String providerUserId
-  );
-
+      AuthProvider authProvider, String providerUserId);
 }

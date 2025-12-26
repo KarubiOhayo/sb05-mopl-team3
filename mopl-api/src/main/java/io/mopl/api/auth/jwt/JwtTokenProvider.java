@@ -26,7 +26,7 @@ public class JwtTokenProvider {
 
   public JwtTokenProvider(
       @Value("${jwt.secret}") String secret,
-      @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds) 
+      @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds)
       throws JOSEException {
     byte[] secretBytes = secret.getBytes();
     this.signer = new MACSigner(secretBytes);
@@ -34,26 +34,22 @@ public class JwtTokenProvider {
     this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
   }
 
-  /**
-   * Access Token 생성
-   */
+  /** Access Token 생성 */
   public String createAccessToken(UUID userId, String email, String role) {
     try {
       Date now = new Date();
       Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
 
-      JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-          .subject(userId.toString())
-          .claim("email", email)
-          .claim("role", role)
-          .issueTime(now)
-          .expirationTime(validity)
-          .build();
+      JWTClaimsSet claimsSet =
+          new JWTClaimsSet.Builder()
+              .subject(userId.toString())
+              .claim("email", email)
+              .claim("role", role)
+              .issueTime(now)
+              .expirationTime(validity)
+              .build();
 
-      SignedJWT signedJWT = new SignedJWT(
-          new JWSHeader(JWSAlgorithm.HS256),
-          claimsSet
-      );
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
 
       signedJWT.sign(signer);
 
@@ -64,17 +60,13 @@ public class JwtTokenProvider {
     }
   }
 
-  /**
-   * 토큰에서 userId 추출
-   */
+  /** 토큰에서 userId 추출 */
   public UUID getUserId(String token) {
     JWTClaimsSet claims = parseClaims(token);
     return UUID.fromString(claims.getSubject());
   }
 
-  /**
-   * 토큰에서 email 추출
-   */
+  /** 토큰에서 email 추출 */
   public String getEmail(String token) {
     try {
       JWTClaimsSet claims = parseClaims(token);
@@ -85,9 +77,7 @@ public class JwtTokenProvider {
     }
   }
 
-  /**
-   * 토큰에서 role 추출
-   */
+  /** 토큰에서 role 추출 */
   public String getRole(String token) {
     try {
       JWTClaimsSet claims = parseClaims(token);
@@ -98,13 +88,11 @@ public class JwtTokenProvider {
     }
   }
 
-  /**
-   * 토큰 유효성 검증
-   */
+  /** 토큰 유효성 검증 */
   public boolean validateToken(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
-      
+
       // 서명 검증
       if (!signedJWT.verify(verifier)) {
         log.error("JWT 서명 검증 실패");
@@ -125,9 +113,7 @@ public class JwtTokenProvider {
     }
   }
 
-  /**
-   * 토큰 파싱
-   */
+  /** 토큰 파싱 */
   private JWTClaimsSet parseClaims(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);

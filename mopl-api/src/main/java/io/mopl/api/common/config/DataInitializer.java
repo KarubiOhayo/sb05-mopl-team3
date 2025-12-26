@@ -24,11 +24,7 @@ public class DataInitializer implements CommandLineRunner {
     initializeTestUsers();
   }
 
-  /**
-   * 어드민 계정 초기화
-   * 이메일: admin@mopl.io
-   * 비밀번호: 1234
-   */
+  /** 어드민 계정 초기화 이메일: admin@mopl.io 비밀번호: 1234 */
   private void initializeAdmin() {
     String adminEmail = "admin@mopl.io";
 
@@ -37,30 +33,27 @@ public class DataInitializer implements CommandLineRunner {
       return;
     }
 
-    User admin = User.builder()
-        .email(adminEmail)
-        .name("admin")
-        .passwordHash(passwordEncoder.encode("1234"))
-        .role(UserRole.ADMIN)
-        .authProvider(AuthProvider.LOCAL)
-        .locked(false)
-        .build();
+    User admin =
+        User.builder()
+            .email(adminEmail)
+            .name("admin")
+            .passwordHash(passwordEncoder.encode("1234"))
+            .role(UserRole.ADMIN)
+            .authProvider(AuthProvider.LOCAL)
+            .locked(false)
+            .build();
 
     userRepository.save(admin);
     log.info("Admin 계정 생성 완료: {}", adminEmail);
   }
 
-  /**
-   * 일반 사용자 계정 초기화
-   * 비밀번호: 1234
-   */
+  /** 일반 사용자 계정 초기화 비밀번호: 1234 */
   private void initializeTestUsers() {
     createUserIfNotExists("woody@mopl.io", "우디");
     createUserIfNotExists("buzz@mopl.io", "버즈");
     createUserIfNotExists("jessie@mopl.io", "제시");
     createUserIfNotExists("rex@mopl.io", "렉스");
     createUserIfNotExists("slinky@mopl.io", "슬링키");
-
   }
 
   private void createUserIfNotExists(String email, String name) {
@@ -69,14 +62,15 @@ public class DataInitializer implements CommandLineRunner {
       return;
     }
 
-    User user = User.builder()
-        .email(email)
-        .name(name)
-        .passwordHash(passwordEncoder.encode("1234"))
-        .role(UserRole.USER)
-        .authProvider(AuthProvider.LOCAL)
-        .locked(false)
-        .build();
+    User user =
+        User.builder()
+            .email(email)
+            .name(name)
+            .passwordHash(passwordEncoder.encode("1234"))
+            .role(UserRole.USER)
+            .authProvider(AuthProvider.LOCAL)
+            .locked(false)
+            .build();
 
     userRepository.save(user);
     log.info("User 계정 생성 완료: {} ({})", name, email);

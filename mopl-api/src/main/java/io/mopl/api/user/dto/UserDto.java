@@ -21,5 +21,4 @@ public class UserDto {
   private String profileImageUrl;
   private UserRole role;
   private Boolean locked;
-
 }

@@ -25,13 +25,14 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
 
-  /**
-   * 로그인
-   */
+  /** 로그인 */
   @Transactional
   public JwtDto signIn(SignInRequest request) {
-    User user = userRepository.findByEmail(request.getUsername())
-        .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + request.getUsername()));
+    User user =
+        userRepository
+            .findByEmail(request.getUsername())
+            .orElseThrow(
+                () -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + request.getUsername()));
 
     if (user.getLocked()) {
       throw new BadCredentialsException("잠긴 계정입니다");
@@ -39,38 +40,31 @@ public class AuthService {
 
     validatePassword(request.getPassword(), user);
 
-    String accessToken = jwtTokenProvider.createAccessToken(
-        user.getId(),
-        user.getEmail(),
-        user.getRole().name()
-    );
+    String accessToken =
+        jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
 
-    UserDto userDto = UserDto.builder()
-        .id(user.getId())
-        .createdAt(user.getCreatedAt())
-        .email(user.getEmail())
-        .name(user.getName())
-        .profileImageUrl(user.getProfileImageUrl())
-        .role(user.getRole())
-        .locked(user.getLocked())
-        .build();
+    UserDto userDto =
+        UserDto.builder()
+            .id(user.getId())
+            .createdAt(user.getCreatedAt())
+            .email(user.getEmail())
+            .name(user.getName())
+            .profileImageUrl(user.getProfileImageUrl())
+            .role(user.getRole())
+            .locked(user.getLocked())
+            .build();
 
-    return JwtDto.builder()
-        .userDto(userDto)
-        .accessToken(accessToken)
-        .build();
+    return JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
   }
 
-  /**
-   * 비밀번호 검증
-   */
+  /** 비밀번호 검증 */
   private void validatePassword(String rawPassword, User user) {
     boolean isPasswordValid = passwordEncoder.matches(rawPassword, user.getPasswordHash());
 
     // 비밀번호 틀렸을 시 임시 비밀번호 체크
     if (!isPasswordValid && user.getTempPasswordHash() != null) {
-      if (user.getTempPasswordExpiresAt() != null &&
-          user.getTempPasswordExpiresAt().isAfter(LocalDateTime.now())) {
+      if (user.getTempPasswordExpiresAt() != null
+          && user.getTempPasswordExpiresAt().isAfter(LocalDateTime.now())) {
         isPasswordValid = passwordEncoder.matches(rawPassword, user.getTempPasswordHash());
       }
     }
