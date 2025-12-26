@@ -16,6 +16,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -31,7 +33,8 @@ public class User {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  @Column(columnDefinition = "BINARY(16)")
+  @Column(columnDefinition = "CHAR(36)")
+  @JdbcTypeCode(SqlTypes.CHAR)
   private UUID id;
 
   @Column(nullable = false, unique = true)
