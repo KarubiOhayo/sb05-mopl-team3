@@ -1,0 +1,49 @@
+{
+  "family": "mopl-worker-task",
+  "containerDefinitions": [
+    {
+      "name": "mopl-worker-container",
+      "image": "690641653011.dkr.ecr.ap-northeast-2.amazonaws.com/mopl-worker",
+      "essential": true,
+      "portMappings": [
+        {
+          "appProtocol": "http",
+          "containerPort": 8082,
+          "hostPort": 8082,
+          "name": "mopl-worker-container-8082-tcp",
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "MOPL_KAFKA_GROUP_ID",
+          "value": "mopl-worker"
+        },
+        {
+          "name": "MOPL_PORT",
+          "value": "8082"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mopl-worker-task",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "cpu": "1024",
+  "memory": "3072",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::690641653011:role/ecsTaskExecutionRole",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  }
+}

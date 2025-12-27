@@ -80,3 +80,18 @@ sonar {
         property "sonar.host.url", "https://sonarcloud.io"
     }
 }
+
+tasks.register('installGitHooks', Copy) {
+    from new File(rootProject.rootDir, 'scripts/pre-commit')
+    into { new File(rootProject.rootDir, '.git/hooks') }
+    
+    doLast {
+        def hookFile = new File(rootProject.rootDir, '.git/hooks/pre-commit')
+        hookFile.setExecutable(true)
+    }
+}
+
+// Ensure hooks are installed when building the project
+tasks.named('build') {
+    dependsOn('installGitHooks')
+}

@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Pre-commit hook to automatically apply Spotless formatting.
+#
+
+echo "🔍 Checking for Java files to format..."
+
+# 스테이징된 Java 파일 목록 가져오기
+STAGED_JAVA_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep ".java$")
+
+if [ -z "$STAGED_JAVA_FILES" ]; then
+    echo "✅ No Java files staged. Skipping Spotless apply."
+    exit 0
+fi
+
+echo "✨ Java files detected. Running './gradlew spotlessApply'..."
+
+# Spotless 적용 (자동 포맷팅)
+./gradlew spotlessApply --daemon
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "❌ Spotless apply failed! Please check the logs."
+    exit 1
+fi
+
+# 포맷팅으로 인해 변경된 파일들이 있다면 다시 스테이징 (git add)
+# 주의: 스테이징된 파일들만 다시 add 해야 함
+echo "➕ Re-staging formatted files..."
+for file in $STAGED_JAVA_FILES; do
+    if [ -f "$file" ]; then
+        git add "$file"
+    fi
+done
+
+echo "✅ Spotless formatting applied and changes staged."
+exit 0

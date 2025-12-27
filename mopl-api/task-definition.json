@@ -1,0 +1,43 @@
+{
+  "family": "mopl-api-task",
+  "containerDefinitions": [
+    {
+      "name": "mopl-api-container",
+      "image": "690641653011.dkr.ecr.ap-northeast-2.amazonaws.com/mopl-api",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "MOPL_PORT",
+          "value": "8080"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mopl-api-task",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "cpu": "1024",
+  "memory": "3072",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::690641653011:role/ecsTaskExecutionRole",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  }
+}
