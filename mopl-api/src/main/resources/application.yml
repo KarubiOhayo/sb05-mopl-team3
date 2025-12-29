@@ -10,6 +10,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          time_zone: UTC
   kafka:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -21,6 +23,8 @@ spring:
         spring.json.trusted.packages: io.mopl
   jackson:
     time-zone: UTC
+  messages:
+    basename: messages,ValidationMessages
 
 management:
   endpoints:
