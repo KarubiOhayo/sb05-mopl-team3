@@ -37,3 +37,11 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+mopl:
+  init:
+    admin:
+      email: ${MOPL_ADMIN_EMAIL:admin@mopl.io}
+      password: ${MOPL_ADMIN_PASSWORD:1234}
+      name: ${MOPL_ADMIN_NAME:admin}
+    test-user-password: ${MOPL_TEST_USER_PASSWORD:1234}

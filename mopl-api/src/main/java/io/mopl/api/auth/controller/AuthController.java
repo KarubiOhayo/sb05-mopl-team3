@@ -24,8 +24,9 @@ public class AuthController {
   /** 로그인 Content-Type: application/x-www-form-urlencoded */
   @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public ResponseEntity<JwtDto> signIn(@Valid @ModelAttribute SignInRequest request) {
-    log.info("로그인 요청: {}", request.getUsername());
+    log.info("로그인 시도");
     JwtDto response = authService.signIn(request);
+    log.info("로그인 성공: userId={}", response.getUserDto().getId());
     return ResponseEntity.ok(response);
   }
 }
