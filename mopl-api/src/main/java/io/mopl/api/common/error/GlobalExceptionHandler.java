@@ -1,7 +1,7 @@
 package io.mopl.api.common.error;
 
 import io.mopl.core.error.BusinessException;
-import io.mopl.core.error.ErrorCode;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.error.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -17,8 +17,10 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
-    ErrorCode errorCode = ex.getErrorCode();
-    return buildResponse(errorCode, errorCode.name(), ex.getDetails());
+    // 인터페이스 변경 후 임시 조치
+    // CommonErrorCode errorCode = ex.getErrorCode();
+    // return buildResponse(errorCode, errorCode.name(), ex.getDetails());
+    return null;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -32,7 +34,8 @@ public class GlobalExceptionHandler {
         .getGlobalErrors()
         .forEach(error -> details.put(error.getObjectName(), error.getDefaultMessage()));
 
-    return buildResponse(ErrorCode.INVALID_REQUEST, ErrorCode.INVALID_REQUEST.name(), details);
+    return buildResponse(
+        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -43,16 +46,18 @@ public class GlobalExceptionHandler {
             violation ->
                 details.put(violation.getPropertyPath().toString(), violation.getMessage()));
 
-    return buildResponse(ErrorCode.INVALID_REQUEST, ErrorCode.INVALID_REQUEST.name(), details);
+    return buildResponse(
+        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-    return buildResponse(ErrorCode.INTERNAL_SERVER_ERROR, ex.getClass().getSimpleName(), null);
+    return buildResponse(
+        CommonErrorCode.INTERNAL_SERVER_ERROR, ex.getClass().getSimpleName(), null);
   }
 
   private ResponseEntity<ErrorResponse> buildResponse(
-      ErrorCode errorCode, String exceptionName, Map<String, String> details) {
+      CommonErrorCode errorCode, String exceptionName, Map<String, String> details) {
     ErrorResponse response =
         ErrorResponse.builder()
             .exceptionName(exceptionName)
