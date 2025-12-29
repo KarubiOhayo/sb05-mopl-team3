@@ -82,7 +82,19 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       # 컨테이너 내부 접속 주소는 kafka:29092
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-
+  gateway:
+    image: nginx:alpine
+    container_name: mopl_gateway
+    ports:
+      - "8085:80"
+    volumes:
+      - ./mopl-gateway/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # 프론트 빌드 산출물 폴더를 여기에 연결
+      - ./mopl-gateway/frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - mysql
+      - redis
+      - kafka
 volumes:
   mysql_data:
   redis_data:

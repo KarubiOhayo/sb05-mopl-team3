@@ -1,6 +1,5 @@
 package io.mopl.api.common.error;
 
-import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.ErrorCode;
 import io.mopl.core.error.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -17,12 +16,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
-public class GlobalExceptionHandler {
+public class ApiExceptionHandler {
 
   private final MessageSource messageSource;
 
-  @ExceptionHandler(BusinessException.class)
-  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
+  @ExceptionHandler(io.mopl.core.error.BusinessException.class)
+  public ResponseEntity<ErrorResponse> handleBusinessException(
+      io.mopl.core.error.BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
     return buildResponse(errorCode, errorCode.name(), ex.getDetails());
   }
@@ -69,8 +69,8 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
   }
 
-  @ExceptionHandler(AuthBusinessException.class)
-  public ResponseEntity<ErrorResponse> handleAuthBusinessException(AuthBusinessException ex) {
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponse> handleAuthBusinessException(BusinessException ex) {
     AuthErrorCode errorCode = ex.getErrorCode();
     String message =
         messageSource.getMessage(errorCode.getMessageKey(), null, LocaleContextHolder.getLocale());
