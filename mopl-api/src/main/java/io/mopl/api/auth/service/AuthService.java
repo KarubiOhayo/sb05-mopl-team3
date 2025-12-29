@@ -3,14 +3,14 @@ package io.mopl.api.auth.service;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
+import io.mopl.api.common.error.AuthBusinessException;
+import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AuthService {
 
   private final UserRepository userRepository;
@@ -31,11 +30,10 @@ public class AuthService {
     User user =
         userRepository
             .findByEmail(request.getUsername())
-            .orElseThrow(
-                () -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + request.getUsername()));
+            .orElseThrow(() -> new AuthBusinessException(AuthErrorCode.USER_NOT_FOUND));
 
     if (user.isLocked()) {
-      throw new BadCredentialsException("잠긴 계정입니다");
+      throw new AuthBusinessException(AuthErrorCode.ACCOUNT_LOCKED);
     }
 
     validatePassword(request.getPassword(), user);
@@ -70,7 +68,7 @@ public class AuthService {
     }
 
     if (!isPasswordValid) {
-      throw new BadCredentialsException("비밀번호가 일치하지 않습니다");
+      throw new AuthBusinessException(AuthErrorCode.INVALID_PASSWORD);
     }
   }
 }

@@ -6,6 +6,9 @@ import io.mopl.core.error.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,7 +16,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+  private final MessageSource messageSource;
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
@@ -58,6 +64,22 @@ public class GlobalExceptionHandler {
             .exceptionName(exceptionName)
             .message(errorCode.getMessage())
             .details(details == null || details.isEmpty() ? null : details)
+            .build();
+
+    return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
+  }
+
+  @ExceptionHandler(AuthBusinessException.class)
+  public ResponseEntity<ErrorResponse> handleAuthBusinessException(AuthBusinessException ex) {
+    AuthErrorCode errorCode = ex.getErrorCode();
+    String message =
+        messageSource.getMessage(errorCode.getMessageKey(), null, LocaleContextHolder.getLocale());
+
+    ErrorResponse response =
+        ErrorResponse.builder()
+            .exceptionName("AuthBusinessException")
+            .message(message)
+            .details(ex.getDetails().isEmpty() ? null : ex.getDetails())
             .build();
 
     return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
