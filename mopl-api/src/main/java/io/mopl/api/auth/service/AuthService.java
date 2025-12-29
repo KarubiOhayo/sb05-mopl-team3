@@ -6,7 +6,7 @@ import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -34,7 +34,7 @@ public class AuthService {
             .orElseThrow(
                 () -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + request.getUsername()));
 
-    if (user.getLocked()) {
+    if (user.isLocked()) {
       throw new BadCredentialsException("잠긴 계정입니다");
     }
 
@@ -51,7 +51,7 @@ public class AuthService {
             .name(user.getName())
             .profileImageUrl(user.getProfileImageUrl())
             .role(user.getRole())
-            .locked(user.getLocked())
+            .locked(user.isLocked())
             .build();
 
     return JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
@@ -64,7 +64,7 @@ public class AuthService {
     // 비밀번호 틀렸을 시 임시 비밀번호 체크
     if (!isPasswordValid && user.getTempPasswordHash() != null) {
       if (user.getTempPasswordExpiresAt() != null
-          && user.getTempPasswordExpiresAt().isAfter(LocalDateTime.now())) {
+          && user.getTempPasswordExpiresAt().isAfter(Instant.now())) {
         isPasswordValid = passwordEncoder.matches(rawPassword, user.getTempPasswordHash());
       }
     }

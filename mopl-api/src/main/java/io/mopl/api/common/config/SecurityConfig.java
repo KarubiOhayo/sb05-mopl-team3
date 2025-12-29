@@ -31,7 +31,14 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/", "/index.html")
                     .permitAll()
-                    .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**")
+                    .requestMatchers(
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/static/**",
+                        "/assets/**",
+                        "/webjars/**",
+                        "/vite.svg")
                     .permitAll()
                     .requestMatchers("/api/auth/**")
                     .permitAll()
