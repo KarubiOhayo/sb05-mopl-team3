@@ -13,6 +13,10 @@ spring:
   jackson:
     time-zone: UTC
 
+tmdb:
+  access-token: ${TMDB_ACCESS_TOKEN:your-access-token-here}
+  language: ${TMDB_LANGUAGE:ko-KR}
+
 management:
   endpoints:
     web:
