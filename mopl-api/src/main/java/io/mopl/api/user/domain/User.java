@@ -53,9 +53,6 @@ public class User {
   @Column(name = "provider_user_id", length = 255)
   private String providerUserId;
 
-  @Column(name = "current_session_id")
-  private String currentSessionId;
-
   @Column(nullable = false, length = 20)
   @Enumerated(EnumType.STRING)
   private UserRole role;
