@@ -87,3 +87,6 @@ volumes:
   mysql_data:
   redis_data:
   kafka_data:
+
+# docker compose down -v
+# docker compose up -d --build
