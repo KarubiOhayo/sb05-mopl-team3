@@ -9,7 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -53,16 +53,13 @@ public class User {
   @Column(name = "provider_user_id", length = 255)
   private String providerUserId;
 
-  @Column(name = "current_session_id")
-  private String currentSessionId;
-
   @Column(nullable = false, length = 20)
   @Enumerated(EnumType.STRING)
   private UserRole role;
 
   @Column(nullable = false)
   @Builder.Default
-  private Boolean locked = false;
+  private boolean locked = false;
 
   @Column(name = "profile_image_url", length = 2048)
   private String profileImageUrl;
@@ -71,15 +68,15 @@ public class User {
   private String tempPasswordHash;
 
   @Column(name = "temp_password_expires_at")
-  private LocalDateTime tempPasswordExpiresAt;
+  private Instant tempPasswordExpiresAt;
 
   @CreatedDate
-  @Column(nullable = false, updatable = false)
-  private LocalDateTime createdAt;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
 
   @LastModifiedDate
-  @Column(nullable = false)
-  private LocalDateTime updatedAt;
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   @PrePersist
   public void generateId() {

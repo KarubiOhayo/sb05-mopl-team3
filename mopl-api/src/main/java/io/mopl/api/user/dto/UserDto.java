@@ -1,7 +1,7 @@
 package io.mopl.api.user.dto;
 
 import io.mopl.api.user.domain.UserRole;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 public class UserDto {
 
   private UUID id;
-  private LocalDateTime createdAt;
+  private Instant createdAt;
   private String email;
   private String name;
   private String profileImageUrl;
   private UserRole role;
-  private Boolean locked;
+  private boolean locked;
 }

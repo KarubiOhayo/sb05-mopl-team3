@@ -9,9 +9,9 @@ CREATE TABLE users (
   locked TINYINT(1) NOT NULL DEFAULT 0,
   profile_image_url VARCHAR(2048) NULL,
   temp_password_hash VARCHAR(255) NULL,
-  temp_password_expires_at DATETIME(6) NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  temp_password_expires_at TIMESTAMP(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
   UNIQUE KEY uq_users_provider (auth_provider, provider_user_id)
@@ -23,11 +23,11 @@ CREATE TABLE contents (
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   thumbnail_url VARCHAR(2048) NOT NULL,
-  average_rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+  average_rating DOUBLE(3,2) NOT NULL DEFAULT 0.00,
   review_count INT NOT NULL DEFAULT 0,
   watcher_count BIGINT NOT NULL DEFAULT 0,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   CONSTRAINT chk_contents_rating CHECK (average_rating >= 0.0 AND average_rating <= 5.0),
   CONSTRAINT chk_contents_review_count CHECK (review_count >= 0),
@@ -59,8 +59,8 @@ CREATE TABLE playlists (
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   subscriber_count BIGINT NOT NULL DEFAULT 0,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   CONSTRAINT fk_playlists_owner
     FOREIGN KEY (owner_id) REFERENCES users(id)
@@ -71,7 +71,7 @@ CREATE TABLE playlists (
 CREATE TABLE playlist_contents (
   playlist_id CHAR(36) NOT NULL,
   content_id CHAR(36) NOT NULL,
-  added_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  added_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (playlist_id, content_id),
   CONSTRAINT fk_playlist_contents_playlist
     FOREIGN KEY (playlist_id) REFERENCES playlists(id)
@@ -84,7 +84,7 @@ CREATE TABLE playlist_contents (
 CREATE TABLE playlist_subscriptions (
   playlist_id CHAR(36) NOT NULL,
   user_id CHAR(36) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (playlist_id, user_id),
   CONSTRAINT fk_playlist_subscriptions_playlist
     FOREIGN KEY (playlist_id) REFERENCES playlists(id)
@@ -99,9 +99,9 @@ CREATE TABLE reviews (
   content_id CHAR(36) NOT NULL,
   author_id CHAR(36) NOT NULL,
   text TEXT NOT NULL,
-  rating DECIMAL(3,2) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  rating DOUBLE(3,2) NOT NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_reviews_content_author (content_id, author_id),
   CONSTRAINT fk_reviews_content
@@ -117,7 +117,7 @@ CREATE TABLE follows (
   id CHAR(36) NOT NULL,
   follower_id CHAR(36) NOT NULL,
   followee_id CHAR(36) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_follows_pair (follower_id, followee_id),
   CONSTRAINT fk_follows_follower
@@ -131,16 +131,16 @@ CREATE TABLE follows (
 
 CREATE TABLE conversations (
   id CHAR(36) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE conversation_participants (
   conversation_id CHAR(36) NOT NULL,
   user_id CHAR(36) NOT NULL,
-  joined_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  last_read_at DATETIME(6) NULL,
+  joined_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  last_read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (conversation_id, user_id),
   CONSTRAINT fk_conversation_participants_conversation
     FOREIGN KEY (conversation_id) REFERENCES conversations(id)
@@ -156,8 +156,8 @@ CREATE TABLE direct_messages (
   sender_id CHAR(36) NOT NULL,
   receiver_id CHAR(36) NOT NULL,
   content TEXT NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  read_at DATETIME(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_direct_messages_conversation
     FOREIGN KEY (conversation_id) REFERENCES conversations(id)
@@ -177,8 +177,8 @@ CREATE TABLE notifications (
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   level VARCHAR(20) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  read_at DATETIME(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_notifications_receiver
     FOREIGN KEY (receiver_id) REFERENCES users(id)
@@ -189,8 +189,8 @@ CREATE TABLE watching_sessions (
   id CHAR(36) NOT NULL,
   content_id CHAR(36) NOT NULL,
   watcher_id CHAR(36) NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  ended_at DATETIME(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  ended_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_watching_sessions_content
     FOREIGN KEY (content_id) REFERENCES contents(id)
