@@ -17,7 +17,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       # (선택) 최초 생성 시 스키마 자동 실행
-      # - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
       interval: 5s
@@ -99,3 +99,6 @@ volumes:
   mysql_data:
   redis_data:
   kafka_data:
+
+# docker compose down -v
+# docker compose up -d --build
