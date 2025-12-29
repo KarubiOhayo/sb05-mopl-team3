@@ -1,13 +1,12 @@
 package io.mopl.api.common.error;
 
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.error.ErrorCode;
 import io.mopl.core.error.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,16 +14,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-@RequiredArgsConstructor
 public class ApiExceptionHandler {
 
-  private final MessageSource messageSource;
-
-  @ExceptionHandler(io.mopl.core.error.BusinessException.class)
-  public ResponseEntity<ErrorResponse> handleBusinessException(
-      io.mopl.core.error.BusinessException ex) {
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
-    return buildResponse(errorCode, errorCode.name(), ex.getDetails());
+    return buildResponse(errorCode, errorCode.getClass().getSimpleName(), ex.getDetails());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -38,7 +33,8 @@ public class ApiExceptionHandler {
         .getGlobalErrors()
         .forEach(error -> details.put(error.getObjectName(), error.getDefaultMessage()));
 
-    return buildResponse(ErrorCode.INVALID_REQUEST, ErrorCode.INVALID_REQUEST.name(), details);
+    return buildResponse(
+        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -49,12 +45,14 @@ public class ApiExceptionHandler {
             violation ->
                 details.put(violation.getPropertyPath().toString(), violation.getMessage()));
 
-    return buildResponse(ErrorCode.INVALID_REQUEST, ErrorCode.INVALID_REQUEST.name(), details);
+    return buildResponse(
+        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-    return buildResponse(ErrorCode.INTERNAL_SERVER_ERROR, ex.getClass().getSimpleName(), null);
+    return buildResponse(
+        CommonErrorCode.INTERNAL_SERVER_ERROR, ex.getClass().getSimpleName(), null);
   }
 
   private ResponseEntity<ErrorResponse> buildResponse(
@@ -64,22 +62,6 @@ public class ApiExceptionHandler {
             .exceptionName(exceptionName)
             .message(errorCode.getMessage())
             .details(details == null || details.isEmpty() ? null : details)
-            .build();
-
-    return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
-  }
-
-  @ExceptionHandler(BusinessException.class)
-  public ResponseEntity<ErrorResponse> handleAuthBusinessException(BusinessException ex) {
-    AuthErrorCode errorCode = ex.getErrorCode();
-    String message =
-        messageSource.getMessage(errorCode.getMessageKey(), null, LocaleContextHolder.getLocale());
-
-    ErrorResponse response =
-        ErrorResponse.builder()
-            .exceptionName("AuthBusinessException")
-            .message(message)
-            .details(ex.getDetails().isEmpty() ? null : ex.getDetails())
             .build();
 
     return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
