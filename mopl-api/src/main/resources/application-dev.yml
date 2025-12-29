@@ -12,6 +12,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${MOPL_DDL_AUTO:update}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   data:
     redis:
       host: ${MOPL_REDIS_HOST:localhost}

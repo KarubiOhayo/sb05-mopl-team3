@@ -1,6 +1,6 @@
-package io.mopl.api.user.dto;
+package io.mopl.api.conversation.dto;
 
-import io.mopl.api.user.domain.UserRole;
+import io.mopl.api.user.dto.UserSummary;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -12,13 +12,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserDto {
+public class DirectMessageDto {
 
   private UUID id;
+  private UUID conversationId;
   private Instant createdAt;
-  private String email;
-  private String name;
-  private String profileImageUrl;
-  private UserRole role;
-  private boolean locked;
+  private UserSummary sender;
+  private UserSummary receiver;
+  private String content;
 }

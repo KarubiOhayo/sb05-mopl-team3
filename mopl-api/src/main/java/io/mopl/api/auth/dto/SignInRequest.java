@@ -13,10 +13,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SignInRequest {
 
-  @NotBlank(message = "이메일은 필수입니다")
-  @Email(message = "올바른 이메일 형식이 아닙니다")
+  @NotBlank(message = "{validation.email.required}")
+  @Email(message = "{validation.email.invalid}")
   private String username;
 
-  @NotBlank(message = "비밀번호는 필수입니다")
+  @NotBlank(message = "{validation.password.required}")
   private String password;
 }
