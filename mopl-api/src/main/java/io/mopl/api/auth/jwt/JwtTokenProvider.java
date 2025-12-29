@@ -9,6 +9,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
@@ -28,7 +29,11 @@ public class JwtTokenProvider {
       @Value("${jwt.secret}") String secret,
       @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds)
       throws JOSEException {
-    byte[] secretBytes = secret.getBytes();
+    // 키 길이 검증
+    byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+    if (secretBytes.length < 32) {
+      throw new IllegalArgumentException("JWT secret 키는 최소 256비트(32바이트) 이상이어야 합니다.");
+    }
     this.signer = new MACSigner(secretBytes);
     this.verifier = new MACVerifier(secretBytes);
     this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
