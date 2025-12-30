@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.common.error.ApiBusinessException;
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
@@ -13,6 +14,7 @@ import io.mopl.core.error.BusinessException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,27 +34,34 @@ public class UserService {
       throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
     }
 
-    User user =
-        User.builder()
-            .email(request.getEmail())
-            .name(request.getName())
-            .passwordHash(passwordEncoder.encode(request.getPassword()))
-            .role(UserRole.USER)
-            .authProvider(AuthProvider.LOCAL)
-            .locked(false)
-            .build();
+    try {
+      User user =
+          User.builder()
+              .email(request.getEmail())
+              .name(request.getName())
+              .passwordHash(passwordEncoder.encode(request.getPassword()))
+              .role(UserRole.USER)
+              .authProvider(AuthProvider.LOCAL)
+              .locked(false)
+              .build();
 
-    User savedUser = userRepository.save(user);
+      User savedUser = userRepository.save(user);
+      log.info("회원가입 완료: {}", savedUser.getEmail());
 
-    return UserDto.builder()
-        .id(savedUser.getId())
-        .createdAt(savedUser.getCreatedAt())
-        .email(savedUser.getEmail())
-        .name(savedUser.getName())
-        .profileImageUrl(savedUser.getProfileImageUrl())
-        .role(savedUser.getRole())
-        .locked(savedUser.isLocked())
-        .build();
+      return UserDto.builder()
+          .id(savedUser.getId())
+          .createdAt(savedUser.getCreatedAt())
+          .email(savedUser.getEmail())
+          .name(savedUser.getName())
+          .profileImageUrl(savedUser.getProfileImageUrl())
+          .role(savedUser.getRole())
+          .locked(savedUser.isLocked())
+          .build();
+
+    } catch (DataIntegrityViolationException e) {
+      log.warn("이메일 중복으로 인한 제약 조건 위반: {}", request.getEmail());
+      throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
+    }
   }
 
   /** 사용자 확인 */
@@ -61,7 +70,7 @@ public class UserService {
     User user =
         userRepository
             .findById(userId)
-            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ApiBusinessException(AuthErrorCode.USER_NOT_FOUND));
 
     return UserSummary.builder()
         .userId(user.getId())
