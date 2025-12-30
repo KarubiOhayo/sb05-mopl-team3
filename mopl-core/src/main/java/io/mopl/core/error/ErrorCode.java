@@ -3,5 +3,5 @@ package io.mopl.core.error;
 public interface ErrorCode {
   int getStatus();
 
-  String getMessage();
+  String getMessageKey();
 }
