@@ -1,7 +1,6 @@
 package io.mopl.api.user.service;
 
 import io.mopl.api.common.error.ApiBusinessException;
-import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -46,7 +45,6 @@ public class UserService {
               .build();
 
       User savedUser = userRepository.save(user);
-      log.info("회원가입 완료: {}", savedUser.getEmail());
 
       return UserDto.builder()
           .id(savedUser.getId())
@@ -59,7 +57,7 @@ public class UserService {
           .build();
 
     } catch (DataIntegrityViolationException e) {
-      log.warn("이메일 중복으로 인한 제약 조건 위반: {}", request.getEmail());
+      log.warn("이메일 중복으로 인한 제약 조건 위반");
       throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
     }
   }
@@ -70,7 +68,7 @@ public class UserService {
     User user =
         userRepository
             .findById(userId)
-            .orElseThrow(() -> new ApiBusinessException(AuthErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ApiBusinessException(UserErrorCode.USER_NOT_FOUND));
 
     return UserSummary.builder()
         .userId(user.getId())
