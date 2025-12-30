@@ -2,10 +2,14 @@ package io.mopl.api.common.error;
 
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.core.error.ErrorCode;
 import io.mopl.core.error.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,14 +17,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+@RequiredArgsConstructor
+public class ApiExceptionHandler {
+
+  private final MessageSource messageSource;
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
-    // 인터페이스 변경 후 임시 조치
-    // CommonErrorCode errorCode = ex.getErrorCode();
-    // return buildResponse(errorCode, errorCode.name(), ex.getDetails());
-    return null;
+    ErrorCode errorCode = ex.getErrorCode();
+    String resolvedMessage = resolveMessage(errorCode.getMessage());
+    return buildResponse(
+        errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -34,8 +41,12 @@ public class GlobalExceptionHandler {
         .getGlobalErrors()
         .forEach(error -> details.put(error.getObjectName(), error.getDefaultMessage()));
 
+    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessage());
     return buildResponse(
-        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
+        CommonErrorCode.INVALID_REQUEST,
+        CommonErrorCode.INVALID_REQUEST.name(),
+        resolvedMessage,
+        details);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -46,25 +57,41 @@ public class GlobalExceptionHandler {
             violation ->
                 details.put(violation.getPropertyPath().toString(), violation.getMessage()));
 
+    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessage());
     return buildResponse(
-        CommonErrorCode.INVALID_REQUEST, CommonErrorCode.INVALID_REQUEST.name(), details);
+        CommonErrorCode.INVALID_REQUEST,
+        CommonErrorCode.INVALID_REQUEST.name(),
+        resolvedMessage,
+        details);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+    String resolvedMessage = resolveMessage(CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage());
     return buildResponse(
-        CommonErrorCode.INTERNAL_SERVER_ERROR, ex.getClass().getSimpleName(), null);
+        CommonErrorCode.INTERNAL_SERVER_ERROR,
+        ex.getClass().getSimpleName(),
+        resolvedMessage,
+        null);
   }
 
   private ResponseEntity<ErrorResponse> buildResponse(
-      CommonErrorCode errorCode, String exceptionName, Map<String, String> details) {
+      ErrorCode errorCode, String exceptionName, String message, Map<String, String> details) {
     ErrorResponse response =
         ErrorResponse.builder()
             .exceptionName(exceptionName)
-            .message(errorCode.getMessage())
+            .message(message)
             .details(details == null || details.isEmpty() ? null : details)
             .build();
 
     return ResponseEntity.status(HttpStatusCode.valueOf(errorCode.getStatus())).body(response);
+  }
+
+  private String resolveMessage(String messageKey) {
+    try {
+      return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+    } catch (Exception e) {
+      return messageKey;
+    }
   }
 }
