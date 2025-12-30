@@ -1,7 +1,7 @@
-package io.mopl.batch.content.tmdb;
+package io.mopl.batch.client.tmdb;
 
-import io.mopl.batch.content.tmdb.dto.TmdbMovieResponse;
-import io.mopl.batch.content.tmdb.dto.TmdbPageResponse;
+import io.mopl.batch.client.tmdb.dto.TmdbMovieResponse;
+import io.mopl.batch.client.tmdb.dto.TmdbPageResponse;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

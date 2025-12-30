@@ -1,4 +1,4 @@
-package io.mopl.batch.content.tmdb.dto;
+package io.mopl.batch.client.tmdb.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;

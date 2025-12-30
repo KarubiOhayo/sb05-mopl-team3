@@ -10,13 +10,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -40,6 +44,9 @@ public class Content {
   @Column(nullable = false, length = 20)
   @Enumerated(EnumType.STRING)
   private ContentType type;
+
+  @Column(name = "external_id")
+  private String externalId;
 
   @Column(nullable = false)
   private String title;
@@ -70,6 +77,8 @@ public class Content {
   @LastModifiedDate
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
+
+  @Transient @Setter private List<Integer> genreIds = new ArrayList<>();
 
   @PrePersist
   public void generateId() {
