@@ -8,7 +8,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -32,12 +30,8 @@ public class AuthController {
   @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public ResponseEntity<JwtDto> signIn(
       @Valid @ModelAttribute SignInRequest request, HttpServletResponse response) {
-    log.info("로그인 시도");
     AuthTokens authTokens = authService.signIn(request);
-
     setRefreshTokenCookie(response, authTokens.getRefreshToken());
-
-    log.info("로그인 성공: userId={}", authTokens.getJwtDto().getUserDto().getId());
     return ResponseEntity.ok(authTokens.getJwtDto());
   }
 
@@ -46,12 +40,8 @@ public class AuthController {
   public ResponseEntity<JwtDto> refresh(
       @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
       HttpServletResponse response) {
-    log.info("토큰 재발급 요청");
     AuthTokens authTokens = authService.reissueToken(refreshToken);
-
     setRefreshTokenCookie(response, authTokens.getRefreshToken());
-
-    log.info("토큰 재발급 성공: userId={}", authTokens.getJwtDto().getUserDto().getId());
     return ResponseEntity.ok(authTokens.getJwtDto());
   }
 
@@ -59,11 +49,11 @@ public class AuthController {
   private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
     Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     cookie.setHttpOnly(true);
-    cookie.setSecure(false);
+    cookie.setSecure(false); // TODO: production 환경에서는 true
     cookie.setPath("/api/auth");
     cookie.setMaxAge(REFRESH_TOKEN_COOKIE_MAX_AGE);
+    cookie.setAttribute("SameSite", "Strict");
 
     response.addCookie(cookie);
-    log.debug("리프레시 토큰 쿠키 설정 완료");
   }
 }
