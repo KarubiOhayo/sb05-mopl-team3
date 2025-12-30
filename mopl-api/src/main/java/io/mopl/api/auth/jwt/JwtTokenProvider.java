@@ -3,40 +3,59 @@ package io.mopl.api.auth.jwt;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-  private final JWSSigner signer;
-  private final JWSVerifier verifier;
-  private final long accessTokenValidityInMilliseconds;
+  @Value("${jwt.secret}")
+  private String secret;
 
-  public JwtTokenProvider(
-      @Value("${jwt.secret}") String secret,
-      @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds)
-      throws JOSEException {
-    // 키 길이 검증
-    byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
-    if (secretBytes.length < 32) {
-      throw new IllegalArgumentException("JWT secret 키는 최소 256비트(32바이트) 이상이어야 합니다.");
+  @Value("${jwt.access-token-validity-in-seconds}")
+  private long accessTokenValidityInSeconds;
+
+  @Value("${jwt.refresh-token-validity-in-seconds:604800}")
+  private long refreshTokenValidityInSeconds;
+
+  private MACSigner signer;
+  private MACVerifier verifier;
+  private long accessTokenValidityInMilliseconds;
+  private long refreshTokenValidityInMilliseconds;
+
+  @PostConstruct
+  protected void init() {
+    try {
+      byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+      if (secretBytes.length < 32) {
+        throw new IllegalArgumentException("JWT secret 키는 최소 32바이트(256비트) 이상이어야 합니다");
+      }
+      this.signer = new MACSigner(secretBytes);
+      this.verifier = new MACVerifier(secretBytes);
+      this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
+      this.refreshTokenValidityInMilliseconds = refreshTokenValidityInSeconds * 1000;
+    } catch (KeyLengthException e) {
+      log.error("JWT secret 키 길이가 유효하지 않습니다: {}", e.getMessage());
+      throw new IllegalArgumentException(
+          "JWT secret 키는 HS256 알고리즘을 위해 최소 32바이트(256비트) 이상이어야 합니다", e);
+    } catch (JOSEException e) {
+      log.error("JWT signer/verifier 초기화 실패: {}", e.getMessage());
+      throw new IllegalArgumentException("JWT 컴포넌트 초기화 실패", e);
     }
-    this.signer = new MACSigner(secretBytes);
-    this.verifier = new MACVerifier(secretBytes);
-    this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
   }
 
   /** Access Token 생성 */
@@ -62,6 +81,31 @@ public class JwtTokenProvider {
     } catch (JOSEException e) {
       log.error("JWT 토큰 생성 실패: {}", e.getMessage());
       throw new RuntimeException("JWT 토큰 생성에 실패했습니다", e);
+    }
+  }
+
+  /** Refresh Token 생성 (JWT 기반) */
+  public String createRefreshToken(UUID userId) {
+    try {
+      Date now = new Date();
+      Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
+
+      JWTClaimsSet claimsSet =
+          new JWTClaimsSet.Builder()
+              .subject(userId.toString())
+              .claim("type", "refresh")
+              .issueTime(now)
+              .expirationTime(validity)
+              .build();
+
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
+
+      signedJWT.sign(signer);
+
+      return signedJWT.serialize();
+    } catch (JOSEException e) {
+      log.error("리프레시 토큰 생성 실패: {}", e.getMessage());
+      throw new RuntimeException("리프레시 토큰 생성에 실패했습니다", e);
     }
   }
 
@@ -98,13 +142,11 @@ public class JwtTokenProvider {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
 
-      // 서명 검증
       if (!signedJWT.verify(verifier)) {
         log.error("JWT 서명 검증 실패");
         return false;
       }
 
-      // 만료 시간 확인
       Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
       if (expirationTime != null && expirationTime.before(new Date())) {
         log.error("JWT 토큰 만료");
