@@ -48,7 +48,6 @@ public class UserService {
       return UserDto.from(savedUser);
 
     } catch (DataIntegrityViolationException e) {
-      log.warn("이메일 중복으로 인한 제약 조건 위반");
       throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
     }
   }

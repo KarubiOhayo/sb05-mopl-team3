@@ -33,24 +33,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     try {
-      // 1. Request Header에서 JWT 토큰 추출
       String token = getTokenFromRequest(request);
 
-      // 2. 토큰 유효성 검증
       if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-        // 3. 토큰에서 사용자 정보 추출
         UUID userId = jwtTokenProvider.getUserId(token);
         String email = jwtTokenProvider.getEmail(token);
         String role = jwtTokenProvider.getRole(token);
 
-        // 4. Spring Security 인증 객체 생성
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
                 userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-        // 5. SecurityContext에 인증 정보 저장
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
