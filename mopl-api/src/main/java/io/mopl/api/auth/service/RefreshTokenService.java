@@ -1,6 +1,8 @@
 package io.mopl.api.auth.service;
 
+import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +15,13 @@ import org.springframework.stereotype.Service;
 public class RefreshTokenService {
 
   private final RedisTemplate<String, String> redisTemplate;
+  private final JwtTokenProvider jwtTokenProvider;
 
   /** 리프레시 토큰 저장 */
   public void saveRefreshToken(UUID userId, String refreshToken) {
     String key = RedisKeyPrefix.REFRESH_TOKEN + userId.toString();
-    redisTemplate.opsForValue().set(key, refreshToken);
+    long ttlSeconds = jwtTokenProvider.getRefreshTokenValidityInSeconds();
+    redisTemplate.opsForValue().set(key, refreshToken, Duration.ofSeconds(ttlSeconds));
     log.debug("리프레시 토큰 저장: userId={}, key={}", userId, key);
   }
 
