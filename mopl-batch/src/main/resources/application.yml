@@ -17,6 +17,10 @@ tmdb:
   access-token: ${TMDB_ACCESS_TOKEN:your-access-token-here}
   language: ${TMDB_LANGUAGE:ko-KR}
 
+batch:
+  schedule:
+    movie-collect-cron: ${BATCH_MOVIE_COLLECT_CRON:0 0 4 * * *}
+
 management:
   endpoints:
     web:
