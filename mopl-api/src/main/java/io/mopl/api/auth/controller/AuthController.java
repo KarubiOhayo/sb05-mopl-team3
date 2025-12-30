@@ -3,6 +3,7 @@ package io.mopl.api.auth.controller;
 import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.SignInRequest;
+import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,9 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final JwtTokenProvider jwtTokenProvider;
 
   private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
-  private static final int REFRESH_TOKEN_COOKIE_MAX_AGE = 604800; // 7일
 
   /** 로그인 Content-Type: application/x-www-form-urlencoded */
   @PostMapping(value = "/sign-in", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -51,7 +52,7 @@ public class AuthController {
     cookie.setHttpOnly(true);
     cookie.setSecure(false); // TODO: production 환경에서는 true
     cookie.setPath("/api/auth");
-    cookie.setMaxAge(REFRESH_TOKEN_COOKIE_MAX_AGE);
+    cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
     cookie.setAttribute("SameSite", "Strict");
 
     response.addCookie(cookie);

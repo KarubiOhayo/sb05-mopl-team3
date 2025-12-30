@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,7 @@ public class JwtTokenProvider {
   @Value("${jwt.access-token-validity-in-seconds}")
   private long accessTokenValidityInSeconds;
 
+  @Getter
   @Value("${jwt.refresh-token-validity-in-seconds:604800}")
   private long refreshTokenValidityInSeconds;
 
