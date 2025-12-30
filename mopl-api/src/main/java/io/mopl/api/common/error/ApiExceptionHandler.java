@@ -30,14 +30,6 @@ public class ApiExceptionHandler {
         errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
 
-  @ExceptionHandler(ApiBusinessException.class)
-  public ResponseEntity<ErrorResponse> handleApiBusinessException(ApiBusinessException ex) {
-    ErrorCode errorCode = ex.getErrorCode();
-    String resolvedMessage = resolveMessage(errorCode.getMessageKey());
-    return buildResponse(
-        errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
-  }
-
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex) {

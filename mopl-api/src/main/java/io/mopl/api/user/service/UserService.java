@@ -1,6 +1,5 @@
 package io.mopl.api.user.service;
 
-import io.mopl.api.common.error.ApiBusinessException;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -60,7 +59,7 @@ public class UserService {
     User user =
         userRepository
             .findById(userId)
-            .orElseThrow(() -> new ApiBusinessException(UserErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
     return UserSummary.builder()
         .userId(user.getId())
