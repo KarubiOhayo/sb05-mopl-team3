@@ -1,6 +1,7 @@
 package io.mopl.batch.content.domain;
 
 import io.mopl.batch.common.UuidV7Generator;
+import io.mopl.core.event.thumbnail.ThumbnailSourceType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -56,6 +57,7 @@ public class Content {
   private String description;
 
   @Column(name = "thumbnail_url", nullable = false, length = 2048)
+  @Setter
   private String thumbnailUrl;
 
   @Column(name = "average_rating", nullable = false)
@@ -79,6 +81,10 @@ public class Content {
   private Instant updatedAt;
 
   @Transient @Setter private List<Integer> genreIds = new ArrayList<>();
+
+  @Transient @Setter private String sourceThumbnailUrl;
+
+  @Transient @Setter private ThumbnailSourceType thumbnailSourceType;
 
   @PrePersist
   public void generateId() {
