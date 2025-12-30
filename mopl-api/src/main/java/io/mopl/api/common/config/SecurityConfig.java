@@ -29,7 +29,8 @@ public class SecurityConfig {
                             request.getMethod().equals("POST")
                                 && (request.getServletPath().equals("/api/auth/sign-in")
                                     || request.getServletPath().equals("/api/auth/sign-up")
-                                    || request.getServletPath().equals("/api/users"))))
+                                    || request.getServletPath().equals("/api/users")
+                                    || request.getServletPath().equals("/api/auth/refresh"))))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
