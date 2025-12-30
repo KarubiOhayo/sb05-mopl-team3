@@ -25,7 +25,7 @@ public class ApiExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
-    String resolvedMessage = resolveMessage(errorCode.getMessage());
+    String resolvedMessage = resolveMessage(errorCode.getMessageKey());
     return buildResponse(
         errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
@@ -41,7 +41,7 @@ public class ApiExceptionHandler {
         .getGlobalErrors()
         .forEach(error -> details.put(error.getObjectName(), error.getDefaultMessage()));
 
-    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessage());
+    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessageKey());
     return buildResponse(
         CommonErrorCode.INVALID_REQUEST,
         CommonErrorCode.INVALID_REQUEST.name(),
@@ -57,7 +57,7 @@ public class ApiExceptionHandler {
             violation ->
                 details.put(violation.getPropertyPath().toString(), violation.getMessage()));
 
-    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessage());
+    String resolvedMessage = resolveMessage(CommonErrorCode.INVALID_REQUEST.getMessageKey());
     return buildResponse(
         CommonErrorCode.INVALID_REQUEST,
         CommonErrorCode.INVALID_REQUEST.name(),
@@ -67,7 +67,7 @@ public class ApiExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-    String resolvedMessage = resolveMessage(CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+    String resolvedMessage = resolveMessage(CommonErrorCode.INTERNAL_SERVER_ERROR.getMessageKey());
     return buildResponse(
         CommonErrorCode.INTERNAL_SERVER_ERROR,
         ex.getClass().getSimpleName(),
