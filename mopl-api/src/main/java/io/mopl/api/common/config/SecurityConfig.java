@@ -19,17 +19,35 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+  // 개발 중 테스트를 위한 csrf 임시 비활성화 메서드
+  //  @Bean
+  //  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  //    http
+  //        .csrf(csrf -> csrf.disable())
+  //        .sessionManagement(session -> session
+  //            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+  //        .authorizeHttpRequests(auth -> auth
+  //            .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+  //            .requestMatchers("/api/users/**").authenticated()
+  //            .anyRequest().permitAll())
+  //        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+  //
+  //    return http.build();
+  //  }
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .ignoringRequestMatchers(
-                        request ->
-                            request.getMethod().equals("POST")
-                                && (request.getServletPath().equals("/api/auth/sign-in")
-                                    || request.getServletPath().equals("/api/auth/sign-up")
-                                    || request.getServletPath().equals("/api/users"))))
+                        request -> {
+                          String method = request.getMethod();
+                          String path = request.getRequestURI();
+                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
+                              || (method.equals("POST") && path.equals("/api/users")
+                                  || (method.equals("POST") && path.equals("/api/auth/refresh")));
+                        }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(

@@ -1,5 +1,6 @@
 package io.mopl.api.auth.service;
 
+import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
@@ -9,6 +10,7 @@ import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,10 +25,11 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
+  private final RefreshTokenService refreshTokenService;
 
   /** 로그인 */
   @Transactional
-  public JwtDto signIn(SignInRequest request) {
+  public AuthTokens signIn(SignInRequest request) {
     User user =
         userRepository
             .findByEmail(request.getUsername())
@@ -41,18 +44,55 @@ public class AuthService {
     String accessToken =
         jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
 
-    UserDto userDto =
-        UserDto.builder()
-            .id(user.getId())
-            .createdAt(user.getCreatedAt())
-            .email(user.getEmail())
-            .name(user.getName())
-            .profileImageUrl(user.getProfileImageUrl())
-            .role(user.getRole())
-            .locked(user.isLocked())
-            .build();
+    String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+    refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-    return JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
+    UserDto userDto = UserDto.from(user);
+
+    JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
+
+    return AuthTokens.builder().jwtDto(jwtDto).refreshToken(refreshToken).build();
+  }
+
+  /** 토큰 재발급 */
+  @Transactional(readOnly = true)
+  public AuthTokens reissueToken(String refreshTokenFromCookie) {
+    if (!jwtTokenProvider.validateToken(refreshTokenFromCookie)
+        || !jwtTokenProvider.isRefreshToken(refreshTokenFromCookie)) {
+      log.warn("유효하지 않은 리프레시 토큰");
+      throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    UUID userId = jwtTokenProvider.getUserId(refreshTokenFromCookie);
+
+    String storeRefreshToken = refreshTokenService.getRefreshToken(userId);
+
+    if (storeRefreshToken == null || !storeRefreshToken.equals(refreshTokenFromCookie)) {
+      log.warn("리프레시 토큰이 일치하지 않음: userId={}", userId);
+      throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+
+    if (user.isLocked()) {
+      throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+    }
+
+    String newAccessToken =
+        jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+
+    String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+    refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken);
+
+    UserDto userDto = UserDto.from(user);
+
+    JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(newAccessToken).build();
+
+    log.info("토큰 재발급 성공: userId={}", userId);
+    return AuthTokens.builder().jwtDto(jwtDto).refreshToken(newRefreshToken).build();
   }
 
   /** 비밀번호 검증 */
