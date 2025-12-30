@@ -33,3 +33,4 @@ logging:
 jwt:
   secret: ${JWT_SECRET:dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
   access-token-validity-in-seconds: ${JWT_VALIDITY:86400} # 디폴트 24시간
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800} # 디폴트 7일
