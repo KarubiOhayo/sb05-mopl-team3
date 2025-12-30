@@ -24,12 +24,7 @@ public class SecurityConfig {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringRequestMatchers(
-                        request ->
-                            request.getMethod().equals("POST")
-                                && (request.getServletPath().equals("/api/auth/sign-in")
-                                    || request.getServletPath().equals("/api/auth/sign-up")
-                                    || request.getServletPath().equals("/api/users"))))
+                    .ignoringRequestMatchers("/api/auth/**", "/api/users"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
