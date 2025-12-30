@@ -6,10 +6,10 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum AuthErrorCode implements ErrorCode {
-  USER_NOT_FOUND(404, "error.auth.user-not-found"),
-  ACCOUNT_LOCKED(403, "error.auth.account-locked"),
-  INVALID_PASSWORD(401, "error.auth.invalid-password");
+public enum UserErrorCode implements ErrorCode {
+  DUPLICATED_EMAIL(409, "error.user.duplicate-email"),
+  USER_NOT_FOUND(404, "error.user.not-found"),
+  UNAUTHORIZED(403, "error.user.unauthorized");
 
   private final int status;
   private final String messageKey;
