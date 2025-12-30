@@ -13,9 +13,4 @@ public enum AuthErrorCode implements ErrorCode {
 
   private final int status;
   private final String messageKey;
-
-  @Override
-  public String getMessageKey() {
-    return messageKey;
-  }
 }

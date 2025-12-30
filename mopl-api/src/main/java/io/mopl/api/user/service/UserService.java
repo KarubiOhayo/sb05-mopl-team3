@@ -1,5 +1,7 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.common.error.BusinessException;
+import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
@@ -24,7 +26,7 @@ public class UserService {
   @Transactional
   public UserDto createUser(UserCreateRequest request) {
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+      throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
     }
 
     User user =
