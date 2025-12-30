@@ -1,6 +1,5 @@
 package io.mopl.api.user.service;
 
-import io.mopl.api.common.error.BusinessException;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -8,6 +7,7 @@ import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.domain.UserRole;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.core.error.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;

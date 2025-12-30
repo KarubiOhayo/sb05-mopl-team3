@@ -3,8 +3,8 @@ package io.mopl.api.auth.service;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
+import io.mopl.api.common.error.ApiBusinessException;
 import io.mopl.api.common.error.AuthErrorCode;
-import io.mopl.api.common.error.BusinessException;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
@@ -30,10 +30,10 @@ public class AuthService {
     User user =
         userRepository
             .findByEmail(request.getUsername())
-            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ApiBusinessException(AuthErrorCode.USER_NOT_FOUND));
 
     if (user.isLocked()) {
-      throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+      throw new ApiBusinessException(AuthErrorCode.ACCOUNT_LOCKED);
     }
 
     validatePassword(request.getPassword(), user);
@@ -68,7 +68,7 @@ public class AuthService {
     }
 
     if (!isPasswordValid) {
-      throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
+      throw new ApiBusinessException(AuthErrorCode.INVALID_PASSWORD);
     }
   }
 }
