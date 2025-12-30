@@ -46,15 +46,7 @@ public class UserService {
 
       User savedUser = userRepository.save(user);
 
-      return UserDto.builder()
-          .id(savedUser.getId())
-          .createdAt(savedUser.getCreatedAt())
-          .email(savedUser.getEmail())
-          .name(savedUser.getName())
-          .profileImageUrl(savedUser.getProfileImageUrl())
-          .role(savedUser.getRole())
-          .locked(savedUser.isLocked())
-          .build();
+      return UserDto.from(savedUser);
 
     } catch (DataIntegrityViolationException e) {
       log.warn("이메일 중복으로 인한 제약 조건 위반");
