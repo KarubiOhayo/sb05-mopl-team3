@@ -57,7 +57,8 @@ public class AuthService {
   /** 토큰 재발급 */
   @Transactional(readOnly = true)
   public AuthTokens reissueToken(String refreshTokenFromCookie) {
-    if (!jwtTokenProvider.validateToken(refreshTokenFromCookie)) {
+    if (!jwtTokenProvider.validateToken(refreshTokenFromCookie)
+        || !jwtTokenProvider.isRefreshToken(refreshTokenFromCookie)) {
       log.warn("유효하지 않은 리프레시 토큰");
       throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
     }

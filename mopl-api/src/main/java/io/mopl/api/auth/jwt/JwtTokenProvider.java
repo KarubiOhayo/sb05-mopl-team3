@@ -162,6 +162,18 @@ public class JwtTokenProvider {
     }
   }
 
+  /** 리프레시 토큰 타입 검증 */
+  public boolean isRefreshToken(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      String type = claims.getStringClaim("type");
+      return "refresh".equals(type);
+    } catch (ParseException e) {
+      log.error("Failed to parse token type", e);
+      return false;
+    }
+  }
+
   /** 토큰 파싱 */
   private JWTClaimsSet parseClaims(String token) {
     try {
