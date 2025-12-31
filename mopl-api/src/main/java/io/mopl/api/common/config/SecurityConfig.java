@@ -1,22 +1,18 @@
 package io.mopl.api.common.config;
 
 import io.mopl.api.auth.jwt.JwtAuthenticationFilter;
-import io.mopl.api.auth.jwt.JwtTokenProvider;
-import io.mopl.api.auth.service.RefreshTokenService;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +20,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final CsrfCookieFilter csrfCookieFilter;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -42,16 +39,26 @@ public class SecurityConfig {
   //  }
 
   @Bean
-  public SecurityFilterChain filterChain(
-      HttpSecurity http, JwtTokenProvider jwtTokenProvider, RefreshTokenService refreshTokenService)
-      throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+
+    // Plain CSRF Token Handler 사용 (XOR 인코딩 비활성화)
+    CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+    requestHandler.setCsrfRequestAttributeName("_csrf");
+
     http.csrf(
             csrf ->
-                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                csrf.csrfTokenRepository(csrfTokenRepository)
+                    .csrfTokenRequestHandler(requestHandler) // Plain token handler 설정
                     .ignoringRequestMatchers(
                         request -> {
+                          String method = request.getMethod();
                           String path = request.getRequestURI();
-                          return path.startsWith("/api/auth/");
+                          // CSRF 검증 제외: 회원가입, 로그인만
+                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
+                              || (method.equals("POST") && path.equals("/api/users"));
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -178,47 +185,9 @@ public class SecurityConfig {
                     // 나머지는 인증 필요
                     .anyRequest()
                     .authenticated())
-        .logout(
-            logout ->
-                logout
-                    .logoutUrl("/api/auth/sign-out")
-                    .logoutSuccessHandler(
-                        (request, response, authentication) -> {
-                          try {
-                            String refreshToken = null;
-                            Cookie[] cookies = request.getCookies();
-                            if (cookies != null) {
-                              for (Cookie cookie : cookies) {
-                                if ("REFRESH_TOKEN".equals(cookie.getName())) {
-                                  refreshToken = cookie.getValue();
-                                  break;
-                                }
-                              }
-                            }
-                            if (refreshToken != null
-                                && jwtTokenProvider.validateToken(refreshToken)) {
-                              UUID userId = jwtTokenProvider.getUserId(refreshToken);
-                              refreshTokenService.deleteRefreshToken(userId);
-                            }
-                          } catch (Exception ignored) {
-                          } finally {
-                            clearRefreshTokenCookie(response);
-                            response.setStatus(HttpStatus.NO_CONTENT.value());
-                          }
-                        })
-                    .permitAll())
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(csrfCookieFilter, CsrfFilter.class);
 
     return http.build();
-  }
-
-  /** 리프레시 토큰 쿠키 제거 */
-  private void clearRefreshTokenCookie(HttpServletResponse response) {
-    Cookie cookie = new Cookie("REFRESH_TOKEN", null);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(false); // TODO: production 환경에서는 ture로 변경할 것
-    cookie.setPath("/api/auth");
-    cookie.setMaxAge(0);
-    response.addCookie(cookie);
   }
 }
