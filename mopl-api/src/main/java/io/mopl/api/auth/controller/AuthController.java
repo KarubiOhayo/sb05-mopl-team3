@@ -67,6 +67,8 @@ public class AuthController {
     cookie.setSecure(false); // TODO: production 환경에서는 true
     cookie.setPath("/api/auth");
     cookie.setMaxAge(0);
+    cookie.setAttribute("SameSite", "Strict");
+
     response.addCookie(cookie);
   }
 
