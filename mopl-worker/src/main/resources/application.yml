@@ -24,6 +24,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: io.mopl.core.event.*
+    listener:
+      ack-mode: manual
   jackson:
     time-zone: UTC
 
@@ -33,6 +35,14 @@ aws:
     region: ${MOPL_S3_REGION:ap-northeast-2}
     access-key: ${AWS_ACCESS_KEY:}
     secret-key: ${AWS_SECRET_KEY:}
+
+mopl:
+  kafka:
+    retry:
+      max-attempts: 3
+      initial-backoff-ms: 1000
+      backoff-multiplier: 2.0
+      max-backoff-ms: 10000
 
 management:
   endpoints:
