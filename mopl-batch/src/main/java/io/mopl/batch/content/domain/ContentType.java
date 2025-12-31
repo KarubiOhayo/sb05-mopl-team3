@@ -2,6 +2,8 @@ package io.mopl.batch.content.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.mopl.batch.common.BatchErrorCode;
+import io.mopl.core.error.BusinessException;
 import java.util.Arrays;
 
 public enum ContentType {
@@ -28,6 +30,9 @@ public enum ContentType {
     return Arrays.stream(values())
         .filter(type -> type.value.equalsIgnoreCase(value))
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("Unknown content type: " + value));
+        .orElseThrow(
+            () ->
+                new BusinessException(BatchErrorCode.UNKNOWN_CONTENT_TYPE)
+                    .addDetail("value", value));
   }
 }

@@ -36,14 +36,14 @@ public class ContentThumbnailRequestedHandler {
 
     try {
       log.info(
-          "Received thumbnail request: contentId={}, s3Key={}, sourceUrl={}, attempt={}",
+          "썸네일 요청 수신: contentId={}, s3Key={}, sourceUrl={}, attempt={}",
           event.contentId(),
           event.s3Key(),
           event.sourceUrl(),
           event.attempt());
 
       if (event.sourceUrl() == null || event.sourceUrl().isBlank()) {
-        log.warn("Skip thumbnail upload: sourceUrl is blank. contentId={}", event.contentId());
+        log.warn("썸네일 업로드 건너뜀: sourceUrl이 비어 있습니다. contentId={}", event.contentId());
         return;
       }
 
@@ -62,11 +62,16 @@ public class ContentThumbnailRequestedHandler {
                   event.s3Key(),
                   event.attempt());
           thumbnailEventPublisher.publishCompleted(completedEvent);
+          log.info(
+              "썸네일 업로드 완료: contentId={}, s3Key={}, sourceUrl={}",
+              event.contentId(),
+              event.s3Key(),
+              event.sourceUrl());
           return;
         } catch (Exception ex) {
           lastFailure = ex;
           log.warn(
-              "Thumbnail upload failed (attempt {}/{}): contentId={}, s3Key={}",
+              "썸네일 업로드 실패 (attempt {}/{}): contentId={}, s3Key={}",
               attempt,
               maxAttempts,
               event.contentId(),
@@ -102,24 +107,17 @@ public class ContentThumbnailRequestedHandler {
       try {
         kafkaTemplate.send(KafkaTopics.CONTENT_THUMBNAIL_REQUESTED_DLQ, event.contentId(), event);
       } catch (Exception ex) {
-        log.error(
-            "Failed to publish DLQ event: contentId={}, s3Key={}",
-            event.contentId(),
-            event.s3Key(),
-            ex);
+        log.error("DLQ 이벤트 발행 실패: contentId={}, s3Key={}", event.contentId(), event.s3Key(), ex);
       }
 
       log.error(
-          "Thumbnail upload failed after retries: contentId={}, s3Key={}, sourceUrl={}",
+          "썸네일 업로드 재시도 후 실패: contentId={}, s3Key={}, sourceUrl={}",
           event.contentId(),
           event.s3Key(),
           event.sourceUrl(),
           lastFailure);
     } catch (Exception ex) {
-      log.error(
-          "Unexpected error while processing thumbnail request: contentId={}",
-          event.contentId(),
-          ex);
+      log.error("썸네일 요청 처리 중 예상치 못한 오류 발생: contentId={}", event.contentId(), ex);
     } finally {
       acknowledgment.acknowledge();
     }

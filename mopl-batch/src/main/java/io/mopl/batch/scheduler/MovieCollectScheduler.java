@@ -21,7 +21,7 @@ public class MovieCollectScheduler {
   @Scheduled(cron = "${batch.schedule.movie-collect-cron}")
   public void runMovieCollectJob() {
     try {
-      log.info("Movie Collect Batch Job Started at {}", System.currentTimeMillis());
+      log.info("Movie 수집 배치 작업 시작: {}", System.currentTimeMillis());
 
       JobParameters jobParameters =
           new JobParametersBuilder()
@@ -31,9 +31,9 @@ public class MovieCollectScheduler {
 
       jobOperator.start(movieCollectJob, jobParameters);
 
-      log.info("Movie Collect Batch Job Finished");
+      log.info("Movie 수집 배치 작업 종료");
     } catch (Exception e) {
-      log.error("Movie Collect Batch Job Failed", e);
+      log.error("Movie 수집 배치 작업 실패", e);
     }
   }
 }

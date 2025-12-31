@@ -1,5 +1,7 @@
 package io.mopl.worker.thumbnail;
 
+import io.mopl.core.error.BusinessException;
+import io.mopl.worker.common.WorkerErrorCode;
 import io.mopl.worker.s3.S3Properties;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -37,7 +39,7 @@ public class ThumbnailS3Uploader {
     String bucket = requireBucket();
 
     if (objectExists(bucket, s3Key)) {
-      log.info("Skip upload: object already exists. s3Key={}", s3Key);
+      log.info("업로드 건너뜀: 이미 객체가 존재합니다. s3Key={}", s3Key);
       return;
     }
 
@@ -48,12 +50,13 @@ public class ThumbnailS3Uploader {
         httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
     if (response.statusCode() / 100 != 2) {
-      throw new IllegalStateException("HTTP download failed. status=" + response.statusCode());
+      throw new BusinessException(WorkerErrorCode.THUMBNAIL_DOWNLOAD_FAILED)
+          .addDetail("status", String.valueOf(response.statusCode()));
     }
 
     byte[] body = response.body();
     if (body == null || body.length == 0) {
-      throw new IllegalStateException("HTTP download returned empty body.");
+      throw new BusinessException(WorkerErrorCode.THUMBNAIL_EMPTY_BODY);
     }
 
     String contentType = resolveContentType(response, s3Key);
@@ -105,7 +108,7 @@ public class ThumbnailS3Uploader {
 
   private String requireBucket() {
     if (s3Properties.bucket() == null || s3Properties.bucket().isBlank()) {
-      throw new IllegalStateException("S3 bucket is not configured.");
+      throw new BusinessException(WorkerErrorCode.S3_BUCKET_NOT_CONFIGURED);
     }
     return s3Properties.bucket();
   }

@@ -2,6 +2,8 @@ package io.mopl.batch.client.tmdb;
 
 import io.mopl.batch.client.tmdb.dto.TmdbMovieResponse;
 import io.mopl.batch.client.tmdb.dto.TmdbPageResponse;
+import io.mopl.batch.common.BatchErrorCode;
+import io.mopl.core.error.BusinessException;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +49,8 @@ public class TmdbApiClient {
       return Collections.emptyList();
     } catch (Exception e) {
       log.error("TMDB API 호출 실패: {}", e.getMessage(), e);
-      throw new RuntimeException("TMDB API 호출 중 오류가 발생했습니다.", e);
+      throw new BusinessException(BatchErrorCode.TMDB_API_CALL_ERROR)
+          .addDetail("page", String.valueOf(page));
     }
   }
 }
