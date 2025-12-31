@@ -31,10 +31,10 @@ spring:
 
 aws:
   s3:
-    bucket: ${MOPL_S3_BUCKET:}
+    bucket: ${MOPL_S3_BUCKET:mopl-bucket}
     region: ${MOPL_S3_REGION:ap-northeast-2}
-    access-key: ${AWS_ACCESS_KEY:}
-    secret-key: ${AWS_SECRET_KEY:}
+    access-key: ${AWS_ACCESS_KEY:access-key}
+    secret-key: ${AWS_SECRET_KEY:secret-key}
 
 mopl:
   kafka:
