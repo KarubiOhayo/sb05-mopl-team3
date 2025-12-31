@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -62,7 +63,7 @@ public class AuthController {
 
   /** CSRF 토큰 조회 */
   @GetMapping("/csrf-token")
-  public ResponseEntity<Void> getCsrfToken() {
+  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }

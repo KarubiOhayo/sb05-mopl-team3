@@ -50,11 +50,8 @@ public class SecurityConfig {
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .ignoringRequestMatchers(
                         request -> {
-                          String method = request.getMethod();
                           String path = request.getRequestURI();
-                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"))
-                              || (method.equals("POST") && path.equals("/api/auth/refresh"));
+                          return path.startsWith("/api/auth/");
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
