@@ -9,9 +9,11 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,5 +58,11 @@ public class AuthController {
     cookie.setAttribute("SameSite", "Strict");
 
     response.addCookie(cookie);
+  }
+
+  /** CSRF 토큰 조회 */
+  @GetMapping("/csrf-token")
+  public ResponseEntity<Void> getCsrfToken() {
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }

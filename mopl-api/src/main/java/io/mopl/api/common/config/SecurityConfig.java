@@ -25,7 +25,7 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-  // 개발 중 테스트를 위한 csrf 임시 비활성화 메서드
+  // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
   //  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
   //    http
