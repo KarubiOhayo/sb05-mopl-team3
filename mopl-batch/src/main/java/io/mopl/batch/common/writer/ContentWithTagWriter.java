@@ -48,8 +48,8 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
       Content savedContent = contentRepository.save(content);
 
       // 2. Tag 저장 및 연결
-      if (savedContent.getGenreIds() != null) {
-        for (Integer genreId : savedContent.getGenreIds()) {
+      if (content.getGenreIds() != null) {
+        for (Integer genreId : content.getGenreIds()) {
           String tagName = TmdbGenre.getNameById(genreId);
 
           // 태그가 없으면 생성, 있으면 조회
