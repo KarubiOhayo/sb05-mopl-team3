@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -37,17 +36,18 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.csrf(
-            csrf ->
-                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringRequestMatchers(
-                        request -> {
-                          String method = request.getMethod();
-                          String path = request.getRequestURI();
-                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users")
-                                  || (method.equals("POST") && path.equals("/api/auth/refresh")));
-                        }))
+    http.csrf(csrf -> csrf.disable())
+        //                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        //                    .ignoringRequestMatchers(
+        //                        request -> {
+        //                          String method = request.getMethod();
+        //                          String path = request.getRequestURI();
+        //                          return (method.equals("POST") &&
+        // path.equals("/api/auth/sign-in"))
+        //                              || (method.equals("POST") && path.equals("/api/users")
+        //                                  || (method.equals("POST") &&
+        // path.equals("/api/auth/refresh")));
+        //                        }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(

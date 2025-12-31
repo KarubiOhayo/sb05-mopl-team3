@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,13 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/reviews")
 public class ReviewController {
+
   private final ReviewService reviewService;
 
   @Operation(summary = "리뷰 생성", description = "새로운 리뷰를 작성합니다.")
   @PostMapping
   public ResponseEntity<ReviewDto> createReview(
-      @Valid @RequestBody ReviewCreateRequest request, @AuthenticationPrincipal Jwt jwt) {
-    UUID userId = UUID.fromString(jwt.getSubject());
+      @Valid @RequestBody ReviewCreateRequest request, @AuthenticationPrincipal UUID userId) {
     ReviewDto reviewDto = reviewService.create(request, userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(reviewDto);
   }
