@@ -6,8 +6,7 @@ spring:
       - optional:file:./.env[.properties]
       - optional:file:./mopl-api/.env[.properties]
   datasource:
-    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
-#    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
     username: ${MOPL_DB_USERNAME:app}
     password: ${MOPL_DB_PASSWORD:app}
   jpa:
