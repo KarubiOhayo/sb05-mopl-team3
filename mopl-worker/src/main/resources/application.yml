@@ -1,4 +1,8 @@
 spring:
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./mopl-worker/.env[.properties]"
   application:
     name: mopl-worker
   profiles:
@@ -11,10 +15,24 @@ spring:
       hibernate:
         format_sql: true
   kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: io.mopl.core.event.*
   jackson:
     time-zone: UTC
+
+aws:
+  s3:
+    bucket: ${MOPL_S3_BUCKET:}
+    region: ${MOPL_S3_REGION:ap-northeast-2}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
 
 management:
   endpoints:

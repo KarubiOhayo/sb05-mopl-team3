@@ -12,6 +12,15 @@ spring:
         format_sql: true
   jackson:
     time-zone: UTC
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: io.mopl.core.event.*
 
 tmdb:
   access-token: ${TMDB_ACCESS_TOKEN:your-access-token-here}

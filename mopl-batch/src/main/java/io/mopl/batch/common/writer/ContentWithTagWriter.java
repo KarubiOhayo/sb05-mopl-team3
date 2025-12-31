@@ -66,9 +66,11 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
         }
       }
 
-      eventPublisher.publishEvent(
-          new ThumbnailRequestedSpringEvent(
-              savedContent.getId().toString(), sourceType, sourceUrl, s3Key));
+      if (!sourceUrl.isBlank()) {
+        eventPublisher.publishEvent(
+            new ThumbnailRequestedSpringEvent(
+                savedContent.getId().toString(), sourceType, sourceUrl, s3Key));
+      }
     }
   }
 

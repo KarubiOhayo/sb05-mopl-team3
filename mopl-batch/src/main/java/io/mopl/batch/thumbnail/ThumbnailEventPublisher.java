@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ThumbnailEventPublisher {
 
-  private final KafkaTemplate<String, ContentThumbnailRequestedEvent> kafkaTemplate;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   public void publishRequested(ContentThumbnailRequestedEvent event) {
     kafkaTemplate.send(KafkaTopics.CONTENT_THUMBNAIL_REQUESTED, event.contentId(), event);
