@@ -45,7 +45,7 @@ public class Content {
   private String title;
 
   @Lob
-  @Column(nullable = false)
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String description;
 
   @Column(name = "thumbnail_url", nullable = false, length = 2048)
