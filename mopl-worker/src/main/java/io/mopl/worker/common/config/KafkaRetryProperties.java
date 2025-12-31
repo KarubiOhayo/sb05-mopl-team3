@@ -1,4 +1,4 @@
-package io.mopl.worker.config;
+package io.mopl.worker.common.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

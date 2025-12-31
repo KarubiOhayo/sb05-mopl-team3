@@ -4,7 +4,7 @@ import io.mopl.core.event.thumbnail.ContentThumbnailCompletedEvent;
 import io.mopl.core.event.thumbnail.ContentThumbnailFailedEvent;
 import io.mopl.core.event.thumbnail.ContentThumbnailRequestedEvent;
 import io.mopl.core.kafka.KafkaTopics;
-import io.mopl.worker.config.KafkaRetryProperties;
+import io.mopl.worker.common.config.KafkaRetryProperties;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
