@@ -24,6 +24,13 @@ public class ReviewController {
 
   private final ReviewService reviewService;
 
+  /**
+   * Creates a new review associated with the authenticated user.
+   *
+   * @param request the payload containing review details to create
+   * @param userId  the UUID of the authenticated user who creates the review
+   * @return a ResponseEntity containing the created ReviewDto and an HTTP 201 (Created) status
+   */
   @Operation(summary = "리뷰 생성", description = "새로운 리뷰를 작성합니다.")
   @PostMapping
   public ResponseEntity<ReviewDto> createReview(

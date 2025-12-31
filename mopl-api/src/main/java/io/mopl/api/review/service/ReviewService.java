@@ -25,7 +25,17 @@ public class ReviewService {
 
   // 1. 리뷰 목록 조회
 
-  // 2. 리뷰 생성
+  /**
+   * Create a new review for the specified content and author.
+   *
+   * Validates the author ID and that the author has not already created a review for the same content,
+   * persists the new review, and returns a DTO of the saved review.
+   *
+   * @param request  the review creation request payload
+   * @param authorId the UUID of the author creating the review
+   * @return the created ReviewDto representing the saved review
+   * @throws BusinessException if {@code authorId} is null or a review by the same author for the content already exists
+   */
   @Transactional
   public ReviewDto create(ReviewCreateRequest request, UUID authorId) {
 

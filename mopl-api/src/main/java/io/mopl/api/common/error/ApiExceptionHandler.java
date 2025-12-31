@@ -67,6 +67,14 @@ public class ApiExceptionHandler {
         details);
   }
 
+  /**
+   * Handle uncaught exceptions thrown by controller methods and produce an internal server error response.
+   *
+   * @param ex the exception that was thrown
+   * @return a ResponseEntity containing an ErrorResponse populated with the exception's simple class name,
+   *         a localized message for INTERNAL_SERVER_ERROR, and no additional details; response status matches
+   *         the INTERNAL_SERVER_ERROR ErrorCode
+   */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
     log.error("Unhandled exception occurred: ", ex);
