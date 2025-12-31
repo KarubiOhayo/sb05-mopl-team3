@@ -151,7 +151,6 @@ public class JwtTokenProvider {
 
       Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
       if (expirationTime != null && expirationTime.before(new Date())) {
-        log.error("JWT 토큰 만료");
         return false;
       }
 
@@ -169,7 +168,7 @@ public class JwtTokenProvider {
       String type = claims.getStringClaim("type");
       return "refresh".equals(type);
     } catch (ParseException e) {
-      log.error("Failed to parse token type", e);
+      log.error("토큰 타입 검증에 실패했습니다", e);
       return false;
     }
   }
