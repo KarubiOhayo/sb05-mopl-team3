@@ -45,7 +45,8 @@ public class SecurityConfig {
                           String method = request.getMethod();
                           String path = request.getRequestURI();
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"));
+                              || (method.equals("POST") && path.equals("/api/users")
+                                  || (method.equals("POST") && path.equals("/api/auth/refresh")));
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
