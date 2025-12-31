@@ -22,6 +22,8 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class TmdbApiClient {
 
+  private final RestTemplate restTemplate;
+
   @Value("${tmdb.access-token}")
   private String accessToken;
 
@@ -31,7 +33,6 @@ public class TmdbApiClient {
   private static final String BASE_URL = "https://api.themoviedb.org/3";
 
   public List<TmdbMovieResponse> fetchPopularMovies(int page) {
-    RestTemplate restTemplate = new RestTemplate();
     String url = String.format("%s/movie/popular?language=%s&page=%d", BASE_URL, language, page);
 
     HttpHeaders headers = new HttpHeaders();
