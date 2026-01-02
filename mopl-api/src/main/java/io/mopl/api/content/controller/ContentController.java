@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/contents")
+@RequestMapping("/api/contents")
 public class ContentController {
 
 	private final ContentService contentService;
