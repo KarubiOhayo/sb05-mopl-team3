@@ -2,6 +2,7 @@ package io.mopl.api.auth.service;
 
 import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
+import io.mopl.api.auth.dto.ResetPasswordRequest;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.common.error.AuthErrorCode;
@@ -26,6 +27,8 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
+  private final TemporaryPasswordService temporaryPasswordService;
+  private final EmailService emailService;
 
   /** 로그인 */
   @Transactional
@@ -110,5 +113,19 @@ public class AuthService {
     if (!isPasswordValid) {
       throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
     }
+  }
+
+  /** 비밀번호 초기화 뒤 임시 비밀번호 발급 및 이메일 전송 */
+  @Transactional
+  public void resetPassword(ResetPasswordRequest request) {
+    User user =
+        userRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+
+    String temporaryPassword =
+        temporaryPasswordService.createAndSaveTemporaryPassword(user.getId());
+
+    emailService.sendTemporaryPassword(user.getEmail(), temporaryPassword);
   }
 }

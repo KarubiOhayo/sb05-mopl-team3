@@ -25,6 +25,21 @@ spring:
         spring.json.trusted.packages: io.mopl.core.event.*
   messages:
     basename: messages,ValidationMessages
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_EMAIL}
+    password: ${GMAIL_APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 management:
   endpoints:
