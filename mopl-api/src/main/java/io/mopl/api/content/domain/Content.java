@@ -77,4 +77,16 @@ public class Content {
       this.id = UuidV7Generator.generate();
     }
   }
+
+  public void update(String title, String description, String thumbnailUrl) {
+    if (title != null && !title.isBlank()) {
+      this.title = title;
+    }
+    if (description != null && !description.isBlank()) {
+      this.description = description;
+    }
+    if (thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+      this.thumbnailUrl = thumbnailUrl;
+    }
+  }
 }
