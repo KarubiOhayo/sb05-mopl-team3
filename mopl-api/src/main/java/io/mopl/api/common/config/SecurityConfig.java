@@ -56,9 +56,10 @@ public class SecurityConfig {
                         request -> {
                           String method = request.getMethod();
                           String path = request.getRequestURI();
-                          // CSRF 검증 제외: 회원가입, 로그인만
+                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화만
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"));
+                              || (method.equals("POST") && path.equals("/api/users"))
+                              || (method.equals("POST") && path.equals("/api/auth/reset-password"));
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

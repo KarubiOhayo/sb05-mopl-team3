@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -43,6 +44,7 @@ public class User {
   private String name;
 
   @Column(name = "password_hash", length = 255)
+  @Setter
   private String passwordHash;
 
   @Enumerated(EnumType.STRING)
@@ -65,8 +67,10 @@ public class User {
   private String profileImageUrl;
 
   @Column(name = "temp_password_hash", length = 255)
+  @Setter
   private String tempPasswordHash;
 
+  @Setter
   @Column(name = "temp_password_expires_at")
   private Instant tempPasswordExpiresAt;
 
