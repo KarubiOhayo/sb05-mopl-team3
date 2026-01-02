@@ -142,7 +142,7 @@ public class AuthService {
     }
 
     String temporaryPassword = generateTemporaryPassword();
-    user.setPasswordHash(temporaryPassword);
+    user.setTempPasswordHash(passwordEncoder.encode(temporaryPassword));
     user.setTempPasswordExpiresAt(Instant.now().plus(3, ChronoUnit.MINUTES));
 
     emailService.sendTemporaryPassword(user.getEmail(), temporaryPassword);
