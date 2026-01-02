@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.content.domain.ContentTagRepository;
 import io.mopl.api.playlist.domain.PlaylistContentRepository;
-import io.mopl.api.review.domain.ReviewRepository;
+import io.mopl.api.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
