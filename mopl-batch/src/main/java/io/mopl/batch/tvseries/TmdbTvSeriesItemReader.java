@@ -26,7 +26,7 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
   private static final int MAX_PAGES = 10;
 
   @Override
-  public @Nullable TmdbTvSeriesResponse read() throws Exception {
+  public @Nullable TmdbTvSeriesResponse read() {
     if (!buffer.isEmpty()) {
       return buffer.poll();
     }

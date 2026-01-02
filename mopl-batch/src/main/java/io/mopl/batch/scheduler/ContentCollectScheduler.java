@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MovieCollectScheduler {
+public class ContentCollectScheduler {
 
   private final JobOperator jobOperator;
   private final Job movieCollectJob;
+  private final Job tvSeriesCollectJob;
 
-  // 매일 새벽 4시 실행 (초 분 시 일 월 요일)
   @Scheduled(cron = "${batch.schedule.movie-collect-cron}")
   public void runMovieCollectJob() {
     try {
@@ -25,8 +25,7 @@ public class MovieCollectScheduler {
 
       JobParameters jobParameters =
           new JobParametersBuilder()
-              .addLong(
-                  "requestTime", System.currentTimeMillis()) // 매번 새로운 JobInstance 생성을 위해 시간 파라미터 추가
+              .addLong("requestTime", System.currentTimeMillis())
               .toJobParameters();
 
       jobOperator.start(movieCollectJob, jobParameters);
@@ -34,6 +33,24 @@ public class MovieCollectScheduler {
       log.info("Movie 수집 배치 작업 종료");
     } catch (Exception e) {
       log.error("Movie 수집 배치 작업 실패", e);
+    }
+  }
+
+  @Scheduled(cron = "${batch.schedule.tv-series-collect-cron}")
+  public void runTvSeriesCollectJob() {
+    try {
+      log.info("TvSeries 수집 배치 작업 시작: {}", System.currentTimeMillis());
+
+      JobParameters jobParameters =
+          new JobParametersBuilder()
+              .addLong("requestTime", System.currentTimeMillis())
+              .toJobParameters();
+
+      jobOperator.start(tvSeriesCollectJob, jobParameters);
+
+      log.info("TvSeries 수집 배치 작업 종료");
+    } catch (Exception e) {
+      log.error("TvSeries 수집 배치 작업 실패", e);
     }
   }
 }

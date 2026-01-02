@@ -29,6 +29,7 @@ tmdb:
 batch:
   schedule:
     movie-collect-cron: ${BATCH_MOVIE_COLLECT_CRON:0 0 4 * * *}
+    tv-series-collect-cron: ${BATCH_TV_SERIES_COLLECT_CRON:0 0 3 * * *}
 
 management:
   endpoints:
