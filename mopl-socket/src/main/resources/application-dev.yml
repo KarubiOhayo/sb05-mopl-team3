@@ -10,7 +10,7 @@ spring:
       host: ${MOPL_REDIS_HOST:localhost}
       port: ${MOPL_REDIS_PORT:6379}
   kafka:
-    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:9092}
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:29092}
 
 server:
   port: ${MOPL_PORT:8081}

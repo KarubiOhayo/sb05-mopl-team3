@@ -12,6 +12,8 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+  jackson:
+    time-zone: UTC
   kafka:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -20,9 +22,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: io.mopl
-  jackson:
-    time-zone: UTC
+        spring.json.trusted.packages: io.mopl.core.event.*
   messages:
     basename: messages,ValidationMessages
 
