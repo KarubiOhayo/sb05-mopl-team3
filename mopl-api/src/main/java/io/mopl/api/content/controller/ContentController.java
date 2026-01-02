@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/contents")
+@RequestMapping("/api/contents")
 public class ContentController {
 
   private final ContentService contentService;
