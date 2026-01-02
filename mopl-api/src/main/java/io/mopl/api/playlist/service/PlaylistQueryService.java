@@ -36,21 +36,11 @@ public class PlaylistQueryService {
 	public CursorResponsePlaylistDto findPlaylists(PlaylistSearchRequest request, UUID me) {
 
 		// 1) 파라미터 기본값/안전장치
-		Integer limitObj = request.getLimit();
-		int limit = (limitObj == null) ? 20 : limitObj.intValue();
-		if (limit < 1) {
-			limit = 1;
-		}
-		if (limit > 100) {
-			limit = 100;
-		}
+		int limit = request.getLimitOrDefault();
 		String sortBy = request.getSortByOrDefault();
 		String sortDirection = request.getSortDirectionOrDefault();
 
 		// 2) QueryDSL로 "플레이리스트 목록" 조회
-		//    - 여기서 contents/owner/subscribed를 join으로 다 끌고오면 중복/폭발 쉬움
-		//    - 그래서 "플레이리스트 기본 목록"만 먼저 가져오고
-		//    - 나머지는 로더로 IN 조회(1~3번 추가쿼리)로 붙임
 		PlaylistPage page = playlistQueryRepository.findPlaylistsPage(
 			request.getKeywordLike(),
 			request.getOwnerIdEqual(),
@@ -82,8 +72,6 @@ public class PlaylistQueryService {
 		// 4) 로더로 "한 번에" 부가정보 로딩
 		Map<UUID, UserSummary> ownerMap = playlistOwnerLoader.loadOwners(ownerIds);
 		Set<UUID> subscribedPlaylistIds = playlistSubscriptionLoader.loadSubscribedPlaylistIdsByMe(me, playlistIds);
-
-		// Map<UUID, List<ContentSummary>> contentsMap = playlistContentLoader.loadContentsByPlaylist(playlistIds);
 		Map<UUID, List<ContentSummary>> contentsMap = playlistContentLoader.loadContentsByPlaylistIds(playlistIds);
 
 		// 5) PlaylistDto 조립

@@ -38,7 +38,7 @@ public class PlaylistSubscriptionLoader {
 		List<PlaylistSubscription> subs = subscriptionRepository.findByIdUserIdAndIdPlaylistIdIn(me, playlistIds);
 
 		// 서비스에서 contains로 빠르게 판단할 수 있게 Set으로 변환
-		Set<UUID> subscribedPlaylistIds = new HashSet<UUID>();
+		Set<UUID> subscribedPlaylistIds = new HashSet<>();
 		for (PlaylistSubscription sub : subs) {
 			subscribedPlaylistIds.add(sub.getId().getPlaylistId());
 		}

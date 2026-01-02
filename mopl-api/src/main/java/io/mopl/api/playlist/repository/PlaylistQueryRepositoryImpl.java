@@ -46,12 +46,12 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 		BooleanBuilder where = buildBaseWhere(keywordLike, ownerIdEqual, subscriberIdEqual, p);
 
 		// 4) 커서 페이징 조건(cursor + idAfter)
-		// - 커서는 "정렬 키(updatedAt 또는 subscriberCount)의 마지막 값"
+		// - 커서는 "정렬 키(updatedAt 또는 subscribeCount)의 마지막 값"
 		// - idAfter는 "동일한 정렬 키 값이 있을 때 중복/누락 방지용 tie-breaker"
 		if (cursor != null && !cursor.isBlank()) {
 			if (idAfter == null) {
 				// 커서 페이징에서 cursor만 있고 idAfter가 없으면
-				// 동일 updatedAt(또는 동일 subscriberCount)에서 중복/누락이 생길 수 있어서 강제.
+				// 동일 updatedAt(또는 동일 subscribeCount)에서 중복/누락이 생길 수 있어서 강제.
 				throw new IllegalArgumentException("cursor가 있으면 idAfter도 필수입니다.");
 			}
 			BooleanExpression cursorCondition = buildCursorCondition(cursor, idAfter, sortBy, sortDirection, p);
@@ -222,7 +222,7 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 			}
 			if ("updatedAt".equals(raw))
 				return UPDATED_AT;
-			if ("subscribeCount".equals(raw) || "subscriberCount".equals(raw))
+			if ("subscribeCount".equals(raw))
 				return SUBSCRIBE_COUNT;
 			throw new IllegalArgumentException("Invalid sortBy: " + raw);
 		}

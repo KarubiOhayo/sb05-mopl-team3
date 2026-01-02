@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 
-@Repository
 public interface PlaylistSubscriptionRepository extends JpaRepository<PlaylistSubscription, PlaylistSubscriptionId> {
 
 	/**

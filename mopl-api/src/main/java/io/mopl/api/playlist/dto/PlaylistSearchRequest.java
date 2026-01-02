@@ -24,7 +24,7 @@ public class PlaylistSearchRequest {
 	private Integer limit;
 
 	private String sortDirection; // ASCENDING | DESCENDING
-	private String sortBy;        // updatedAt | subscribeCount | subscriberCount
+	private String sortBy;        // updatedAt | subscribeCount
 
 	public int getLimitOrDefault() {
 		return limit != null ? limit : 20;
@@ -56,7 +56,7 @@ public class PlaylistSearchRequest {
 				Instant.parse(cursor);
 				return true;
 			}
-			if ("subscribeCount".equals(sort) || "subscriberCount".equals(sort)) {
+			if ("subscribeCount".equals(sort)) {
 				Long.parseLong(cursor);
 				return true;
 			}

@@ -36,7 +36,7 @@ public class PlaylistOwnerLoader {
 			return Map.of();
 		}
 		// 결과를 Map으로 만들어 두면 서비스에서 ownerId로 O(1) 조회 가능
-		Map<UUID, UserSummary> result = new HashMap<UUID, UserSummary>();
+		Map<UUID, UserSummary> result = new HashMap<>();
 
 		// JPA 기본 제공 findAllById는 내부적으로 IN 쿼리로 조회.
 		List<User> users = userRepository.findAllById(ownerIds);

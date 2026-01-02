@@ -31,6 +31,7 @@ public class PlaylistController {
 		return playlistQueryService.findPlaylists(request, me);
 	}
 
+	// -- 헬퍼 메서드 --
 	private UUID extractUserId(Jwt jwt) {
 		if (jwt == null) {
 			return null;
@@ -41,7 +42,7 @@ public class PlaylistController {
 
 		try {
 			return raw != null ? UUID.fromString(raw) : null;
-		} catch (Exception e) {
+		} catch (IllegalArgumentException e) {
 			return null;
 		}
 	}

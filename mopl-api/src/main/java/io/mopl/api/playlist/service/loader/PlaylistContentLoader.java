@@ -44,24 +44,15 @@ public class PlaylistContentLoader {
 		if (playlistIds == null || playlistIds.isEmpty()) {
 			return Map.of();
 		}
-		QPlaylistContent pc = QPlaylistContent.playlistContent; // playlist_contents
+		QPlaylistContent pc = QPlaylistContent.playlistContent;
 		QContent c = QContent.content;
 
-		/**
-		 * 1) playlist_contents + contents를 조인해서
-		 *    "플레이리스트별로 들어있는 콘텐츠 기본 정보"를 한 번에 가져온다.
-		 *
-		 * 정렬:
-		 * - playlistId로 묶고
-		 * - 같은 playlist 안에서는 addedAt DESC (최근 추가된 콘텐츠 먼저)
-		 *
-		 * ※ schema.sql 기준으로 playlist_contents에는 added_at이 있음.
-		 */
 
+		// 1) playlist_contents + contents를 조인해서
 		List<Tuple> rows = queryFactory
 			.select(
-				pc.id.playlistId,      // composite key의 playlist_id
-				pc.id.contentId,       // composite key의 content_id
+				pc.id.playlistId,
+				pc.id.contentId,
 
 				c.type,
 				c.title,
@@ -77,13 +68,13 @@ public class PlaylistContentLoader {
 			.fetch();
 
 		// playlistId -> contentId 리스트 (순서 유지)
-		Map<UUID, List<UUID>> contentIdsByPlaylistId = new HashMap<UUID, List<UUID>>();
+		Map<UUID, List<UUID>> contentIdsByPlaylistId = new HashMap<>();
 
 		// contentId -> content 기본정보 임시 저장(태그 붙이기 전)
-		Map<UUID, ContentBase> baseByContentId = new HashMap<UUID, ContentBase>();
+		Map<UUID, ContentBase> baseByContentId = new HashMap<>();
 
 		// 태그 조회를 위해 전체 contentId를 Set으로 수집
-		Set<UUID> allContentIds = new HashSet<UUID>();
+		Set<UUID> allContentIds = new HashSet<>();
 
 		for (Tuple row : rows) {
 			UUID playlistId = row.get(pc.id.playlistId);
@@ -118,18 +109,16 @@ public class PlaylistContentLoader {
 		}
 
 		// 콘텐츠가 하나도 없으면 playlistId별 빈 리스트를 넣어서 반환
-		Map<UUID, List<ContentSummary>> emptyResult = new HashMap<UUID, List<ContentSummary>>();
 		if (allContentIds.isEmpty()) {
+			Map<UUID, List<ContentSummary>> emptyResult = new HashMap<UUID, List<ContentSummary>>();
 			for (UUID playlistId : playlistIds) {
 				emptyResult.put(playlistId, List.of());
 			}
 			return emptyResult;
 		}
 
-		/**
-		 * 2) content_tags + tags 조인해서
-		 *    "콘텐츠별 태그 목록"을 한 번에 가져온다.
-		 */
+
+		 // 2) content_tags + tags 조인해서 "콘텐츠별 태그 목록"을 한 번에 가져온다.
 		QContentTag ct = QContentTag.contentTag; // content_tags
 		QTag t = QTag.tag;                       // tags
 
@@ -154,9 +143,7 @@ public class PlaylistContentLoader {
 			tags.add(tagName);
 		}
 
-		/**
-		 * 3) contentId -> ContentSummary(태그 포함) 생성
-		 */
+		// 3) contentId -> ContentSummary(태그 포함) 생성
 		Map<UUID, ContentSummary> summaryByContentId = new HashMap<UUID, ContentSummary>();
 		for (Map.Entry<UUID, ContentBase> entry : baseByContentId.entrySet()) {
 			UUID contentId = entry.getKey();
@@ -181,9 +168,7 @@ public class PlaylistContentLoader {
 			summaryByContentId.put(contentId, summary);
 		}
 
-		/**
-		 * 4) playlistId -> List<ContentSummary>로 최종 조립(playlist_contents 순서 유지)
-		 */
+		// 4) playlistId -> List<ContentSummary>로 최종 조립(playlist_contents 순서 유지)
 		Map<UUID, List<ContentSummary>> result = new HashMap<UUID, List<ContentSummary>>();
 		for (UUID playlistId : playlistIds) {
 			List<UUID> contentIds = contentIdsByPlaylistId.get(playlistId);
@@ -206,10 +191,7 @@ public class PlaylistContentLoader {
 		return result;
 	}
 
-	/**
-	 * 태그 붙이기 전 "콘텐츠 기본 정보"를 잠깐 담는 내부 클래스.
-	 * (DB 조회 결과를 저장해두고, tags와 결합해 최종 DTO를 만들기 위함)
-	 */
+	// 5. 태그 붙이기 전 "콘텐츠 기본 정보"를 잠깐 담는 내부 클래스. (DB 조회 결과를 저장해두고, tags와 결합해 최종 DTO를 만들기 위함)
 	private static class ContentBase {
 		private final UUID id;
 		private final io.mopl.api.content.domain.ContentType type;
