@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.infrastructure.item.ItemReader;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,9 +23,8 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
   private int currentPage = 1;
   private final Queue<TmdbMovieResponse> buffer = new LinkedList<>();
 
-  // 배치 실행 시 파라미터로 받거나, 프로퍼티로 설정할 수 있는 최대 페이지 수
-  // 안전 장치로 일단 10페이지까지만 수집하도록 설정 (약 200개)
-  private static final int MAX_PAGES = 10;
+  @Value("${tmdb.max-pages.movie:10}")
+  private int maxPages;
 
   @Override
   public TmdbMovieResponse read() {
@@ -34,7 +34,7 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
     }
 
     // 2. 버퍼가 비었고, 최대 페이지에 도달했다면 종료 (null 반환)
-    if (currentPage > MAX_PAGES) {
+    if (currentPage > maxPages) {
       return null;
     }
 

@@ -25,6 +25,9 @@ spring:
 tmdb:
   access-token: ${TMDB_ACCESS_TOKEN:your-access-token-here}
   language: ${TMDB_LANGUAGE:ko-KR}
+  max-pages:
+    movie: ${TMDB_MAX_PAGES_MOVIE:10}
+    tv-series: ${TMDB_MAX_PAGES_TV_SERIES:10}
 
 batch:
   schedule:

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.infrastructure.item.ItemReader;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -23,7 +24,8 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
   private int currentPage = 1;
   private final Queue<TmdbTvSeriesResponse> buffer = new LinkedList<>();
 
-  private static final int MAX_PAGES = 10;
+  @Value("${tmdb.max-pages.tv-series:10}")
+  private int maxPages;
 
   @Override
   public @Nullable TmdbTvSeriesResponse read() {
@@ -31,7 +33,7 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
       return buffer.poll();
     }
 
-    if (currentPage > MAX_PAGES) {
+    if (currentPage > maxPages) {
       return null;
     }
 
