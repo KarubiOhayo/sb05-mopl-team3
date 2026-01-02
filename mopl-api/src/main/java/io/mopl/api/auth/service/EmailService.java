@@ -2,11 +2,15 @@ package io.mopl.api.auth.service;
 
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.core.error.BusinessException;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,6 +23,10 @@ public class EmailService {
   private String fromEmail;
 
   /** 임시 비밀번호를 이메일로 전송 */
+  @Retryable(
+      retryFor = {MailException.class},
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 2000, multiplier = 2))
   public void sendTemporaryPassword(String toEmail, String temporaryPassword) {
     try {
       MimeMessage message = mailSender.createMimeMessage();
@@ -30,8 +38,9 @@ public class EmailService {
       helper.setText(buildEmailContent(temporaryPassword));
 
       mailSender.send(message);
-    } catch (Exception e) {
-      throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAILED);
+
+    } catch (MessagingException | MailException e) {
+      throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAILED, e);
     }
   }
 
