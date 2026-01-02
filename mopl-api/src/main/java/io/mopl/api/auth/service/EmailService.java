@@ -2,10 +2,11 @@ package io.mopl.api.auth.service;
 
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.core.error.BusinessException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,11 +21,13 @@ public class EmailService {
   /** 임시 비밀번호를 이메일로 전송 */
   public void sendTemporaryPassword(String toEmail, String temporaryPassword) {
     try {
-      SimpleMailMessage message = new SimpleMailMessage();
-      message.setFrom(fromEmail);
-      message.setTo(toEmail);
-      message.setSubject("[모두의 플리] 임시 비밀번호 발급 안내");
-      message.setText(buildEmailContent(temporaryPassword));
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+      helper.setFrom("모두의 플리 <" + fromEmail + ">");
+      helper.setTo(toEmail);
+      helper.setSubject("[모두의 플리] 임시 비밀번호 발급 안내");
+      helper.setText(buildEmailContent(temporaryPassword));
 
       mailSender.send(message);
     } catch (Exception e) {
@@ -43,6 +46,7 @@ public class EmailService {
 
         ※ 발급된 임시 비밀번호는 발급 시점부터 3분간 유효합니다.
         ※ 로그인 후 반드시 비밀번호를 변경해주세요.
+        ※ 본 메일은 발신전용으로 회신되지 않습니다.
 
         감사합니다.
         """,
