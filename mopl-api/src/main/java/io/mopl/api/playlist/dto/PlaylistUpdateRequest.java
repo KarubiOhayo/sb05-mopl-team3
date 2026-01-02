@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlaylistUpdateRequest {
+
   private String title;
   private String description;
 }

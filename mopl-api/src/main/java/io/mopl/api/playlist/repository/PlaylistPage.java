@@ -1,9 +1,8 @@
 package io.mopl.api.playlist.repository;
 
+import io.mopl.api.playlist.domain.Playlist;
 import java.util.List;
 import java.util.UUID;
-
-import io.mopl.api.playlist.domain.Playlist;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,9 +10,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class PlaylistPage {
-	private final List<Playlist> playlists;
-	private final boolean hasNext;
-	private final String nextCursor;
-	private final UUID nextIdAfter;
 
+  private final List<Playlist> playlists;
+  private final boolean hasNext;
+  private final String nextCursor;
+  private final UUID nextIdAfter;
 }
