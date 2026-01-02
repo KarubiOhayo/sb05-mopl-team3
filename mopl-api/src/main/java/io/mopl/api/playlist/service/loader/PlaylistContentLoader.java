@@ -105,7 +105,7 @@ public class PlaylistContentLoader {
 
 		// 콘텐츠가 하나도 없으면 playlistId별 빈 리스트를 넣어서 반환
 		if (allContentIds.isEmpty()) {
-			Map<UUID, List<ContentSummary>> emptyResult = new HashMap<UUID, List<ContentSummary>>();
+			Map<UUID, List<ContentSummary>> emptyResult = new HashMap<>();
 			for (UUID playlistId : playlistIds) {
 				emptyResult.put(playlistId, List.of());
 			}
@@ -125,7 +125,7 @@ public class PlaylistContentLoader {
 			.fetch();
 
 		// contentId -> tagName 리스트
-		Map<UUID, List<String>> tagsByContentId = new HashMap<UUID, List<String>>();
+		Map<UUID, List<String>> tagsByContentId = new HashMap<>();
 		for (Tuple row : tagRows) {
 			UUID contentId = row.get(ct.id.contentId);
 			String tagName = row.get(t.name);
@@ -134,7 +134,7 @@ public class PlaylistContentLoader {
 		}
 
 		// 3) contentId -> ContentSummary(태그 포함) 생성
-		Map<UUID, ContentSummary> summaryByContentId = new HashMap<UUID, ContentSummary>();
+		Map<UUID, ContentSummary> summaryByContentId = new HashMap<>();
 		for (Map.Entry<UUID, ContentBase> entry : baseByContentId.entrySet()) {
 			UUID contentId = entry.getKey();
 			ContentBase base = entry.getValue();
@@ -159,7 +159,7 @@ public class PlaylistContentLoader {
 		}
 
 		// 4) playlistId -> List<ContentSummary>로 최종 조립(playlist_contents 순서 유지)
-		Map<UUID, List<ContentSummary>> result = new HashMap<UUID, List<ContentSummary>>();
+		Map<UUID, List<ContentSummary>> result = new HashMap<>();
 		for (UUID playlistId : playlistIds) {
 			List<UUID> contentIds = contentIdsByPlaylistId.get(playlistId);
 
@@ -168,7 +168,7 @@ public class PlaylistContentLoader {
 				continue;
 			}
 
-			List<ContentSummary> summaries = new ArrayList<ContentSummary>();
+			List<ContentSummary> summaries = new ArrayList<>();
 			for (UUID contentId : contentIds) {
 				ContentSummary summary = summaryByContentId.get(contentId);
 				if (summary != null) {

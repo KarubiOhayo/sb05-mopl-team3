@@ -65,9 +65,6 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 		// 5) 정렬(Order By)
 		//    - 기본 정렬 키 1개 + id로 2차 정렬을 반드시 둬야 커서 페이징이 안정적으로 동작함
 		OrderSpecifier<?> primaryOrder = buildPrimaryOrder(sortBy, sortDirection, p);
-		OrderSpecifier<UUID> idOrder = (sortDirection == SortDirection.DESC)
-			? p.id.desc()
-			: p.id.asc();
 
 		// 6) limit+1로 가져오는 이유:
 		//    - 딱 limit개만 가져오면 다음 페이지 존재 여부를 알기 어려움
@@ -75,8 +72,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 		List<Playlist> fetched = queryFactory
 			.selectFrom(p)
 			.where(where)
-			.orderBy(primaryOrder, idOrder)
-			.limit((long)limit + 1L)
+			.orderBy(primaryOrder, (sortDirection == SortDirection.DESC) ? p.id.desc() : p.id.asc())
+			.limit(limit + 1)
 			.fetch();
 
 		boolean hasNext = fetched.size() > limit;
@@ -183,7 +180,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 				c = Instant.parse(cursor);
 			} catch (DateTimeParseException e) {
 				throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-					.addDetail("reason", "잘못된 cursor 형식입니다");
+					.addDetail("reason", "잘못된 cursor 형식입니다")
+					.addDetail("cursor", cursor);
 			}
 
 			if (sortDirection == SortDirection.DESC) {
@@ -202,7 +200,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 			c = Long.parseLong(cursor);
 		} catch (NumberFormatException e) {
 			throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-				.addDetail("reason", "잘못된 cursor 형식입니다");
+				.addDetail("reason", "잘못된 cursor 형식입니다")
+				.addDetail("cursor", cursor);
 		}
 
 		if (sortDirection == SortDirection.DESC) {
