@@ -10,7 +10,9 @@ import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +29,6 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
-  private final TemporaryPasswordService temporaryPasswordService;
   private final EmailService emailService;
 
   /** 로그인 */
@@ -123,9 +124,25 @@ public class AuthService {
             .findByEmail(request.getEmail())
             .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
 
-    String temporaryPassword =
-        temporaryPasswordService.createAndSaveTemporaryPassword(user.getId());
+    String temporaryPassword = generateTemporaryPassword();
+
+    user.setTempPasswordHash(passwordEncoder.encode(temporaryPassword));
+    user.setTempPasswordExpiresAt(Instant.now().plus(3, ChronoUnit.MINUTES));
 
     emailService.sendTemporaryPassword(user.getEmail(), temporaryPassword);
+  }
+
+  /** 임시 비밀번호 랜덤 생성 */
+  private String generateTemporaryPassword() {
+    String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    int PASSWORD_LENGTH = 12;
+    SecureRandom random = new SecureRandom();
+    StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
+
+    for (int i = 0; i < PASSWORD_LENGTH; i++) {
+      password.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
+    }
+
+    return password.toString();
   }
 }
