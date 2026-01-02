@@ -2,6 +2,7 @@ package io.mopl.api.auth.controller;
 
 import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
+import io.mopl.api.auth.dto.ResetPasswordRequest;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -99,5 +101,12 @@ public class AuthController {
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
     csrfToken.getToken();
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
+
+  /** 비밀번호 초기화 */
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    authService.resetPassword(request);
+    return ResponseEntity.noContent().build();
   }
 }
