@@ -57,8 +57,8 @@ public class PlaylistQueryService {
     List<Playlist> playlists = page.getPlaylists();
 
     // 3) 로더용 ID 수집
-    Set<UUID> ownerIds = new HashSet<UUID>();
-    List<UUID> playlistIds = new ArrayList<UUID>();
+    Set<UUID> ownerIds = new HashSet<>();
+    List<UUID> playlistIds = new ArrayList<>();
 
     for (Playlist playlist : playlists) {
       ownerIds.add(playlist.getOwnerId());
@@ -73,7 +73,7 @@ public class PlaylistQueryService {
         playlistContentLoader.loadContentsByPlaylistIds(playlistIds);
 
     // 5) PlaylistDto 조립
-    List<PlaylistDto> data = new ArrayList<PlaylistDto>();
+    List<PlaylistDto> data = new ArrayList<>();
 
     for (Playlist playlist : playlists) {
       UUID playlistId = playlist.getId();
