@@ -103,7 +103,7 @@ public class AuthController {
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
-  /** 비밀번호 초기화 */
+  /** 비밀번호 초기화 후 이메일 전송 */
   @PostMapping("/reset-password")
   public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
     authService.resetPassword(request);

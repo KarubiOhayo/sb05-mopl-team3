@@ -44,6 +44,7 @@ public class User {
   private String name;
 
   @Column(name = "password_hash", length = 255)
+  @Setter
   private String passwordHash;
 
   @Enumerated(EnumType.STRING)
