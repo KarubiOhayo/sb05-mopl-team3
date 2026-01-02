@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ContentErrorCode implements ErrorCode {
-	CONTENT_NOT_FOUND(404, "error.content.not-found");
+  CONTENT_NOT_FOUND(404, "error.content.not-found");
 
-	private final int status;
-	private final String messageKey;
+  private final int status;
+  private final String messageKey;
 }
