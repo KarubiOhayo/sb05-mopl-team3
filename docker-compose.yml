@@ -44,7 +44,7 @@ services:
     hostname: kafka
     ports:
       # 호스트(내 PC)에서 접속하는 포트
-      - "9092:9092"
+      - "29092:9092"
     environment:
       # 단일 브로커 로컬 개발용 설정들
       KAFKA_BROKER_ID: 1
@@ -54,7 +54,7 @@ services:
 
       # 내부(컨테이너)용 29092 / 컨트롤러 29093 / 외부(호스트)용 9092
       KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -66,10 +66,12 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
       # 로그 디렉토리(컨테이너 내부)
-      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
 
       # KRaft용 클러스터 ID (아무거나 쓰면 안되고, "한 번 정하면 유지"가 좋아)
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
