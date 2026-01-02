@@ -30,7 +30,7 @@ public class ContentCollectScheduler {
 
       jobOperator.start(movieCollectJob, jobParameters);
 
-      log.info("Movie 수집 배치 작업 종료");
+      log.info("Movie 수집 배치 작업 트리거 완료");
     } catch (Exception e) {
       log.error("Movie 수집 배치 작업 실패", e);
     }
@@ -48,7 +48,7 @@ public class ContentCollectScheduler {
 
       jobOperator.start(tvSeriesCollectJob, jobParameters);
 
-      log.info("TvSeries 수집 배치 작업 종료");
+      log.info("TvSeries 수집 배치 작업 트리거 완료");
     } catch (Exception e) {
       log.error("TvSeries 수집 배치 작업 실패", e);
     }
