@@ -1,6 +1,7 @@
 package io.mopl.api.playlist.repository;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.playlist.domain.Playlist;
 import io.mopl.api.playlist.domain.QPlaylist;
 import io.mopl.api.playlist.domain.QPlaylistSubscription;
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -52,7 +55,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 			if (idAfter == null) {
 				// 커서 페이징에서 cursor만 있고 idAfter가 없으면
 				// 동일 updatedAt(또는 동일 subscribeCount)에서 중복/누락이 생길 수 있어서 강제.
-				throw new IllegalArgumentException("cursor가 있으면 idAfter도 필수입니다.");
+				throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+					.addDetail("reason", "cursor가 있으면 idAfter도 필수입니다.");
 			}
 			BooleanExpression cursorCondition = buildCursorCondition(cursor, idAfter, sortBy, sortDirection, p);
 			where.and(cursorCondition);
@@ -174,7 +178,13 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 		QPlaylist p
 	) {
 		if (sortBy == SortBy.UPDATED_AT) {
-			Instant c = Instant.parse(cursor);
+			Instant c;
+			try {
+				c = Instant.parse(cursor);
+			} catch (DateTimeParseException e) {
+				throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+					.addDetail("reason", "잘못된 cursor 형식입니다");
+			}
 
 			if (sortDirection == SortDirection.DESC) {
 				// (updatedAt < cursor) OR (updatedAt == cursor AND id < idAfter)
@@ -187,7 +197,13 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 		}
 
 		// sortBy == SUBSCRIBE_COUNT
-		long c = Long.parseLong(cursor);
+		long c;
+		try {
+			c = Long.parseLong(cursor);
+		} catch (NumberFormatException e) {
+			throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+				.addDetail("reason", "잘못된 cursor 형식입니다");
+		}
 
 		if (sortDirection == SortDirection.DESC) {
 			return p.subscriberCount.lt(c)
@@ -224,7 +240,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 				return UPDATED_AT;
 			if ("subscribeCount".equals(raw))
 				return SUBSCRIBE_COUNT;
-			throw new IllegalArgumentException("Invalid sortBy: " + raw);
+			throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+				.addDetail("sortBy", String.valueOf(raw));
 		}
 	}
 
@@ -240,7 +257,8 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 				return ASC;
 			if ("DESCENDING".equals(raw))
 				return DESC;
-			throw new IllegalArgumentException("Invalid sortDirection: " + raw);
+			throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+				.addDetail("sortDirection", String.valueOf(raw));
 		}
 	}
 }

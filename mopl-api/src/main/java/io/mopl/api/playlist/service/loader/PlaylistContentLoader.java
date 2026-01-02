@@ -80,12 +80,7 @@ public class PlaylistContentLoader {
 			UUID playlistId = row.get(pc.id.playlistId);
 			UUID contentId = row.get(pc.id.contentId);
 
-			List<UUID> list = contentIdsByPlaylistId.get(playlistId);
-			if (list == null) {
-				list = new ArrayList<UUID>();
-				contentIdsByPlaylistId.put(playlistId, list);
-			}
-			list.add(contentId);
+			contentIdsByPlaylistId.computeIfAbsent(playlistId, k -> new ArrayList<>()).add(contentId);
 
 			allContentIds.add(contentId);
 
@@ -135,12 +130,7 @@ public class PlaylistContentLoader {
 			UUID contentId = row.get(ct.id.contentId);
 			String tagName = row.get(t.name);
 
-			List<String> tags = tagsByContentId.get(contentId);
-			if (tags == null) {
-				tags = new ArrayList<String>();
-				tagsByContentId.put(contentId, tags);
-			}
-			tags.add(tagName);
+			tagsByContentId.computeIfAbsent(contentId, k -> new ArrayList<>()).add(tagName);
 		}
 
 		// 3) contentId -> ContentSummary(태그 포함) 생성
@@ -192,31 +182,13 @@ public class PlaylistContentLoader {
 	}
 
 	// 5. 태그 붙이기 전 "콘텐츠 기본 정보"를 잠깐 담는 내부 클래스. (DB 조회 결과를 저장해두고, tags와 결합해 최종 DTO를 만들기 위함)
-	private static class ContentBase {
-		private final UUID id;
-		private final io.mopl.api.content.domain.ContentType type;
-		private final String title;
-		private final String description;
-		private final String thumbnailUrl;
-		private final double averageRating;
-		private final int reviewCount;
-
-		private ContentBase(
-			UUID id,
-			io.mopl.api.content.domain.ContentType type,
-			String title,
-			String description,
-			String thumbnailUrl,
-			double averageRating,
-			int reviewCount
-		) {
-			this.id = id;
-			this.type = type;
-			this.title = title;
-			this.description = description;
-			this.thumbnailUrl = thumbnailUrl;
-			this.averageRating = averageRating;
-			this.reviewCount = reviewCount;
-		}
-	}
+	private record ContentBase(
+		UUID id,
+		io.mopl.api.content.domain.ContentType type,
+		String title,
+		String description,
+		String thumbnailUrl,
+		double averageRating,
+		int reviewCount
+	) {}
 }

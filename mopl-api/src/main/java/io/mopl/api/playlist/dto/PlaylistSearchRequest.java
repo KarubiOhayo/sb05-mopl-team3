@@ -6,6 +6,7 @@ import java.time.Instant;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +24,9 @@ public class PlaylistSearchRequest {
 	@Max(100)
 	private Integer limit;
 
+	@Pattern(regexp = "^(ASCENDING|DESCENDING)$", message = "sortDirection must be ASCENDING or DESCENDING")
 	private String sortDirection; // ASCENDING | DESCENDING
+	@Pattern(regexp = "^(updatedAt|subscribeCount)$", message = "sortBy must be updatedAt or subscribeCount")
 	private String sortBy;        // updatedAt | subscribeCount
 
 	public int getLimitOrDefault() {
