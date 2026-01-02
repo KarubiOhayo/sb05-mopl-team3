@@ -28,6 +28,9 @@ public class PlaylistService {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
 
+    // 사용자 존재 여부를 먼저 확인
+    UserSummary owner = userService.getUserSummary(userId);
+
     Playlist playlist =
         Playlist.builder()
             .ownerId(userId)
@@ -36,7 +39,6 @@ public class PlaylistService {
             .build();
 
     Playlist saved = playlistRepository.save(playlist);
-    UserSummary owner = userService.getUserSummary(userId);
 
     return PlaylistDto.builder()
         .id(saved.getId())
