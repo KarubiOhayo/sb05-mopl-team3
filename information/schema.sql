@@ -20,6 +20,7 @@ CREATE TABLE users (
 CREATE TABLE contents (
   id CHAR(36) NOT NULL,
   type VARCHAR(20) NOT NULL,
+  external_id VARCHAR(255) NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   thumbnail_url VARCHAR(2048) NOT NULL,
@@ -29,6 +30,7 @@ CREATE TABLE contents (
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
+  UNIQUE KEY uq_contents_external_id_type (external_id, type),
   CONSTRAINT chk_contents_rating CHECK (average_rating >= 0.0 AND average_rating <= 5.0),
   CONSTRAINT chk_contents_review_count CHECK (review_count >= 0),
   CONSTRAINT chk_contents_watcher_count CHECK (watcher_count >= 0)

@@ -41,6 +41,9 @@ public class Content {
   @Enumerated(EnumType.STRING)
   private ContentType type;
 
+  @Column(name = "external_id")
+  private String externalId;
+
   @Column(nullable = false)
   private String title;
 
