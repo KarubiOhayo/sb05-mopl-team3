@@ -31,6 +31,10 @@ public class Tag {
   @Column(nullable = false, length = 100)
   private String name;
 
+  public Tag(String name) {
+    this.name = name;
+  }
+
   @PrePersist
   public void generateId() {
     if (this.id == null) {
