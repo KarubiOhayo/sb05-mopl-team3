@@ -1,15 +1,21 @@
 package io.mopl.api.playlist.controller;
 
 import io.mopl.api.playlist.dto.CursorResponsePlaylistDto;
+import io.mopl.api.playlist.dto.PlaylistCreateRequest;
+import io.mopl.api.playlist.dto.PlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;
 import io.mopl.api.playlist.service.PlaylistQueryService;
+import io.mopl.api.playlist.service.PlaylistService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,27 +25,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlaylistController {
 
   private final PlaylistQueryService playlistQueryService;
+  private final PlaylistService playlistService;
 
   @GetMapping
   public CursorResponsePlaylistDto findPlaylists(
-      @Valid @ModelAttribute PlaylistSearchRequest request, @AuthenticationPrincipal Jwt jwt) {
-    UUID me = extractUserId(jwt);
-    return playlistQueryService.findPlaylists(request, me);
+      @Valid @ModelAttribute PlaylistSearchRequest request, @AuthenticationPrincipal UUID userId) {
+    return playlistQueryService.findPlaylists(request, userId);
   }
 
-  // -- 헬퍼 메서드 --
-  private UUID extractUserId(Jwt jwt) {
-    if (jwt == null) {
-      return null;
-    }
-
-    Object claimUserId = jwt.getClaims().get("userId");
-    String raw = claimUserId != null ? String.valueOf(claimUserId) : jwt.getSubject();
-
-    try {
-      return raw != null ? UUID.fromString(raw) : null;
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+  @PostMapping
+  public ResponseEntity<PlaylistDto> createPlaylist(
+      @Valid @RequestBody PlaylistCreateRequest request, @AuthenticationPrincipal UUID userId) {
+    PlaylistDto playlistDto = playlistService.create(request, userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(playlistDto);
   }
 }
