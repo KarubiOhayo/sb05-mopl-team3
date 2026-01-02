@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public enum ContentType {
   MOVIE("movie"),
-  TVSERIES("tvSeries"),
+  TV_SERIES("tvSeries"),
   SPORT("sport");
 
   private final String value;
