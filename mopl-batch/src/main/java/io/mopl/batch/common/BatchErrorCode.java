@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 public enum BatchErrorCode implements ErrorCode {
   TMDB_API_CALL_ERROR(502, "error.batch.tmdb-api-call-error"),
   JOB_LAUNCH_FAILED(500, "error.batch.job-launch-failed"),
-  UNKNOWN_CONTENT_TYPE(400, "error.batch.unknown-content-type");
+  UNKNOWN_CONTENT_TYPE(400, "error.batch.unknown-content-type"),
+  TSDB_API_CALL_ERROR(502, "error.batch.tsdb-api-call-error");
 
   private final int status;
   private final String messageKey;
