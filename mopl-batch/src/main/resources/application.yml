@@ -29,6 +29,9 @@ tmdb:
     movie: ${TMDB_MAX_PAGES_MOVIE:10}
     tv-series: ${TMDB_MAX_PAGES_TV_SERIES:10}
 
+tsdb:
+  api-key: ${TSDB_API_KEY:123} # TSDB의 무료 API key는 123
+
 batch:
   schedule:
     movie-collect-cron: ${BATCH_MOVIE_COLLECT_CRON:0 0 4 * * *}
