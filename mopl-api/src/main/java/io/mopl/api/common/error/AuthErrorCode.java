@@ -11,7 +11,8 @@ public enum AuthErrorCode implements ErrorCode {
   ACCOUNT_LOCKED(403, "error.auth.account-locked"),
   INVALID_PASSWORD(401, "error.auth.invalid-password"),
   INVALID_REFRESH_TOKEN(401, "error.auth.invalid-refresh-token"),
-  ;
+  EMAIL_SEND_FAILED(500, "error.auth.email-send-failed"),
+  TOO_MANY_RESET_REQUESTS(429, "error.auth.too-many-reset-requests");
 
   private final int status;
   private final String messageKey;
