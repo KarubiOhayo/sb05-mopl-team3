@@ -1,9 +1,12 @@
 package io.mopl.api.playlist.service;
 
 import io.mopl.api.playlist.domain.Playlist;
+import io.mopl.api.playlist.domain.PlaylistSubscription;
+import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import io.mopl.api.playlist.dto.PlaylistCreateRequest;
 import io.mopl.api.playlist.dto.PlaylistDto;
 import io.mopl.api.playlist.repository.PlaylistRepository;
+import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
@@ -20,6 +23,7 @@ public class PlaylistService {
 
   private final PlaylistRepository playlistRepository;
   private final UserService userService;
+  private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
 
   // Playlist 생성
   @Transactional
@@ -50,5 +54,29 @@ public class PlaylistService {
         .subscribedByMe(false)
         .contents(List.of())
         .build();
+  }
+
+  @Transactional
+  public void subscribe(UUID playlistId, UUID userId) {
+    if (userId == null || playlistId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+
+    Playlist playlist =
+        playlistRepository
+            .findById(playlistId)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+
+    PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
+    if (playlistSubscriptionRepository.existsById(id)) {
+      throw new BusinessException(CommonErrorCode.CONFLICT);
+    }
+
+    PlaylistSubscription subscription = PlaylistSubscription.builder().id(id).build();
+    playlistSubscriptionRepository.save(subscription);
+
+    // subscriberCount 증가
+    playlist.increaseSubscriberCount();
+    playlistRepository.save(playlist);
   }
 }

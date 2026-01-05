@@ -64,4 +64,9 @@ public class Playlist {
       this.id = UuidV7Generator.generate();
     }
   }
+
+  // 구독자 수 +1
+  public void increaseSubscriberCount() {
+    this.subscriberCount += 1;
+  }
 }
