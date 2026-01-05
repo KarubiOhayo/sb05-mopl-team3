@@ -53,6 +53,17 @@ public class UserService {
     }
   }
 
+  /** 사용자 상세 조회 */
+  @Transactional(readOnly = true)
+  public UserDto getUserDetails(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    return UserDto.from(user);
+  }
+
   /** 사용자 확인 */
   @Transactional(readOnly = true)
   public UserSummary getUserSummary(UUID userId) {
