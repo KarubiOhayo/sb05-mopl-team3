@@ -110,18 +110,11 @@ public class PlaylistService {
 
   @Transactional
   public void addContent(UUID playlistId, UUID contentId, UUID userId) {
-    if (userId == null || playlistId == null || contentId == null) {
-      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
-    }
+    validatePlaylistContentInputs(playlistId, contentId, userId);
 
-    Playlist playlist =
-        playlistRepository
-            .findById(playlistId)
-            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+    Playlist playlist = findPlaylistOrThrow(playlistId);
 
-    if (!playlist.getOwnerId().equals(userId)) {
-      throw new BusinessException(CommonErrorCode.FORBIDDEN);
-    }
+    assertOwner(playlist, userId);
 
     if (!contentRepository.existsById(contentId)) {
       throw new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND);
@@ -136,6 +129,22 @@ public class PlaylistService {
     playlistContentRepository.save(playlistContent);
   }
 
+  @Transactional
+  public void removeContent(UUID playlistId, UUID contentId, UUID userId) {
+    validatePlaylistContentInputs(playlistId, contentId, userId);
+
+    Playlist playlist = findPlaylistOrThrow(playlistId);
+
+    assertOwner(playlist, userId);
+
+    PlaylistContentId id = new PlaylistContentId(playlistId, contentId);
+    if (!playlistContentRepository.existsById(id)) {
+      return;
+    }
+
+    playlistContentRepository.deleteById(id);
+  }
+
   // -- 헬퍼 메서드 --
   private void validateSubscriptionInputs(UUID playlistId, UUID userId) {
     if (userId == null || playlistId == null) {
@@ -146,6 +155,24 @@ public class PlaylistService {
   private void assertPlaylistExists(UUID playlistId) {
     if (!playlistRepository.existsById(playlistId)) {
       throw new BusinessException(CommonErrorCode.NOT_FOUND);
+    }
+  }
+
+  private void validatePlaylistContentInputs(UUID playlistId, UUID contentId, UUID userId) {
+    if (userId == null || playlistId == null || contentId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+  }
+
+  private Playlist findPlaylistOrThrow(UUID playlistId) {
+    return playlistRepository
+        .findById(playlistId)
+        .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+  }
+
+  private void assertOwner(Playlist playlist, UUID userId) {
+    if (!playlist.getOwnerId().equals(userId)) {
+      throw new BusinessException(CommonErrorCode.FORBIDDEN);
     }
   }
 }

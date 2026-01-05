@@ -64,4 +64,13 @@ public class PlaylistController {
     playlistService.addContent(playlistId, contentId, userId);
     return ResponseEntity.noContent().build();
   }
+
+  @DeleteMapping("/{playlistId}/contents/{contentId}")
+  public ResponseEntity<Void> removeContentFromPlaylist(
+      @PathVariable UUID playlistId,
+      @PathVariable UUID contentId,
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.removeContent(playlistId, contentId, userId);
+    return ResponseEntity.noContent().build();
+  }
 }
