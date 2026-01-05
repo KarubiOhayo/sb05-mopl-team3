@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -127,10 +128,15 @@ public class PlaylistService {
     if (playlistContentRepository.existsById(id)) {
       return;
     }
-
-    PlaylistContent playlistContent = PlaylistContent.builder().id(id).build();
-    playlistContentRepository.save(playlistContent);
-    log.info("playlist_content_added playlistId={} contentId={}", playlistId, contentId);
+    try {
+      PlaylistContent playlistContent = PlaylistContent.builder().id(id).build();
+      playlistContentRepository.save(playlistContent);
+      log.info("playlist_content_added playlistId={} contentId={}", playlistId, contentId);
+    } catch (DataIntegrityViolationException e) {
+      // 동시 요청으로 인한 중복 저장 시도 - 이미 존재하므로 무시
+      log.debug(
+          "playlist_content_already_exists playlistId={} contentId={}", playlistId, contentId);
+    }
   }
 
   // Playlist 컨텐츠 삭제
