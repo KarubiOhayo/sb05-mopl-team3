@@ -24,6 +24,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   @Modifying
   @Query(
       "UPDATE User u SET u.tempPasswordHash = null, u.tempPasswordExpiresAt = null "
-          + "WHERE u.tempPasswordHash IS NOT NULL AND u.tempPasswordExpiresAt < :now")
+          + "WHERE u.tempPasswordHash IS NOT NULL AND u.tempPasswordExpiresAt <= :now")
   int clearExpiredTempPasswords(@Param("now") Instant now);
 }
