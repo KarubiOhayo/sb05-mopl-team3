@@ -13,6 +13,15 @@ import org.springframework.stereotype.Repository;
 public interface PlaylistContentRepository
     extends JpaRepository<PlaylistContent, PlaylistContentId> {
 
+  @Modifying
+  @Query(
+      value =
+          "insert into playlist_contents (playlist_id, content_id) "
+              + "values (:playlistId, :contentId) "
+              + "on duplicate key update playlist_id = playlist_id",
+      nativeQuery = true)
+  int insertIgnore(@Param("playlistId") UUID playlistId, @Param("contentId") UUID contentId);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("delete from PlaylistContent pc where pc.id.contentId = :contentId")
   void deleteByIdContentId(@Param("contentId") UUID contentId);
