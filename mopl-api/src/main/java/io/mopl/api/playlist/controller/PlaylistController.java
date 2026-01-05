@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +46,13 @@ public class PlaylistController {
   public ResponseEntity<Void> subscribe(
       @PathVariable UUID playlistId, @AuthenticationPrincipal UUID userId) {
     playlistService.subscribe(playlistId, userId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @DeleteMapping("/{playlistId}/subscription")
+  public ResponseEntity<Void> unsubscribe(
+      @PathVariable UUID playlistId, @AuthenticationPrincipal UUID userId) {
+    playlistService.unsubscribe(playlistId, userId);
     return ResponseEntity.noContent().build();
   }
 }

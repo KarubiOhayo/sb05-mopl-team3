@@ -79,4 +79,26 @@ public class PlaylistService {
     playlist.increaseSubscriberCount();
     playlistRepository.save(playlist);
   }
+
+  @Transactional
+  public void unsubscribe(UUID playlistId, UUID userId) {
+    if (userId == null || playlistId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+
+    Playlist playlist =
+        playlistRepository
+            .findById(playlistId)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+
+    PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
+    if (!playlistSubscriptionRepository.existsById(id)) {
+      throw new BusinessException(CommonErrorCode.CONFLICT);
+    }
+
+    playlistSubscriptionRepository.deleteById(id);
+
+    playlist.decreaseSubscriberCount();
+    playlistRepository.save(playlist);
+  }
 }

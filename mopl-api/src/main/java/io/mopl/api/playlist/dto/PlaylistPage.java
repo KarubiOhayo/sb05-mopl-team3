@@ -1,4 +1,4 @@
-package io.mopl.api.playlist.repository;
+package io.mopl.api.playlist.dto;
 
 import io.mopl.api.playlist.domain.Playlist;
 import java.util.List;
