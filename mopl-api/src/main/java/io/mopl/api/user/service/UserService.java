@@ -80,10 +80,6 @@ public class UserService {
       throw new BusinessException(UserErrorCode.OAUTH_USER_CANNOT_CHANGE_PASSWORD);
     }
 
-    if (passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-      throw new BusinessException(UserErrorCode.SAME_PASSWORD);
-    }
-
     String encodedPassword = passwordEncoder.encode(request.getPassword());
     user.setPasswordHash(encodedPassword);
 

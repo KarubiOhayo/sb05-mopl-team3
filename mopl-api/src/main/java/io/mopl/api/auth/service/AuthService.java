@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
-  private final RedisTemplate<Object, Object> redisTemplate;
+  private final StringRedisTemplate stringRedisTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
   private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:limit:";
@@ -156,15 +156,15 @@ public class AuthService {
   /** Rate Limiting 체크 */
   private void checkRateLimit(String email) {
     String key = RESET_LIMIT_KEY_PREFIX + email;
-    Integer attempts = (Integer) redisTemplate.opsForValue().get(key);
 
-    if (attempts != null && attempts >= MAX_RESET_ATTEMPTS) {
-      throw new BusinessException(AuthErrorCode.TOO_MANY_RESET_REQUESTS);
+    Long attempts = stringRedisTemplate.opsForValue().increment(key);
+
+    if (attempts == 1) {
+      stringRedisTemplate.expire(key, RESET_LIMIT_DURATION, TimeUnit.SECONDS);
     }
 
-    redisTemplate.opsForValue().increment(key);
-    if (attempts == null) {
-      redisTemplate.expire(key, RESET_LIMIT_DURATION, TimeUnit.SECONDS);
+    if (attempts > MAX_RESET_ATTEMPTS) {
+      throw new BusinessException(AuthErrorCode.TOO_MANY_RESET_REQUESTS);
     }
   }
 
