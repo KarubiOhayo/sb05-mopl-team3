@@ -64,16 +64,4 @@ public class Playlist {
       this.id = UuidV7Generator.generate();
     }
   }
-
-  // 구독자 수 +1
-  public void increaseSubscriberCount() {
-    this.subscriberCount += 1;
-  }
-
-  // 구독자 수 -1 - 0일때는 -1 못하게 조건문 추가
-  public void decreaseSubscriberCount() {
-    if (this.subscriberCount > 0) {
-      this.subscriberCount -= 1;
-    }
-  }
 }

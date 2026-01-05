@@ -58,14 +58,9 @@ public class PlaylistService {
 
   @Transactional
   public void subscribe(UUID playlistId, UUID userId) {
-    if (userId == null || playlistId == null) {
-      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
-    }
+    validateSubscriptionInputs(playlistId, userId);
 
-    Playlist playlist =
-        playlistRepository
-            .findById(playlistId)
-            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+    Playlist playlist = findPlaylistOrThrow(playlistId);
 
     PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
     if (playlistSubscriptionRepository.existsById(id)) {
@@ -74,31 +69,34 @@ public class PlaylistService {
 
     PlaylistSubscription subscription = PlaylistSubscription.builder().id(id).build();
     playlistSubscriptionRepository.save(subscription);
-
-    // subscriberCount 증가
-    playlist.increaseSubscriberCount();
-    playlistRepository.save(playlist);
+    playlistRepository.increaseSubscriberCount(playlistId);
   }
 
   @Transactional
   public void unsubscribe(UUID playlistId, UUID userId) {
-    if (userId == null || playlistId == null) {
-      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
-    }
+    validateSubscriptionInputs(playlistId, userId);
 
-    Playlist playlist =
-        playlistRepository
-            .findById(playlistId)
-            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+    Playlist playlist = findPlaylistOrThrow(playlistId);
 
     PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
     if (!playlistSubscriptionRepository.existsById(id)) {
-      throw new BusinessException(CommonErrorCode.CONFLICT);
+      return;
     }
 
     playlistSubscriptionRepository.deleteById(id);
+    playlistRepository.decreaseSubscriberCount(playlistId);
+  }
 
-    playlist.decreaseSubscriberCount();
-    playlistRepository.save(playlist);
+  // -- 헬퍼 메서드 --
+  private void validateSubscriptionInputs(UUID playlistId, UUID userId) {
+    if (userId == null || playlistId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+  }
+
+  private Playlist findPlaylistOrThrow(UUID playlistId) {
+    return playlistRepository
+        .findById(playlistId)
+        .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
   }
 }
