@@ -1,6 +1,5 @@
 package io.mopl.batch.common.writer;
 
-import io.mopl.batch.client.tmdb.TmdbGenre;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentTag;
@@ -10,7 +9,9 @@ import io.mopl.batch.content.domain.Tag;
 import io.mopl.batch.content.domain.TagRepository;
 import io.mopl.batch.thumbnail.ThumbnailRequestedSpringEvent;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.Chunk;
@@ -48,9 +49,12 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
       Content savedContent = contentRepository.save(content);
 
       // 2. Tag 저장 및 연결
-      if (content.getGenreIds() != null) {
-        for (Integer genreId : content.getGenreIds()) {
-          String tagName = TmdbGenre.getNameById(genreId);
+      if (content.getTags() != null) {
+        Set<String> dedupedTags = new LinkedHashSet<>(content.getTags());
+        for (String tagName : dedupedTags) {
+          if (tagName == null || tagName.isBlank()) {
+            continue;
+          }
 
           // 태그가 없으면 생성, 있으면 조회
           Tag tag =

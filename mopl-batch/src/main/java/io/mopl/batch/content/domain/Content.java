@@ -80,11 +80,11 @@ public class Content {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  @Transient @Setter private List<Integer> genreIds = new ArrayList<>();
-
   @Transient @Setter private String sourceThumbnailUrl;
 
   @Transient @Setter private ThumbnailSourceType thumbnailSourceType;
+
+  @Transient @Setter private List<String> tags = new ArrayList<>();
 
   @PrePersist
   public void generateId() {

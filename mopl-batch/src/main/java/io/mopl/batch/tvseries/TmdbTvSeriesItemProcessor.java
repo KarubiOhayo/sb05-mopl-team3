@@ -1,10 +1,13 @@
 package io.mopl.batch.tvseries;
 
+import io.mopl.batch.client.tmdb.TmdbGenre;
 import io.mopl.batch.client.tmdb.dto.TmdbTvSeriesResponse;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentType;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -42,7 +45,10 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
     content.setThumbnailSourceType(ThumbnailSourceType.TMDB);
 
     if (item.getGenreIds() != null) {
-      content.setGenreIds(item.getGenreIds());
+      List<String> tags =
+          item.getGenreIds().stream().map(TmdbGenre::getNameById).collect(Collectors.toList());
+      content.setTags(tags);
+      content.getTags().add("TV 시리즈");
     }
 
     return content;
