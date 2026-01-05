@@ -1,7 +1,5 @@
 package io.mopl.api.auth.service;
 
-import io.mopl.api.common.error.AuthErrorCode;
-import io.mopl.core.error.BusinessException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -24,24 +22,21 @@ public class EmailService {
 
   /** 임시 비밀번호를 이메일로 전송 */
   @Retryable(
-      retryFor = {MailException.class},
+      retryFor = {MailException.class, MessagingException.class},
       maxAttempts = 3,
       backoff = @Backoff(delay = 2000, multiplier = 2))
-  public void sendTemporaryPassword(String toEmail, String temporaryPassword) {
-    try {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+  public void sendTemporaryPassword(String toEmail, String temporaryPassword)
+      throws MessagingException {
 
-      helper.setFrom("모두의 플리 <" + fromEmail + ">");
-      helper.setTo(toEmail);
-      helper.setSubject("[모두의 플리] 임시 비밀번호 발급 안내");
-      helper.setText(buildEmailContent(temporaryPassword));
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-      mailSender.send(message);
+    helper.setFrom("모두의 플리 <" + fromEmail + ">");
+    helper.setTo(toEmail);
+    helper.setSubject("[모두의 플리] 임시 비밀번호 발급 안내");
+    helper.setText(buildEmailContent(temporaryPassword));
 
-    } catch (MessagingException | MailException e) {
-      throw new BusinessException(AuthErrorCode.EMAIL_SEND_FAILED, e);
-    }
+    mailSender.send(message);
   }
 
   /** 이메일 본문 내용 생성 */

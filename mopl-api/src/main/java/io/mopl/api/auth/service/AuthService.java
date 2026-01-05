@@ -4,6 +4,7 @@ import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.ResetPasswordRequest;
 import io.mopl.api.auth.dto.SignInRequest;
+import io.mopl.api.auth.event.PasswordResetEvent;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,8 +35,8 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
-  private final EmailService emailService;
   private final RedisTemplate<Object, Object> redisTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:limit:";
   private static final int MAX_RESET_ATTEMPTS = 3;
@@ -137,6 +139,7 @@ public class AuthService {
     }
 
     User user = optionalUser.get();
+
     if (user.getAuthProvider() != AuthProvider.LOCAL) {
       return;
     }
@@ -145,7 +148,9 @@ public class AuthService {
     user.setTempPasswordHash(passwordEncoder.encode(temporaryPassword));
     user.setTempPasswordExpiresAt(Instant.now().plus(3, ChronoUnit.MINUTES));
 
-    emailService.sendTemporaryPassword(user.getEmail(), temporaryPassword);
+    PasswordResetEvent event =
+        new PasswordResetEvent(user.getId(), user.getEmail(), temporaryPassword);
+    eventPublisher.publishEvent(event);
   }
 
   /** Rate Limiting 체크 */
