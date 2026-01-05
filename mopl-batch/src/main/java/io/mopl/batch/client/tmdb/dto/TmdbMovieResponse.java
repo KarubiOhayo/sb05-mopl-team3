@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+/** TMDB 영화 조회 응답 DTO. */
 @Getter
 @NoArgsConstructor
 @ToString

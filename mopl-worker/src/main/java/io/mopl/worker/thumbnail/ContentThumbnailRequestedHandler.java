@@ -14,6 +14,11 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+/**
+ * 썸네일 요청 이벤트를 처리하는 비동기 핸들러.
+ *
+ * <p>다운로드/업로드를 수행하고 결과 이벤트를 발행하며, 실패 시 재시도 정책을 적용한다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,6 +29,14 @@ public class ContentThumbnailRequestedHandler {
   private final KafkaTemplate<String, Object> kafkaTemplate;
   private final KafkaRetryProperties retryProperties;
 
+  /**
+   * 비동기로 썸네일 업로드를 처리한다.
+   *
+   * <p>재시도 후에도 실패하면 실패 이벤트와 DLQ 이벤트를 발행한다.
+   *
+   * @param event 요청 이벤트
+   * @param acknowledgment Kafka ACK
+   */
   @Async("kafkaTaskExecutor")
   public void handleAsync(ContentThumbnailRequestedEvent event, Acknowledgment acknowledgment) {
     int maxAttempts = retryProperties.maxAttempts() == null ? 3 : retryProperties.maxAttempts();
