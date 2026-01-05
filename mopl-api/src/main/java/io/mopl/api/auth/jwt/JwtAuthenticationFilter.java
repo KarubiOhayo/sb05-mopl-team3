@@ -1,5 +1,6 @@
 package io.mopl.api.auth.jwt;
 
+import io.mopl.api.common.config.AuthUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,9 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = jwtTokenProvider.getEmail(token);
         String role = jwtTokenProvider.getRole(token);
 
+        AuthUser authUser = AuthUser.builder().userId(userId).email(email).role(role).build();
+
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                authUser, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

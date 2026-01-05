@@ -8,6 +8,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.playlist.domain.Playlist;
 import io.mopl.api.playlist.domain.QPlaylist;
 import io.mopl.api.playlist.domain.QPlaylistSubscription;
+import io.mopl.api.playlist.dto.PlaylistPage;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
