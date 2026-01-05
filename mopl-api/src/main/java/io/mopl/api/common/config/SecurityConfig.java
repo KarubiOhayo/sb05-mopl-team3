@@ -7,12 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -20,46 +18,24 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-  private final CsrfCookieFilter csrfCookieFilter;
-
-  // 개발 중 테스트를 위한 csrf 비활성화 메서드
-  //  @Bean
-  //  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-  //    http
-  //        .csrf(csrf -> csrf.disable())
-  //        .sessionManagement(session -> session
-  //            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-  //        .authorizeHttpRequests(auth -> auth
-  //            .requestMatchers("/api/users/register", "/api/users/login").permitAll()
-  //            .requestMatchers("/api/users/**").authenticated()
-  //            .anyRequest().permitAll())
-  //        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-  //
-  //    return http.build();
-  //  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-    csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
-
-    // Plain CSRF Token Handler 사용 (XOR 인코딩 비활성화)
-    CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-    requestHandler.setCsrfRequestAttributeName("_csrf");
-
-    http.csrf(
-            csrf ->
-                csrf.csrfTokenRepository(csrfTokenRepository)
-                    .csrfTokenRequestHandler(requestHandler) // Plain token handler 설정
-                    .ignoringRequestMatchers(
-                        request -> {
-                          String method = request.getMethod();
-                          String path = request.getRequestURI();
-                          // CSRF 검증 제외: 회원가입, 로그인만
-                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"));
-                        }))
+    // 개발 편의를 위해 CSRF 비활성화 (나중에 활성화 시 아래 주석 해제 및 위 코드 삭제)
+    http.csrf(AbstractHttpConfigurer::disable)
+        //    http.csrf(
+        //            csrf ->
+        //                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        //                    .ignoringRequestMatchers(
+        //                        request -> {
+        //                          String method = request.getMethod();
+        //                          String path = request.getRequestURI();
+        //                          return (method.equals("POST") &&
+        // path.equals("/api/auth/sign-in"))
+        //                              || (method.equals("POST") && path.equals("/api/users"))
+        //                              || (method.equals("POST") &&
+        // path.equals("/api/auth/refresh"));
+        //                        }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
@@ -185,8 +161,7 @@ public class SecurityConfig {
                     // 나머지는 인증 필요
                     .anyRequest()
                     .authenticated())
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterAfter(csrfCookieFilter, CsrfFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }

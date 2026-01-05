@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ReviewErrorCode implements ErrorCode {
-  ALREADY_EXISTS_REVIEW(409, "error.review.already-exists");
+  ALREADY_EXISTS_REVIEW(409, "error.review.already-exists"),
+  NOT_FOUND_REVIEW(404, "error.review.not-found");
 
   private final int status;
   private final String messageKey;
