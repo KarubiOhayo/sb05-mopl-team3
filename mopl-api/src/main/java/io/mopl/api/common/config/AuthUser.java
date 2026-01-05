@@ -1,28 +1,18 @@
 package io.mopl.api.common.config;
 
-import java.util.Collection;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import lombok.NoArgsConstructor;
 
 @Getter
-public class AuthUser extends User {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AuthUser {
 
-  private final UUID userId;
-
-  public AuthUser(
-      UUID userId,
-      String username,
-      String password,
-      Collection<? extends GrantedAuthority> authorities) {
-    super(username, password, authorities);
-    this.userId = userId;
-  }
-
-  public AuthUser(
-      UUID userId, String username, Collection<? extends GrantedAuthority> authorities) {
-    super(username, "", authorities);
-    this.userId = userId;
-  }
+  private UUID userId;
+  private String email;
+  private String role;
 }
