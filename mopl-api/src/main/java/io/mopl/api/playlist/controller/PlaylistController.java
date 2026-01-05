@@ -55,4 +55,13 @@ public class PlaylistController {
     playlistService.unsubscribe(playlistId, userId);
     return ResponseEntity.noContent().build();
   }
+
+  @PostMapping("/{playlistId}/contents/{contentId}")
+  public ResponseEntity<Void> addContentToPlaylist(
+      @PathVariable UUID playlistId,
+      @PathVariable UUID contentId,
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.addContent(playlistId, contentId, userId);
+    return ResponseEntity.noContent().build();
+  }
 }

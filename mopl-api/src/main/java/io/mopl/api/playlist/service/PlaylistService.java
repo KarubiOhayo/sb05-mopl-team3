@@ -1,10 +1,15 @@
 package io.mopl.api.playlist.service;
 
+import io.mopl.api.common.error.ContentErrorCode;
+import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.playlist.domain.Playlist;
+import io.mopl.api.playlist.domain.PlaylistContent;
+import io.mopl.api.playlist.domain.PlaylistContentId;
 import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import io.mopl.api.playlist.dto.PlaylistCreateRequest;
 import io.mopl.api.playlist.dto.PlaylistDto;
+import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.playlist.repository.PlaylistRepository;
 import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
 import io.mopl.api.user.dto.UserSummary;
@@ -26,6 +31,8 @@ public class PlaylistService {
   private final PlaylistRepository playlistRepository;
   private final UserService userService;
   private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
+  private final ContentRepository contentRepository;
+  private final PlaylistContentRepository playlistContentRepository;
 
   // Playlist 생성
   @Transactional
@@ -99,6 +106,34 @@ public class PlaylistService {
           playlistId,
           userId);
     }
+  }
+
+  @Transactional
+  public void addContent(UUID playlistId, UUID contentId, UUID userId) {
+    if (userId == null || playlistId == null || contentId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+
+    Playlist playlist =
+        playlistRepository
+            .findById(playlistId)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+
+    if (!playlist.getOwnerId().equals(userId)) {
+      throw new BusinessException(CommonErrorCode.FORBIDDEN);
+    }
+
+    if (!contentRepository.existsById(contentId)) {
+      throw new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND);
+    }
+
+    PlaylistContentId id = new PlaylistContentId(playlistId, contentId);
+    if (playlistContentRepository.existsById(id)) {
+      return;
+    }
+
+    PlaylistContent playlistContent = PlaylistContent.builder().id(id).build();
+    playlistContentRepository.save(playlistContent);
   }
 
   // -- 헬퍼 메서드 --
