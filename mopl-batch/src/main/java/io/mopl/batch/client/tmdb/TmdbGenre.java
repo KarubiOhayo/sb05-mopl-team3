@@ -4,6 +4,7 @@ import java.util.Arrays;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/** TMDB 장르 ID와 한글 명칭 매핑. */
 @Getter
 @RequiredArgsConstructor
 public enum TmdbGenre {
@@ -40,6 +41,12 @@ public enum TmdbGenre {
   private final int id;
   private final String name;
 
+  /**
+   * 장르 ID에 해당하는 한글 명칭을 반환한다.
+   *
+   * @param id TMDB 장르 ID
+   * @return 장르명 (없으면 "기타")
+   */
   public static String getNameById(int id) {
     return Arrays.stream(values())
         .filter(genre -> genre.id == id)

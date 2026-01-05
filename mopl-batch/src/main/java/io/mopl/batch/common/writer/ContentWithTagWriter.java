@@ -18,6 +18,18 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 수집된 콘텐츠를 저장하고 태그를 연결한 뒤 썸네일 요청 이벤트를 발행하는 Writer.
+ *
+ * <p>처리 흐름:
+ *
+ * <ol>
+ *   <li>콘텐츠 ID 생성 및 썸네일 S3 키 설정
+ *   <li>콘텐츠 저장
+ *   <li>태그 저장/연결
+ *   <li>썸네일 요청 이벤트 발행
+ * </ol>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,6 +40,13 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
   private final ContentTagRepository contentTagRepository;
   private final ApplicationEventPublisher eventPublisher;
 
+  /**
+   * 청크 단위로 콘텐츠 저장과 태그 연결을 수행한다.
+   *
+   * <p>중복 여부는 Processor 단계에서 이미 필터링되었다는 전제다.
+   *
+   * @param chunk 저장할 콘텐츠 목록
+   */
   @Override
   @Transactional
   public void write(Chunk<? extends Content> chunk) {

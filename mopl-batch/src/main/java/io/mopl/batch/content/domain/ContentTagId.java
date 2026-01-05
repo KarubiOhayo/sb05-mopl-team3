@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/** 콘텐츠-태그 관계의 복합키. */
 @Embeddable
 @Getter
 @NoArgsConstructor

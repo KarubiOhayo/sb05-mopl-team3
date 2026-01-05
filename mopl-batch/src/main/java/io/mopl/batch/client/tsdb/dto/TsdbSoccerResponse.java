@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+/** TheSportsDB 축구 경기 조회 응답 DTO. */
 @Getter
 @NoArgsConstructor
 @ToString

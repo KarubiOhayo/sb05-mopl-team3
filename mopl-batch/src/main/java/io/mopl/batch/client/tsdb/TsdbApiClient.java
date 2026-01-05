@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+/** TheSportsDB API 호출을 담당하는 클라이언트. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

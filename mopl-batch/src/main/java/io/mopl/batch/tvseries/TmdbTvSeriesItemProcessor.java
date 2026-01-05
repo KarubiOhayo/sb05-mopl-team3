@@ -14,6 +14,11 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
+/**
+ * TMDB TV 시리즈 응답을 {@link Content}로 변환하는 Processor.
+ *
+ * <p>중복 콘텐츠는 필터링하고, 썸네일 소스/태그를 채워 Writer로 전달한다.
+ */
 @Component
 @StepScope
 @RequiredArgsConstructor
@@ -22,6 +27,12 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
   private final ContentRepository contentRepository;
   private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
+  /**
+   * TMDB TV 시리즈 데이터를 콘텐츠로 변환한다.
+   *
+   * @param item TMDB TV 시리즈 응답
+   * @return 변환된 콘텐츠, 중복이면 null
+   */
   @Override
   public @Nullable Content process(TmdbTvSeriesResponse item) {
     if (contentRepository.existsByExternalIdAndType(

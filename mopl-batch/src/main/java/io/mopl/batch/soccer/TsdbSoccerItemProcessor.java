@@ -12,6 +12,11 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
+/**
+ * TheSportsDB 축구 경기 응답을 {@link Content}로 변환하는 Processor.
+ *
+ * <p>중복 콘텐츠는 제외하고, 리그/경기장 정보를 태그로 구성한다.
+ */
 @Component
 @StepScope
 @RequiredArgsConstructor
@@ -19,6 +24,12 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
 
   private final ContentRepository contentRepository;
 
+  /**
+   * TheSportsDB 축구 경기 데이터를 콘텐츠로 변환한다.
+   *
+   * @param item 축구 경기 응답
+   * @return 변환된 콘텐츠, 중복이면 null
+   */
   @Override
   public @Nullable Content process(TsdbSoccerResponse item) {
     if (contentRepository.existsByExternalIdAndType(

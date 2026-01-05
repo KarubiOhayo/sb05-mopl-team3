@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+/** TMDB 페이지네이션 응답 DTO. */
 @Getter
 @NoArgsConstructor
 @ToString
