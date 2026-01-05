@@ -14,9 +14,11 @@ import io.mopl.core.error.CommonErrorCode;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlaylistService {
@@ -60,23 +62,29 @@ public class PlaylistService {
   public void subscribe(UUID playlistId, UUID userId) {
     validateSubscriptionInputs(playlistId, userId);
 
-    Playlist playlist = findPlaylistOrThrow(playlistId);
+    assertPlaylistExists(playlistId);
 
     PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
     if (playlistSubscriptionRepository.existsById(id)) {
-      throw new BusinessException(CommonErrorCode.CONFLICT);
+      return;
     }
 
     PlaylistSubscription subscription = PlaylistSubscription.builder().id(id).build();
     playlistSubscriptionRepository.save(subscription);
-    playlistRepository.increaseSubscriberCount(playlistId);
+    int affected = playlistRepository.increaseSubscriberCount(playlistId);
+    if (affected == 0) {
+      log.warn(
+          "playlist_subscribe_count_mismatch playlistId={} userId={} reason=update_not_applied",
+          playlistId,
+          userId);
+    }
   }
 
   @Transactional
   public void unsubscribe(UUID playlistId, UUID userId) {
     validateSubscriptionInputs(playlistId, userId);
 
-    Playlist playlist = findPlaylistOrThrow(playlistId);
+    assertPlaylistExists(playlistId);
 
     PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
     if (!playlistSubscriptionRepository.existsById(id)) {
@@ -84,7 +92,13 @@ public class PlaylistService {
     }
 
     playlistSubscriptionRepository.deleteById(id);
-    playlistRepository.decreaseSubscriberCount(playlistId);
+    int affected = playlistRepository.decreaseSubscriberCount(playlistId);
+    if (affected == 0) {
+      log.warn(
+          "playlist_unsubscribe_count_mismatch playlistId={} userId={} reason=subscriberCount_already_zero",
+          playlistId,
+          userId);
+    }
   }
 
   // -- 헬퍼 메서드 --
@@ -94,9 +108,9 @@ public class PlaylistService {
     }
   }
 
-  private Playlist findPlaylistOrThrow(UUID playlistId) {
-    return playlistRepository
-        .findById(playlistId)
-        .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+  private void assertPlaylistExists(UUID playlistId) {
+    if (!playlistRepository.existsById(playlistId)) {
+      throw new BusinessException(CommonErrorCode.NOT_FOUND);
+    }
   }
 }
