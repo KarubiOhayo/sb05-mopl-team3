@@ -22,6 +22,7 @@ public class JobLauncherController {
   private final JobOperator jobOperator;
   private final Job movieCollectJob;
   private final Job tvSeriesCollectJob;
+  private final Job soccerCollectJob;
 
   @PostMapping("/movies")
   public ResponseEntity<String> runMovieCollectJob() {
@@ -56,6 +57,24 @@ public class JobLauncherController {
       log.error("배치 작업 실행 실패: jobName={}", tvSeriesCollectJob.getName(), e);
       throw new BusinessException(BatchErrorCode.JOB_LAUNCH_FAILED)
           .addDetail("jobName", tvSeriesCollectJob.getName());
+    }
+  }
+
+  @PostMapping("/soccer")
+  public ResponseEntity<String> runSoccerCollectJob() {
+    try {
+      JobParameters jobParameters =
+          new JobParametersBuilder()
+              .addLong("requestTime", System.currentTimeMillis())
+              .toJobParameters();
+
+      jobOperator.start(soccerCollectJob, jobParameters);
+
+      return ResponseEntity.ok("Soccer Collect Job Started!");
+    } catch (Exception e) {
+      log.error("배치 작업 실행 실패: jobName={}", soccerCollectJob.getName(), e);
+      throw new BusinessException(BatchErrorCode.JOB_LAUNCH_FAILED)
+          .addDetail("jobName", soccerCollectJob.getName());
     }
   }
 }

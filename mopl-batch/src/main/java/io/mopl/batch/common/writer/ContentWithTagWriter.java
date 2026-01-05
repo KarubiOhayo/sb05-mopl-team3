@@ -9,9 +9,7 @@ import io.mopl.batch.content.domain.Tag;
 import io.mopl.batch.content.domain.TagRepository;
 import io.mopl.batch.thumbnail.ThumbnailRequestedSpringEvent;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
-import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.Chunk;
@@ -50,8 +48,7 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
 
       // 2. Tag 저장 및 연결
       if (content.getTags() != null) {
-        Set<String> dedupedTags = new LinkedHashSet<>(content.getTags());
-        for (String tagName : dedupedTags) {
+        for (String tagName : content.getTags()) {
           if (tagName == null || tagName.isBlank()) {
             continue;
           }

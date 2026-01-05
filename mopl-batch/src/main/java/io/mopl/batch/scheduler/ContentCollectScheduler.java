@@ -17,6 +17,7 @@ public class ContentCollectScheduler {
   private final JobOperator jobOperator;
   private final Job movieCollectJob;
   private final Job tvSeriesCollectJob;
+  private final Job soccerCollectJob;
 
   @Scheduled(cron = "${batch.schedule.movie-collect-cron}")
   public void runMovieCollectJob() {
@@ -51,6 +52,24 @@ public class ContentCollectScheduler {
       log.info("TvSeries 수집 배치 작업 트리거 완료");
     } catch (Exception e) {
       log.error("TvSeries 수집 배치 작업 실패", e);
+    }
+  }
+
+  @Scheduled(cron = "${batch.schedule.soccer-collect-cron}")
+  public void runSoccerCollectJob() {
+    try {
+      log.info("Soccer 수집 배치 작업 시작: {}", System.currentTimeMillis());
+
+      JobParameters jobParameters =
+          new JobParametersBuilder()
+              .addLong("requestTime", System.currentTimeMillis())
+              .toJobParameters();
+
+      jobOperator.start(soccerCollectJob, jobParameters);
+
+      log.info("Soccer 수집 배치 작업 트리거 완료");
+    } catch (Exception e) {
+      log.error("Soccer 수집 배치 작업 실패", e);
     }
   }
 }
