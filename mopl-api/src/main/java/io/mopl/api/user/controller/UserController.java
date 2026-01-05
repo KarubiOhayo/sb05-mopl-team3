@@ -1,12 +1,12 @@
 package io.mopl.api.user.controller;
 
 import io.mopl.api.common.config.AuthUser;
-import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class UserController {
       @AuthenticationPrincipal AuthUser authUser) {
 
     if (!userId.equals(authUser.getUserId())) {
-      throw new BusinessException(UserErrorCode.FORBIDDEN);
+      throw new BusinessException(CommonErrorCode.FORBIDDEN);
     }
 
     userService.changePassword(userId, request);
