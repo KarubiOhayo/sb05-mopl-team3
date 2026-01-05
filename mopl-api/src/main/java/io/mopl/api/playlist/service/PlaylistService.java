@@ -3,7 +3,6 @@ package io.mopl.api.playlist.service;
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.playlist.domain.Playlist;
-import io.mopl.api.playlist.domain.PlaylistContent;
 import io.mopl.api.playlist.domain.PlaylistContentId;
 import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,16 +122,8 @@ public class PlaylistService {
       throw new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND);
     }
 
-    PlaylistContentId id = new PlaylistContentId(playlistId, contentId);
-    if (playlistContentRepository.existsById(id)) {
-      return;
-    }
-    try {
-      PlaylistContent playlistContent = PlaylistContent.builder().id(id).build();
-      playlistContentRepository.save(playlistContent);
-      log.info("playlist_content_added playlistId={} contentId={}", playlistId, contentId);
-    } catch (DataIntegrityViolationException e) {
-      // 동시 요청으로 인한 중복 저장 시도 - 이미 존재하므로 무시
+    int affected = playlistContentRepository.insertIgnore(playlistId, contentId);
+    if (affected == 0) {
       log.debug(
           "playlist_content_already_exists playlistId={} contentId={}", playlistId, contentId);
     }
