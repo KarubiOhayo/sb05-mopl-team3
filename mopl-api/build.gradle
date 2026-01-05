@@ -36,4 +36,11 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+    // Email 전송
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // 재시도 메커니즘
+    implementation 'org.springframework.retry:spring-retry:2.0.5'
+    implementation 'org.springframework:spring-aspects'
 }

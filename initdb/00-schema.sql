@@ -14,7 +14,8 @@ CREATE TABLE users (
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id)
+  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id),
+  INDEX idx_temp_password_expires_at (temp_password_expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE contents (
