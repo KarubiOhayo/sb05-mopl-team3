@@ -1,5 +1,6 @@
 package io.mopl.api.playlist.repository;
 
+import io.mopl.api.playlist.dto.PlaylistPage;
 import java.util.UUID;
 
 public interface PlaylistQueryRepository {
