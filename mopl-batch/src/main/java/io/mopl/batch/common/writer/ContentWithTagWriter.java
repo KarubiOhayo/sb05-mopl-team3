@@ -89,11 +89,24 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
 
     int queryIndex = sourceUrl.indexOf('?');
     String sanitized = queryIndex >= 0 ? sourceUrl.substring(0, queryIndex) : sourceUrl;
+    sanitized = stripTrailingMediumSegment(sanitized);
     int dotIndex = sanitized.lastIndexOf('.');
     if (dotIndex < 0 || dotIndex == sanitized.length() - 1) {
       return "jpg";
     }
     String extension = sanitized.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
     return extension.isBlank() ? "jpg" : extension;
+  }
+
+  private static String stripTrailingMediumSegment(String url) {
+    if (url == null || url.isBlank()) {
+      return url;
+    }
+    String suffix = "/medium";
+    if (url.length() >= suffix.length()
+        && url.substring(url.length() - suffix.length()).equalsIgnoreCase(suffix)) {
+      return url.substring(0, url.length() - suffix.length());
+    }
+    return url;
   }
 }
