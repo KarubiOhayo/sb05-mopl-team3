@@ -5,6 +5,7 @@ import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentType;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -39,12 +40,15 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
     content.setSourceThumbnailUrl(sourceThumbnailUrl);
     content.setThumbnailSourceType(ThumbnailSourceType.THE_SPORTS_DB);
 
-    if (content.getTags() != null) {
+    content.setTags(new ArrayList<>());
+    if (item.getLeague() != null && !item.getLeague().isBlank()) {
       content.getTags().add(item.getLeague());
-      content.getTags().add(item.getVenue());
-      content.getTags().add("Soccer");
-      content.getTags().add("스포츠");
     }
+    if (item.getVenue() != null && !item.getVenue().isBlank()) {
+      content.getTags().add(item.getVenue());
+    }
+    content.getTags().add("Soccer");
+    content.getTags().add("스포츠");
 
     return content;
   }
