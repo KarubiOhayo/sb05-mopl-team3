@@ -42,83 +42,83 @@ VALUES
 
 -- content dummy data
 INSERT INTO contents (id, type, external_id, title, description, thumbnail_url, average_rating, review_count, watcher_count, created_at, updated_at) VALUES
-('a1e21d98-bc59-4682-a78d-cd556457f482', 'tvSeries', '1396', '브레이킹 배드',
+('a1e21d98-bc59-4682-a78d-cd556457f482', 'TV_SERIES', '1396', '브레이킹 배드',
 '2008년 1월 AMC에서 방영을 시작한 범죄 스릴러. Breaking Bad는 막가기를 뜻하는 미국 남부 지방의 속어이다. 한때 노벨화학상까지 바라 볼 정도로 뛰어난 과학자였던 고등학교 화학 교사 월터 화이트는 자신의 50세 생일 날에 폐암 3기 진단을 받는다. 어느 날 동서와 함께 마약 단속 현장을 참관한 그는 현장에서 달아나는 옛 제자 제시를 발견한다. 뇌성마비에 걸린 고등학생 아들과 임신한 아내를 위해 제시에게 동업을 제의한 월터는 자신의 화학지식을 이용해 전례없는 고순도 고품질의 메스암페타민을 제조한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/89a1c53b-88e0-469d-9a8b-4d3d2f947fcc?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=2dc4e83542491e52eb075477ceed14d20725dda8e8aaefecca66413b83d57d27',
 3.73, 12, 1, DEFAULT, DEFAULT),
-('011150c5-4ddf-4615-9342-3e2ee925a319', 'movie', '865', '더 러닝 맨',
+('011150c5-4ddf-4615-9342-3e2ee925a319', 'MOVIE', '865', '더 러닝 맨',
 '실직한 가장 ‘벤 리처즈’가 거액의 상금을 위해 30일간 잔인한 추격자들로부터 살아남아야 하는 글로벌 서바이벌 프로그램에 참가하며 펼쳐지는 추격 액션 블록버스터',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/0f1500d6-509b-4a98-a1e2-958b42afa1cd?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=de396eb8863d47a45acf1ddfa2ee8527c8d7727f2e1c9f8f6e7bab041cffc34e',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('0b57b34c-9c62-44b2-8837-c2e215fd6718', 'sport', 's101', 'Aston Villa vs Bournemouth',
+('0b57b34c-9c62-44b2-8837-c2e215fd6718', 'SPORT', 's101', 'Aston Villa vs Bournemouth',
 'English Premier League 2025-11-09 Aston Villa vs Bournemouth',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/38c4fe19-0133-4ec6-8107-98266ed776b9?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=1f20a61d230271ca888bf7d477379f1f3688419e6ef007a0a4f7f2d7b40f7df0',
 3.10, 2, 0, DEFAULT, DEFAULT),
-('aa80720d-6fef-48e1-a5f0-14b68c3d106e', 'tvSeries', '66732', '기묘한 이야기',
+('aa80720d-6fef-48e1-a5f0-14b68c3d106e', 'TV_SERIES', '66732', '기묘한 이야기',
 '인디애나주의 작은 마을에서 행방불명된 소년. 이와 함께 미스터리한 힘을 가진 소녀가 나타나고, 마을에는 기묘한 현상들이 일어나기 시작한다. 아들을 찾으려는 엄마와 마을 사람들은 이제 정부의 일급비밀 실험의 실체와 무시무시한 기묘한 현상들에 맞서야 한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/56ad6e97-cce8-4afd-8bf3-df72a13e37e2?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=39b43ef7ed05577842510bd8da1ec483559d2009284af04d633121fc8fd75045',
 4.07, 6, 0, DEFAULT, DEFAULT),
-('01fd8ad2-b219-4480-be07-6d9030bf9b95', 'tvSeries', '215286', 'คลั่ง/รัก/นักโทษ',
+('01fd8ad2-b219-4480-be07-6d9030bf9b95', 'TV_SERIES', '215286', 'คลั่ง/รัก/นักโทษ',
 '',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/49fa7b09-0112-47c7-8d3f-03e92611a030?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=9f2ff417d939c8d009f23fece6e8b35324b07de5ba9a816947046810062aa470',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('32cf12ee-6e15-41de-941e-5eb6c9ca621e', 'movie', '1183181', '힘',
+('32cf12ee-6e15-41de-941e-5eb6c9ca621e', 'MOVIE', '1183181', '힘',
 '미식축구 리그 진출을 앞둔 유망한 쿼터백 ‘캐머런 케이드’. 컴바인을 준비하던 어느 날, 정체불명의 인물에게 습격을 당하고 치명적인 부상을 입는다. 선수로서의 생명이 불투명해진 그에게 어릴 적 자신이 우상으로 여겼던 전설적인 쿼터백 ‘아이제이아 화이트’가 나타나 함께 훈련하자는 제안을 한다. 역대 최고라 불리는 선수와 함께 한다는 기쁨도 잠시 ‘최고에는 희생이 따른다’는 슬로건 아래 기이한 방식의 훈련이 이어지고 이로 인해 정신적인 혼란까지 겪게 된 그는 끝내 어두운 이면을 마주한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/bdc54209-ed95-4cbd-aeac-b7816bf064f8?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=5cde1640a5e5b3ac8ef6f8e1cf786238b4b910d688945ead982e483730683101',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('013a3fff-145f-4fdd-bf4d-b87f47af7262', 'tvSeries', '258838', '''라스트 프런티어'' - The Last Frontier',
+('013a3fff-145f-4fdd-bf4d-b87f47af7262', 'TV_SERIES', '258838', '''라스트 프런티어'' - The Last Frontier',
 '죄수 수송 비행기가 외진 알래스카 황무지에 추락하며 난폭한 죄수들이 풀려나자, 그 지역의 유일한 경찰은 자기가 지키기로 맹세한 마을의 안전을 위해 애쓴다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/3738d9a6-539c-4244-ad66-e8f2c4ff970b?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=579eaed6e7782665f4fb1c5982b6255700d3852313c95ebd3408f5d3b6d385fd',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('018b512c-4d0f-4e65-bd01-272ee8e4c293', 'tvSeries', '234220', '아이 러브 LA',
+('018b512c-4d0f-4e65-bd01-272ee8e4c293', 'TV_SERIES', '234220', '아이 러브 LA',
 '',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/feae8fb7-c9dd-43bf-9ad8-f08f833db73f?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=6eeca1ba4701e8cc415fd459f8b793ef6918013c5b236b7625350156a4f8577a',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('039561b6-523e-47ba-8231-d8117f2a63ed', 'tvSeries', '241512', '복권에 당첨되는 법',
+('039561b6-523e-47ba-8231-d8117f2a63ed', 'TV_SERIES', '241512', '복권에 당첨되는 법',
 '경제적으로 절박해진 평범한 남자. 아웃사이더들을 모아, 생방송 TV 쇼에서 복권 당첨금을 훔치는 대담한 범행을 기획한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/6c8422aa-d5ce-4221-8c9a-d8ee7b3f632f?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=0f159e0e18b857e6f2953bca66f79eb46a7641bb3a837d22e028153c3c597709',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('043d349a-248e-457d-8aac-59dd1a1e51b9', 'sport', 's102', 'Getafe vs Atlético Madrid',
+('043d349a-248e-457d-8aac-59dd1a1e51b9', 'SPORT', 's102', 'Getafe vs Atlético Madrid',
 'Spanish La Liga 2025-11-23 Getafe vs Atlético Madrid',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/ab77c374-1d62-49b0-b4d7-9f90e1cea5be?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=c6b4fd0776fb6431cfc0821b2d5c1da80e73013fc36b6ee0fc41b8804931fffd',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('0462ffb5-e98a-4c12-8f30-4c052c63bcb9', 'movie', '1097848', '굿 포춘',
+('0462ffb5-e98a-4c12-8f30-4c052c63bcb9', 'MOVIE', '1097848', '굿 포춘',
 '천사가 건드린 인생 역전, 운명의 저울이 흔들린다. 선의는 넘치지만 영 서툰 천사 가브리엘이 삶의 끝자락에서 버티는 긱 워커 ‘아지’와 호사 속을 굴리는 벤처 자본가 ‘제프’의 일상에 개입한다. 작은 도움으로 시작된 일은 두 사람의 세계를 기묘하게 뒤섞고, 돈과 성공이 진짜 행복을 보장하지 않음을 증명하려던 가브리엘의 계획마저 엉키기 시작한다. 사랑과 우정, 자존감 사이에서 균형을 찾으려 애쓰는 이들은 각자 놓쳐온 것을 돌아보게 되고, 결국 ‘행운’의 의미를 다시 정의하게 되는데...',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/2750d8bd-69e7-467d-81cd-fe708ef93bd4?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=4a8c47b231d0faf6bd5bbf5454c531199ebc13f473734d0a2868dd60a9be61c3',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('05aa5825-2398-4d12-8609-8e9c8c95460e', 'sport', 's103', 'Real Betis vs Girona',
+('05aa5825-2398-4d12-8609-8e9c8c95460e', 'SPORT', 's103', 'Real Betis vs Girona',
 'Spanish La Liga 2025-11-23 Real Betis vs Girona',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/291a3199-daeb-4685-8a17-eeee00b5358d?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=0b0846ff0197e5b097b7fd2a36c4b16566737630d2649288d3b009f5c4dc9ea9',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('05ba0c76-5623-400a-b198-30308624d32a', 'movie', '269149', '주토피아',
+('05ba0c76-5623-400a-b198-30308624d32a', 'MOVIE', '269149', '주토피아',
 '어릴 적부터 경찰이 꿈이었던 토끼 주디 홉스는 주변의 만류에도 불구하고 경찰학교에 들어가 당당히 수석으로 졸업한다. 온갖 동물들이 모여 살며 교양 있고 세련된 라이프 스타일을 주도하는 대도시 주토피아에 자원한 주디는 의욕을 안고 출근하지만, 상사는 작은 토끼라는 이유로 주차관리 같은 소일거리만 시킨다. 따분하게 업무를 보던 주디는 아이스크림 불법 판매를 일삼는 사기꾼 여우 닉 와일드를 알게 되고, 그와 함께 48시간 안에 주토피아에서 벌어지고 있는 연쇄 실종사건을 추적해야만 하는데...',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/5fc9fd01-f694-4980-b763-ecbe2bf55c75?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=59ce0e842c7997c7a6030943cc1b6ea9ea1d8eca17bf138a493435b52edd33c5',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('064e73f8-2646-4eb9-9781-af133a173a1a', 'sport', 's104', 'Mallorca vs Girona',
+('064e73f8-2646-4eb9-9781-af133a173a1a', 'SPORT', 's104', 'Mallorca vs Girona',
 'Spanish La Liga 2026-01-04 Mallorca vs Girona',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/8e1bea22-df6a-4580-91f9-c6ddc3ed0b3a?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=6742eb27cc733ca4d1eb389cc1544db8fbcb3041e8e3db64f9f665dd813584be',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('06d82ece-767d-4197-9529-ddb24263bd60', 'sport', 's105', 'Arsenal vs Wolverhampton Wanderers',
+('06d82ece-767d-4197-9529-ddb24263bd60', 'SPORT', 's105', 'Arsenal vs Wolverhampton Wanderers',
 'English Premier League 2025-12-13 Arsenal vs Wolverhampton Wanderers',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/ed79c308-ec5e-4f94-865e-67e1fed74cbb?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=896444f95adf268b229215982d6d6c5361eaabca1971078f7bceb43d5afe3aea',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('07588c12-1192-4ef8-b6c8-f488ba8bcb96', 'sport', 's106', 'Barcelona vs Athletic Bilbao',
+('07588c12-1192-4ef8-b6c8-f488ba8bcb96', 'SPORT', 's106', 'Barcelona vs Athletic Bilbao',
 'Spanish La Liga 2025-11-22 Barcelona vs Athletic Bilbao',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/f552bca5-61d5-4b28-9574-fb0bbd561b53?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=1746d5c9452b1fdb258d64293a10b7acc3215748430e1e696fb1213ea728563e',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('08aa93a9-35dd-4aed-9f53-b9f6b5b33daa', 'movie', '1241982', '극장판 귀멸의 칼날: 무한성편',
+('08aa93a9-35dd-4aed-9f53-b9f6b5b33daa', 'MOVIE', '1241982', '극장판 귀멸의 칼날: 무한성편',
 '혈귀로 변해버린 여동생 네즈코를 인간으로 되돌리기 위해 혈귀를 사냥하는 조직인 《귀살대》에 입대한 카마도 탄지로. 입대 후 동료인 아가츠마 젠이츠, 하시비라 이노스케와 함께 많은 혈귀와 싸우고, 성장하면서 세 사람의 우정과 유대는 깊어진다. 탄지로는 《귀살대》 최고위 검사인 《주》와도 함께 싸웠다. 「무한열차」에서는 염주・렌고쿠 쿄쥬로, 「유곽」에서는 음주・우즈이 텐겐, 「도공 마을」에서는 하주・토키토 무이치로, 연주・칸로지 미츠리와 함께 혈귀를 상대로 격렬한 전투를 벌였다. 그 후 다가올 혈귀와의 결전에 대비해 귀살대원들과 함께 《주》가 주도하는 합동 강화 훈련에 참가해 훈련을 받던 도중 《귀살대》의 본부인 우부야시키 저택에 나타난 키부츠지 무잔. 어르신의 위기에 달려온 《주》들과 탄지로였지만, 무잔의 술수로 의문의 공간으로 떨어지고 말았는데. 탄지로 일행이 떨어진 곳, 그곳은 혈귀의 본거지 《무한성》─ “귀살대”와 “혈귀”의 최종 결전의 포문이 열린다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/c7f79237-ad7e-4715-b63a-a02f5448d430?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=c9850f8308eb4f9ec246c4df078071b89f1314f1dd544cf687f0cc861f8b1c3b',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('0a4b929d-b987-45fc-b6ea-e06730847c8b', 'tvSeries', '103786', '종말의 발키리',
+('0a4b929d-b987-45fc-b6ea-e06730847c8b', 'TV_SERIES', '103786', '종말의 발키리',
 '7백만 년 인류 역사에 종지부를 찍기로 한 신들. 그들이 인간에게 마지막 기회를 준다. 전 세계의 신과 사상 최강의 인간이 일대일로 맞붙는 열세 번의 승부, ‘라그나로크’가 지금 시작된다!',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/664108a5-758d-4185-88f8-445e075bf959?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=6d2ba2f9e6a4e46723d76dbf0ffabe968c7486d0b61619e2f2c73344de6d1f2c',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('0ba299f3-0ce7-4d08-9c7a-f9e2a3ea8cdc', 'tvSeries', '135934', '唐诡奇谭',
+('0ba299f3-0ce7-4d08-9c7a-f9e2a3ea8cdc', 'TV_SERIES', '135934', '唐诡奇谭',
 '',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/ac5617a3-b7ac-4429-92bf-5e707685da8b?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=55a2d98844546c5816c30380939ce9f83a42a2a3b0f26e8dd3db4166cf3589de',
 0.00, 0, 0, DEFAULT, DEFAULT),
-('0c279d74-ce72-4272-b05b-5a5bc22c2f41', 'tvSeries', '280695', '''플루리부스: 행복의 시대'' - Pluribus',
+('0c279d74-ce72-4272-b05b-5a5bc22c2f41', 'TV_SERIES', '280695', '''플루리부스: 행복의 시대'' - Pluribus',
 '세상에서 가장 불행한 사람이 세상을 ''행복''으로부터 구해야 한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/1c7d9c21-0e74-49cf-82bb-dbb374f9df80?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=d7767cfe370a28c868f9ab2af6a5e7abf3d0839179da33a919d3825a12d324ce',
 0.00, 0, 0, DEFAULT, DEFAULT);
@@ -157,7 +157,124 @@ VALUES
 
 -- 3. 박카카오(u4444...)의 플레이리스트
 ('c3333333-3333-3333-3333-333333333333', 'a4444444-4444-4444-4444-444444444444',
- '스포츠 하이라이트', '박진감 넘치는 경기들만 모았습니다.', 0, DEFAULT, DEFAULT);
+ '스포츠 하이라이트', '박진감 넘치는 경기들만 모았습니다.', 0, DEFAULT, DEFAULT),
+-- 1
+('c0000000-0000-0000-0000-000000000001', 'a2222222-2222-2222-2222-222222222222', '주말 정주행 드라마 01', '주말에 몰아보기 좋은 드라마 모음 01', 5,  DEFAULT, DEFAULT),
+-- 2
+('c0000000-0000-0000-0000-000000000002', 'a3333333-3333-3333-3333-333333333333', '최신 개봉 영화 02', '보고 싶은 최신 영화 기대작 모음 02', 12, DEFAULT, DEFAULT),
+-- 3
+('c0000000-0000-0000-0000-000000000003', 'a4444444-4444-4444-4444-444444444444', '스포츠 하이라이트 03', '박진감 넘치는 경기 하이라이트 모음 03', 0,  DEFAULT, DEFAULT),
+
+-- 4
+('c0000000-0000-0000-0000-000000000004', 'a2222222-2222-2222-2222-222222222222', '퇴근 후 가볍게 04', '짧고 재밌는 콘텐츠 위주로 담은 플리 04', 3,  DEFAULT, DEFAULT),
+-- 5
+('c0000000-0000-0000-0000-000000000005', 'a3333333-3333-3333-3333-333333333333', '감성 충전 영화 05', '울컥/힐링 감성 영화 모음 05', 18, DEFAULT, DEFAULT),
+-- 6
+('c0000000-0000-0000-0000-000000000006', 'a4444444-4444-4444-4444-444444444444', '축구 경기 모음 06', '프리미어리그/라리가 경기 모음 06', 7,  DEFAULT, DEFAULT),
+
+-- 7
+('c0000000-0000-0000-0000-000000000007', 'a2222222-2222-2222-2222-222222222222', '명작 드라마 입문 07', '드라마 입문용 추천 리스트 07', 22, DEFAULT, DEFAULT),
+-- 8
+('c0000000-0000-0000-0000-000000000008', 'a3333333-3333-3333-3333-333333333333', '액션 영화 모음 08', '스트레스 날리는 액션 영화 08', 14, DEFAULT, DEFAULT),
+-- 9
+('c0000000-0000-0000-0000-000000000009', 'a4444444-4444-4444-4444-444444444444', '야구 하이라이트 09', '명장면만 모아둔 야구 하이라이트 09', 2,  DEFAULT, DEFAULT),
+
+-- 10
+('c0000000-0000-0000-0000-000000000010', 'a2222222-2222-2222-2222-222222222222', '로맨스 드라마 10', '설렘 가득 로맨스 드라마 모음 10', 9,  DEFAULT, DEFAULT),
+-- 11
+('c0000000-0000-0000-0000-000000000011', 'a3333333-3333-3333-3333-333333333333', '가족과 보기 좋은 11', '가족과 함께 보기 좋은 영화/시리즈 11', 6,  DEFAULT, DEFAULT),
+-- 12
+('c0000000-0000-0000-0000-000000000012', 'a4444444-4444-4444-4444-444444444444', '농구 명경기 12', '역대급 농구 명경기 모음 12', 11, DEFAULT, DEFAULT),
+
+-- 13
+('c0000000-0000-0000-0000-000000000013', 'a2222222-2222-2222-2222-222222222222', '스릴러 드라마 13', '긴장감 넘치는 스릴러 드라마 13', 13, DEFAULT, DEFAULT),
+-- 14
+('c0000000-0000-0000-0000-000000000014', 'a3333333-3333-3333-3333-333333333333', '한국 영화 추천 14', '요즘 핫한 한국 영화 추천 14', 20, DEFAULT, DEFAULT),
+-- 15
+('c0000000-0000-0000-0000-000000000015', 'a4444444-4444-4444-4444-444444444444', '격투 스포츠 15', '격투/무술 경기 하이라이트 15', 4,  DEFAULT, DEFAULT),
+
+-- 16
+('c0000000-0000-0000-0000-000000000016', 'a2222222-2222-2222-2222-222222222222', '힐링 드라마 16', '마음 편해지는 힐링 드라마 16', 8,  DEFAULT, DEFAULT),
+-- 17
+('c0000000-0000-0000-0000-000000000017', 'a3333333-3333-3333-3333-333333333333', 'SF 영화 모음 17', '우주/미래/과학 SF 영화 17', 16, DEFAULT, DEFAULT),
+-- 18
+('c0000000-0000-0000-0000-000000000018', 'a4444444-4444-4444-4444-444444444444', 'F1 레이스 모음 18', '속도감 폭발 레이스 경기 18', 1,  DEFAULT, DEFAULT),
+
+-- 19
+('c0000000-0000-0000-0000-000000000019', 'a2222222-2222-2222-2222-222222222222', '시트콤 추천 19', '가볍게 웃기 좋은 시트콤 19', 10, DEFAULT, DEFAULT),
+-- 20
+('c0000000-0000-0000-0000-000000000020', 'a3333333-3333-3333-3333-333333333333', '고전 영화 명작 20', '시간이 지나도 좋은 고전 명작 20', 25, DEFAULT, DEFAULT),
+-- 21
+('c0000000-0000-0000-0000-000000000021', 'a4444444-4444-4444-4444-444444444444', '테니스 명승부 21', '명승부/역전극 테니스 경기 21', 6,  DEFAULT, DEFAULT),
+
+-- 22
+('c0000000-0000-0000-0000-000000000022', 'a2222222-2222-2222-2222-222222222222', '범죄 드라마 22', '범죄/수사 드라마 모음 22', 17, DEFAULT, DEFAULT),
+-- 23
+('c0000000-0000-0000-0000-000000000023', 'a3333333-3333-3333-3333-333333333333', '애니메이션 영화 23', '가족/혼자 보기 좋은 애니 23', 19, DEFAULT, DEFAULT),
+-- 24
+('c0000000-0000-0000-0000-000000000024', 'a4444444-4444-4444-4444-444444444444', '배구 하이라이트 24', '국가대표/프로 배구 하이라이트 24', 3,  DEFAULT, DEFAULT),
+
+-- 25
+('c0000000-0000-0000-0000-000000000025', 'a2222222-2222-2222-2222-222222222222', '눈물 버튼 드라마 25', '울 준비하고 보는 드라마 25', 21, DEFAULT, DEFAULT),
+-- 26
+('c0000000-0000-0000-0000-000000000026', 'a3333333-3333-3333-3333-333333333333', '코미디 영화 26', '빵 터지는 코미디 영화 26', 8,  DEFAULT, DEFAULT),
+-- 27
+('c0000000-0000-0000-0000-000000000027', 'a4444444-4444-4444-4444-444444444444', 'e스포츠 명경기 27', 'LOL/발로란트 등 명경기 27', 15, DEFAULT, DEFAULT),
+
+-- 28
+('c0000000-0000-0000-0000-000000000028', 'a2222222-2222-2222-2222-222222222222', '정주행 필수 28', '한 번 시작하면 멈출 수 없는 28', 30, DEFAULT, DEFAULT),
+-- 29
+('c0000000-0000-0000-0000-000000000029', 'a3333333-3333-3333-3333-333333333333', '감독별 추천 29', '취향 저격 감독 작품 모음 29', 9,  DEFAULT, DEFAULT),
+-- 30
+('c0000000-0000-0000-0000-000000000030', 'a4444444-4444-4444-4444-444444444444', '프리미어리그 모음 30', 'EPL 주요 경기 모음 30', 12, DEFAULT, DEFAULT),
+
+-- 31
+('c0000000-0000-0000-0000-000000000031', 'a2222222-2222-2222-2222-222222222222', '새벽 감성 31', '새벽에 보기 좋은 잔잔한 드라마 31', 4,  DEFAULT, DEFAULT),
+-- 32
+('c0000000-0000-0000-0000-000000000032', 'a3333333-3333-3333-3333-333333333333', '반전 영화 32', '끝까지 봐야 하는 반전 영화 32', 23, DEFAULT, DEFAULT),
+-- 33
+('c0000000-0000-0000-0000-000000000033', 'a4444444-4444-4444-4444-444444444444', '라리가 모음 33', '스페인 라리가 경기 모음 33', 5,  DEFAULT, DEFAULT),
+
+-- 34
+('c0000000-0000-0000-0000-000000000034', 'a2222222-2222-2222-2222-222222222222', '추천 드라마 TOP 34', '평점 높은 드라마 모음 34', 27, DEFAULT, DEFAULT),
+-- 35
+('c0000000-0000-0000-0000-000000000035', 'a3333333-3333-3333-3333-333333333333', 'OST 맛집 영화 35', '음악 좋은 영화 모음 35', 7,  DEFAULT, DEFAULT),
+-- 36
+('c0000000-0000-0000-0000-000000000036', 'a4444444-4444-4444-4444-444444444444', '월드컵 레전드 36', '레전드 월드컵 경기 모음 36', 18, DEFAULT, DEFAULT),
+
+-- 37
+('c0000000-0000-0000-0000-000000000037', 'a2222222-2222-2222-2222-222222222222', '긴장감 MAX 37', '손에 땀 쥐는 드라마 37', 11, DEFAULT, DEFAULT),
+-- 38
+('c0000000-0000-0000-0000-000000000038', 'a3333333-3333-3333-3333-333333333333', '기분전환 영화 38', '가볍게 보기 좋은 영화 38', 2,  DEFAULT, DEFAULT),
+-- 39
+('c0000000-0000-0000-0000-000000000039', 'a4444444-4444-4444-4444-444444444444', '하이라이트 모음 39', '짧게 보는 핵심 장면 모음 39', 9,  DEFAULT, DEFAULT),
+
+-- 40
+('c0000000-0000-0000-0000-000000000040', 'a2222222-2222-2222-2222-222222222222', '드라마 명대사 40', '여운 남는 작품 위주 40', 6,  DEFAULT, DEFAULT),
+-- 41
+('c0000000-0000-0000-0000-000000000041', 'a3333333-3333-3333-3333-333333333333', '영화제 수상작 41', '영화제 수상작 중심 추천 41', 13, DEFAULT, DEFAULT),
+-- 42
+('c0000000-0000-0000-0000-000000000042', 'a4444444-4444-4444-4444-444444444444', '스포츠 다큐 추천 42', '스포츠 다큐/스토리 추천 42', 1,  DEFAULT, DEFAULT),
+
+-- 43
+('c0000000-0000-0000-0000-000000000043', 'a2222222-2222-2222-2222-222222222222', '로맨스 코미디 43', '달달하고 웃긴 드라마 43', 15, DEFAULT, DEFAULT),
+-- 44
+('c0000000-0000-0000-0000-000000000044', 'a3333333-3333-3333-3333-333333333333', '다시 보고 싶은 영화 44', 'N회차 각, 재관람 추천 44', 26, DEFAULT, DEFAULT),
+-- 45
+('c0000000-0000-0000-0000-000000000045', 'a4444444-4444-4444-4444-444444444444', '주간 경기 모음 45', '이번 주 주요 경기 모음 45', 8,  DEFAULT, DEFAULT),
+
+-- 46
+('c0000000-0000-0000-0000-000000000046', 'a2222222-2222-2222-2222-222222222222', '미스터리 드라마 46', '떡밥 회수 맛집 미스터리 46', 12, DEFAULT, DEFAULT),
+-- 47
+('c0000000-0000-0000-0000-000000000047', 'a3333333-3333-3333-3333-333333333333', '한밤의 공포 47', '무서운 거 땡길 때 보는 공포 47', 5,  DEFAULT, DEFAULT),
+-- 48
+('c0000000-0000-0000-0000-000000000048', 'a4444444-4444-4444-4444-444444444444', '챔스 레전드 48', '챔피언스리그 레전드 경기 48', 17, DEFAULT, DEFAULT),
+
+-- 49
+('c0000000-0000-0000-0000-000000000049', 'a2222222-2222-2222-2222-222222222222', '입문용 추천 49', '처음 보는 사람도 즐기는 추천 49', 4,  DEFAULT, DEFAULT),
+-- 50
+('c0000000-0000-0000-0000-000000000050', 'a3333333-3333-3333-3333-333333333333', '연말 정리 50', '올해의 영화/시리즈 정리 50', 19, DEFAULT, DEFAULT);
+
 
 
 -- playlist_contents dummy data
