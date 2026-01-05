@@ -26,7 +26,7 @@ public class ContentController {
 
   @DeleteMapping("/{contentId}")
   public ResponseEntity<Void> delete(@PathVariable("contentId") UUID contentId) {
-  	contentService.delete(contentId);
-  	return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    contentService.delete(contentId);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }
