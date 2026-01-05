@@ -65,6 +65,7 @@ public class PlaylistService {
         .build();
   }
 
+  // Playlist 구독
   @Transactional
   public void subscribe(UUID playlistId, UUID userId) {
     validateSubscriptionInputs(playlistId, userId);
@@ -87,6 +88,7 @@ public class PlaylistService {
     }
   }
 
+  // Playlist 구독 취소
   @Transactional
   public void unsubscribe(UUID playlistId, UUID userId) {
     validateSubscriptionInputs(playlistId, userId);
@@ -108,6 +110,7 @@ public class PlaylistService {
     }
   }
 
+  // Playlist 컨텐츠 추가
   @Transactional
   public void addContent(UUID playlistId, UUID contentId, UUID userId) {
     validatePlaylistContentInputs(playlistId, contentId, userId);
@@ -127,8 +130,10 @@ public class PlaylistService {
 
     PlaylistContent playlistContent = PlaylistContent.builder().id(id).build();
     playlistContentRepository.save(playlistContent);
+    log.info("playlist_content_added playlistId={} contentId={}", playlistId, contentId);
   }
 
+  // Playlist 컨텐츠 삭제
   @Transactional
   public void removeContent(UUID playlistId, UUID contentId, UUID userId) {
     validatePlaylistContentInputs(playlistId, contentId, userId);
@@ -143,6 +148,7 @@ public class PlaylistService {
     }
 
     playlistContentRepository.deleteById(id);
+    log.info("playlist_content_removed playlistId={} contentId={}", playlistId, contentId);
   }
 
   // -- 헬퍼 메서드 --
