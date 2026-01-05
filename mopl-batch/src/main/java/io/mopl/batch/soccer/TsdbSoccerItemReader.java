@@ -23,12 +23,18 @@ public class TsdbSoccerItemReader implements ItemReader<TsdbSoccerResponse> {
   private final TsdbApiClient tsdbApiClient;
 
   private final Queue<TsdbSoccerResponse> buffer = new LinkedList<>();
+  private boolean fetched = false;
 
   @Override
   public @Nullable TsdbSoccerResponse read() {
     if (!buffer.isEmpty()) {
       return buffer.poll();
     }
+
+    if (fetched) {
+      return null;
+    }
+    fetched = true;
 
     String date = LocalDate.now(ZoneOffset.UTC).toString();
     log.info("TSDB API 호출 date: {}", date);
