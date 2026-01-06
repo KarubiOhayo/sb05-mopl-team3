@@ -97,7 +97,7 @@ public class PlaylistController {
       @PathVariable UUID playlistId,
       @Valid @RequestBody PlaylistUpdateRequest request,
       @AuthenticationPrincipal(expression = "userId") UUID userId) {
-    PlaylistDto dto = playlistService.playlistUpdate(playlistId, request, userId);
+    PlaylistDto dto = playlistService.updatePlaylist(playlistId, request, userId);
     return ResponseEntity.ok(dto);
   }
 }

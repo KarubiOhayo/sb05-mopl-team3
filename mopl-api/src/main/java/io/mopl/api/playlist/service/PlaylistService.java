@@ -70,7 +70,7 @@ public class PlaylistService {
   // Playlist 구독
   @Transactional
   public void subscribe(UUID playlistId, UUID userId) {
-    validateSubscriptionInputs(playlistId, userId);
+    validatePlaylistAndUserIds(playlistId, userId);
 
     assertPlaylistExists(playlistId);
 
@@ -93,7 +93,7 @@ public class PlaylistService {
   // Playlist 구독 취소
   @Transactional
   public void unsubscribe(UUID playlistId, UUID userId) {
-    validateSubscriptionInputs(playlistId, userId);
+    validatePlaylistAndUserIds(playlistId, userId);
 
     assertPlaylistExists(playlistId);
 
@@ -153,7 +153,7 @@ public class PlaylistService {
   // Playlist 삭제
   @Transactional
   public void removePlaylist(UUID playlistId, UUID userId) {
-    validateSubscriptionInputs(playlistId, userId);
+    validatePlaylistAndUserIds(playlistId, userId);
 
     Playlist playlist = findPlaylistOrThrow(playlistId);
     assertOwner(playlist, userId);
@@ -163,9 +163,9 @@ public class PlaylistService {
 
   // Playlist 수정
   @Transactional
-  public PlaylistDto playlistUpdate(
+  public PlaylistDto updatePlaylist(
       UUID playlistId, @Valid PlaylistUpdateRequest request, UUID userId) {
-    validateSubscriptionInputs(playlistId, userId);
+    validatePlaylistAndUserIds(playlistId, userId);
 
     Playlist playlist = findPlaylistOrThrow(playlistId);
     assertOwner(playlist, userId);
@@ -176,7 +176,7 @@ public class PlaylistService {
   }
 
   // -- 헬퍼 메서드 --
-  private void validateSubscriptionInputs(UUID playlistId, UUID userId) {
+  private void validatePlaylistAndUserIds(UUID playlistId, UUID userId) {
     if (userId == null || playlistId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
