@@ -43,4 +43,8 @@ dependencies {
     // 재시도 메커니즘
     implementation 'org.springframework.retry:spring-retry:2.0.5'
     implementation 'org.springframework:spring-aspects'
+
+    // AWS S3 SDK
+    implementation platform('software.amazon.awssdk:bom:2.41.1')
+    implementation 'software.amazon.awssdk:s3:2.40.17'
 }
