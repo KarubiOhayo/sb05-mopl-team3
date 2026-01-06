@@ -109,8 +109,7 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    assert request.getName() != null;
-    if (request.getName().trim().isBlank()) {
+    if (request.getName() != null && !request.getName().isBlank()) {
       user.setName(request.getName().trim());
     }
 
