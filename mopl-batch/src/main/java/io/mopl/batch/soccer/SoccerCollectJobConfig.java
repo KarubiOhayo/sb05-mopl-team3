@@ -1,6 +1,6 @@
-package io.mopl.batch.tvseries;
+package io.mopl.batch.soccer;
 
-import io.mopl.batch.client.tmdb.dto.TmdbTvSeriesResponse;
+import io.mopl.batch.client.tsdb.dto.TsdbSoccerResponse;
 import io.mopl.batch.common.writer.ContentWithTagWriter;
 import io.mopl.batch.content.domain.Content;
 import lombok.RequiredArgsConstructor;
@@ -13,38 +13,38 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** TV 시리즈 수집 배치 잡 구성. */
+/** 축구 경기 수집 배치 잡 구성. */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class TvSeriesCollectJobConfig {
+public class SoccerCollectJobConfig {
 
-  private final TmdbTvSeriesItemReader reader;
-  private final TmdbTvSeriesItemProcessor processor;
+  private final TsdbSoccerItemReader reader;
+  private final TsdbSoccerItemProcessor processor;
   private final ContentWithTagWriter writer;
 
   /**
-   * TV 시리즈 수집 잡을 생성한다.
+   * 축구 경기 수집 잡을 생성한다.
    *
    * @param jobRepository 잡 저장소
-   * @param tvSeriesCollectStep 실행 스텝
+   * @param soccerCollectStep 실행 스텝
    * @return Job 인스턴스
    */
   @Bean
-  public Job tvSeriesCollectJob(JobRepository jobRepository, Step tvSeriesCollectStep) {
-    return new JobBuilder("tvSeriesCollectJob", jobRepository).start(tvSeriesCollectStep).build();
+  public Job soccerCollectJob(JobRepository jobRepository, Step soccerCollectStep) {
+    return new JobBuilder("soccerCollectJob", jobRepository).start(soccerCollectStep).build();
   }
 
   /**
-   * TMDB TV 시리즈 데이터를 읽어 콘텐츠로 저장하는 스텝.
+   * TheSportsDB 데이터를 읽어 콘텐츠로 저장하는 스텝.
    *
    * @param jobRepository 잡 저장소
    * @return Step 인스턴스
    */
   @Bean
-  public Step tvSeriesCollectStep(JobRepository jobRepository) {
-    return new StepBuilder("tvSeriesCollectStep", jobRepository)
-        .<TmdbTvSeriesResponse, Content>chunk(10)
+  public Step soccerCollectStep(JobRepository jobRepository) {
+    return new StepBuilder("soccerCollectStep", jobRepository)
+        .<TsdbSoccerResponse, Content>chunk(10)
         .reader(reader)
         .processor(processor)
         .writer(writer)

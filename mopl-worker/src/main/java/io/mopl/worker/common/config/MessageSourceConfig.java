@@ -5,9 +5,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
+/** 워커/코어 메시지 번들을 로드하는 MessageSource 설정. */
 @Configuration
 public class MessageSourceConfig {
 
+  /**
+   * 다국어 메시지 조회를 위한 MessageSource 빈.
+   *
+   * @return 메시지 번들 설정이 적용된 MessageSource
+   */
   @Bean
   public MessageSource messageSource() {
     ReloadableResourceBundleMessageSource messageSource =

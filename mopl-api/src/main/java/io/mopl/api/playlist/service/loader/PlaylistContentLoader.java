@@ -185,4 +185,14 @@ public class PlaylistContentLoader {
       String thumbnailUrl,
       double averageRating,
       int reviewCount) {}
+
+  // 6. 단건 조회 (위에 코드는 전체조회)
+  public List<ContentSummary> loadContentsByPlaylistId(UUID playlistId) {
+    if (playlistId == null) {
+      return List.of();
+    }
+    Map<UUID, List<ContentSummary>> map = loadContentsByPlaylistIds(List.of(playlistId));
+    List<ContentSummary> contents = map.get(playlistId);
+    return contents != null ? contents : List.of();
+  }
 }
