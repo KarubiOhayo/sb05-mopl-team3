@@ -9,6 +9,7 @@ import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserSummary;
+import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -25,6 +27,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final ProfileImageUploadService profileImageUploadService;
 
   /** 회원가입 */
   @Transactional
@@ -96,5 +99,32 @@ public class UserService {
 
     user.setTempPasswordHash(null);
     user.setTempPasswordExpiresAt(null);
+  }
+
+  /** 프로필 변경 */
+  @Transactional
+  public UserDto updateProfile(UUID userId, UserUpdateRequest request, MultipartFile profileImage) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    assert request.getName() != null;
+    if (request.getName().trim().isBlank()) {
+      user.setName(request.getName().trim());
+    }
+
+    if (profileImage != null && !profileImage.isEmpty()) {
+      if (user.getProfileImageUrl() != null) {
+        profileImageUploadService.deleteImageByUrl(user.getProfileImageUrl());
+      }
+
+      String newImageUrl = profileImageUploadService.uploadProfileImage(profileImage, userId);
+      user.setProfileImageUrl(newImageUrl);
+    }
+
+    User savedUser = userRepository.save(user);
+
+    return UserDto.from(savedUser);
   }
 }
