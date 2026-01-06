@@ -14,6 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 배치 API에서 발생하는 예외를 공통 응답 포맷으로 변환한다.
+ *
+ * <p>BusinessException은 코드/메시지를 매핑하고, 그 외 예외는 500으로 처리한다.
+ */
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -21,6 +26,12 @@ public class BatchExceptionHandler {
 
   private final MessageSource messageSource;
 
+  /**
+   * 비즈니스 예외를 처리한다.
+   *
+   * @param ex 비즈니스 예외
+   * @return 표준 에러 응답
+   */
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
@@ -29,6 +40,12 @@ public class BatchExceptionHandler {
         errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
 
+  /**
+   * 처리되지 않은 예외를 내부 서버 오류로 변환한다.
+   *
+   * @param ex 예외
+   * @return 표준 에러 응답
+   */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
     log.error("배치 처리 중 예상치 못한 예외가 발생했습니다: ", ex);

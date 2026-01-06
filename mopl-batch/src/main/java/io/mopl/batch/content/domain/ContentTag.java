@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/** 콘텐츠와 태그의 다대다 관계를 나타내는 조인 엔티티. */
 @Entity
 @Table(name = "content_tags")
 @Getter
