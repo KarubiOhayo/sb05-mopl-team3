@@ -44,7 +44,7 @@ public class ReviewService {
   }
 
   @Transactional(readOnly = true)
-  public ReviewDto findById(UUID reviewId) {
+  public ReviewDto findById(UUID reviewId, UUID userId) {
     Review review =
         reviewRepository
             .findById(reviewId)
@@ -56,7 +56,7 @@ public class ReviewService {
   }
 
   @Transactional(readOnly = true)
-  public List<ReviewDto> findByContentId(UUID contentId) {
+  public List<ReviewDto> findByContentId(UUID contentId, UUID userId) {
     List<Review> reviews = reviewRepository.findByContentId(contentId);
     return reviews.stream()
         .map(

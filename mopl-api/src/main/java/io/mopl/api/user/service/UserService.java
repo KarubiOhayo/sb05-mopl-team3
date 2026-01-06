@@ -5,6 +5,7 @@ import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.domain.UserRole;
+import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserSummary;
@@ -52,6 +53,17 @@ public class UserService {
     }
   }
 
+  /** 사용자 상세 조회 */
+  @Transactional(readOnly = true)
+  public UserDto getUserDetails(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    return UserDto.from(user);
+  }
+
   /** 사용자 확인 */
   @Transactional(readOnly = true)
   public UserSummary getUserSummary(UUID userId) {
@@ -65,5 +77,24 @@ public class UserService {
         .name(user.getName())
         .profileImageUrl(user.getProfileImageUrl())
         .build();
+  }
+
+  /** 비밀번호 변경 */
+  @Transactional
+  public void changePassword(UUID userId, ChangePasswordRequest request) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (user.getAuthProvider() != AuthProvider.LOCAL) {
+      throw new BusinessException(UserErrorCode.OAUTH_USER_CANNOT_CHANGE_PASSWORD);
+    }
+
+    String encodedPassword = passwordEncoder.encode(request.getPassword());
+    user.setPasswordHash(encodedPassword);
+
+    user.setTempPasswordHash(null);
+    user.setTempPasswordExpiresAt(null);
   }
 }

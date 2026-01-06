@@ -7,10 +7,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -21,21 +22,27 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    // 개발 편의를 위해 CSRF 비활성화 (나중에 활성화 시 아래 주석 해제 및 위 코드 삭제)
-    http.csrf(AbstractHttpConfigurer::disable)
-        //    http.csrf(
-        //            csrf ->
-        //                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-        //                    .ignoringRequestMatchers(
-        //                        request -> {
-        //                          String method = request.getMethod();
-        //                          String path = request.getRequestURI();
-        //                          return (method.equals("POST") &&
-        // path.equals("/api/auth/sign-in"))
-        //                              || (method.equals("POST") && path.equals("/api/users"))
-        //                              || (method.equals("POST") &&
-        // path.equals("/api/auth/refresh"));
-        //                        }))
+
+    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+
+    // Plain CSRF Token Handler 사용 (XOR 인코딩 비활성화)
+    CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+    requestHandler.setCsrfRequestAttributeName("_csrf");
+
+    http.csrf(
+            csrf ->
+                csrf.csrfTokenRepository(csrfTokenRepository)
+                    .csrfTokenRequestHandler(requestHandler) // Plain token handler 설정
+                    .ignoringRequestMatchers(
+                        request -> {
+                          String method = request.getMethod();
+                          String path = request.getRequestURI();
+                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화만
+                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
+                              || (method.equals("POST") && path.equals("/api/users"))
+                              || (method.equals("POST") && path.equals("/api/auth/reset-password"));
+                        }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(

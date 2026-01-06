@@ -28,6 +28,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+/**
+ * 수집된 콘텐츠(영화/TV/스포츠)를 저장하는 엔티티.
+ *
+ * <p>썸네일 소스 URL, 썸네일 타입, 태그는 배치 처리 중에만 사용하는 임시 값이다.
+ */
 @Entity
 @Table(name = "contents")
 @Getter
@@ -80,12 +85,17 @@ public class Content {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  @Transient @Setter private List<Integer> genreIds = new ArrayList<>();
-
   @Transient @Setter private String sourceThumbnailUrl;
 
   @Transient @Setter private ThumbnailSourceType thumbnailSourceType;
 
+  @Transient @Setter private List<String> tags = new ArrayList<>();
+
+  /**
+   * 저장 전에 ID가 없다면 UUID v7로 생성한다.
+   *
+   * <p>배치 처리 단계에서 명시적으로 호출되기도 한다.
+   */
   @PrePersist
   public void generateId() {
     if (this.id == null) {

@@ -1,6 +1,7 @@
 package io.mopl.api.auth.controller;
 
 import io.mopl.api.auth.dto.AuthTokens;
+import io.mopl.api.auth.dto.ResetPasswordRequest;
 import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,5 +34,12 @@ public class AuthController {
   public ResponseEntity<AuthTokens> refresh(@RequestBody String refreshToken) {
     AuthTokens tokens = authService.reissueToken(refreshToken);
     return ResponseEntity.ok(tokens);
+  }
+
+  /** 비밀번호 초기화 후 이메일 전송 */
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    authService.resetPassword(request);
+    return ResponseEntity.noContent().build();
   }
 }

@@ -1,5 +1,6 @@
 package io.mopl.api.review.controller;
 
+import io.mopl.api.common.config.AuthUser;
 import io.mopl.api.review.dto.ReviewCreateRequest;
 import io.mopl.api.review.dto.ReviewDto;
 import io.mopl.api.review.service.ReviewService;
@@ -31,22 +32,30 @@ public class ReviewController {
   @Operation(summary = "리뷰 생성", description = "새로운 리뷰를 작성합니다.")
   @PostMapping
   public ResponseEntity<ReviewDto> createReview(
-      @Valid @RequestBody ReviewCreateRequest request, @AuthenticationPrincipal UUID userId) {
+      @Valid @RequestBody ReviewCreateRequest request, @AuthenticationPrincipal AuthUser authUser) {
+    UUID userId = authUser.getUserId();
     ReviewDto reviewDto = reviewService.create(request, userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(reviewDto);
   }
 
   @Operation(summary = "리뷰 단건 조회", description = "특정 리뷰를 단건 조회합니다.")
   @GetMapping("/{reviewId}")
-  public ResponseEntity<ReviewDto> getReview(@PathVariable UUID reviewId) {
-    ReviewDto reviewDto = reviewService.findById(reviewId);
+  public ResponseEntity<ReviewDto> getReview(
+      @PathVariable UUID reviewId, @AuthenticationPrincipal AuthUser authUser) {
+    UUID userId = (authUser != null) ? authUser.getUserId() : null;
+
+    ReviewDto reviewDto = reviewService.findById(reviewId, userId);
     return ResponseEntity.ok(reviewDto);
   }
 
   @Operation(summary = "콘텐츠별 리뷰 목록 조회", description = "특정 콘텐츠에 달린 리뷰 목록을 조회합니다.")
   @GetMapping
-  public ResponseEntity<List<ReviewDto>> getReviews(@RequestParam UUID contentId) {
-    List<ReviewDto> reviews = reviewService.findByContentId(contentId);
+  public ResponseEntity<List<ReviewDto>> getReviews(
+      @RequestParam UUID contentId, @AuthenticationPrincipal AuthUser authUser) {
+
+    UUID userId = (authUser != null) ? authUser.getUserId() : null;
+
+    List<ReviewDto> reviews = reviewService.findByContentId(contentId, userId);
     return ResponseEntity.ok(reviews);
   }
 }

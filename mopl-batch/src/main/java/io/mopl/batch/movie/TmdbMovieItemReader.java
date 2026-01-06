@@ -12,6 +12,11 @@ import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * TMDB 인기 영화 목록을 페이지 단위로 읽어오는 ItemReader.
+ *
+ * <p>내부 버퍼가 비면 다음 페이지를 호출해 채우고, 버퍼가 소진되면 null을 반환한다.
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -26,6 +31,11 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
   @Value("${tmdb.max-pages.movie:10}")
   private int maxPages;
 
+  /**
+   * 다음 영화 항목을 반환한다.
+   *
+   * @return 다음 영화 항목, 더 이상 없으면 null
+   */
   @Override
   public TmdbMovieResponse read() {
     // 1. 버퍼에 데이터가 남아있으면 즉시 반환
