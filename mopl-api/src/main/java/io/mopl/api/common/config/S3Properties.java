@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "aws.s3")
-public class S3properties {
+public class S3Properties {
 
   private String accessKey;
   private String secretKey;
