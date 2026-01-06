@@ -20,7 +20,7 @@ public interface PlaylistContentRepository
               + "values (:playlistId, :contentId) "
               + "on duplicate key update playlist_id = playlist_id",
       nativeQuery = true)
-  int insertIgnore(@Param("playlistId") UUID playlistId, @Param("contentId") UUID contentId);
+  int insertIgnore(@Param("playlistId") String playlistId, @Param("contentId") String contentId);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("delete from PlaylistContent pc where pc.id.contentId = :contentId")

@@ -125,7 +125,8 @@ public class PlaylistService {
       throw new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND);
     }
 
-    int affected = playlistContentRepository.insertIgnore(playlistId, contentId);
+    int affected =
+        playlistContentRepository.insertIgnore(playlistId.toString(), contentId.toString());
     if (affected == 0) {
       log.debug(
           "playlist_content_already_exists playlistId={} contentId={}", playlistId, contentId);
