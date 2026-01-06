@@ -98,9 +98,8 @@ public class AuthController {
 
   /** CSRF 토큰 조회 */
   @GetMapping("/csrf-token")
-  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    csrfToken.getToken();
-    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
+    return ResponseEntity.noContent().build();
   }
 
   /** 비밀번호 초기화 후 이메일 전송 */

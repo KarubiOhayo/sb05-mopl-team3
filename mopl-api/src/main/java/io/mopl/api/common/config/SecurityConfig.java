@@ -81,6 +81,19 @@ public class SecurityConfig {
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
 
+                    /* ========== SPA 프론트엔드 라우트 ========== */
+                    .requestMatchers(
+                        "/profiles/**",
+                        "/playlists/**",
+                        "/contents/**",
+                        "/conversations/**",
+                        "/notifications/**")
+                    .permitAll()
+
+                    /* ========== CSRF 토큰 발급 ========== */
+                    .requestMatchers(HttpMethod.GET, "/api/csrf")
+                    .permitAll()
+
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
                     .requestMatchers("/api/auth/**")

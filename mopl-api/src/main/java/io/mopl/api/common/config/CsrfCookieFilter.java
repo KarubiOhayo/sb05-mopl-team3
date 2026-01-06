@@ -2,27 +2,46 @@ package io.mopl.api.common.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.filter.GenericFilterBean;
 
-/** CSRF 토큰 쿠키 자동 생성 필터 */
+/** CSRF 토큰 쿠키 생성 필터 */
+@Slf4j
 @Component
-public class CsrfCookieFilter extends OncePerRequestFilter {
+public class CsrfCookieFilter extends GenericFilterBean {
+
+  private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
 
   @Override
-  protected void doFilterInternal(
-      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-      throws ServletException, IOException {
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
 
-    CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+    CsrfToken csrfToken = (CsrfToken) httpRequest.getAttribute(CsrfToken.class.getName());
+
     if (csrfToken != null) {
-      csrfToken.getToken();
+      String token = csrfToken.getToken();
+
+      Cookie cookie = new Cookie(CSRF_COOKIE_NAME, token);
+      cookie.setPath("/");
+      cookie.setHttpOnly(false);
+      cookie.setSecure(false); // TODO: Production에서는 true
+      cookie.setMaxAge(-1);
+
+      httpResponse.addCookie(cookie);
+      log.debug("CSRF 쿠키 설정: {}", token.substring(0, Math.min(10, token.length())) + "...");
     }
 
-    filterChain.doFilter(request, response);
+    chain.doFilter(request, response);
   }
 }

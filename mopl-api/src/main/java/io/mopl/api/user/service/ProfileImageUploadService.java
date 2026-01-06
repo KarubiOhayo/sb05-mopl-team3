@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
@@ -42,7 +41,6 @@ public class ProfileImageUploadService {
               .bucket(s3Properties.getBucket())
               .key(key)
               .contentType(file.getContentType())
-              .acl(ObjectCannedACL.PUBLIC_READ)
               .serverSideEncryption(ServerSideEncryption.AES256)
               .build();
 
