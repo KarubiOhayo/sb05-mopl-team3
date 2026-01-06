@@ -64,4 +64,13 @@ public class Playlist {
       this.id = UuidV7Generator.generate();
     }
   }
+
+  public void update(String title, String description) {
+    if (title != null) {
+      this.title = title;
+    }
+    if (description != null) {
+      this.description = description;
+    }
+  }
 }

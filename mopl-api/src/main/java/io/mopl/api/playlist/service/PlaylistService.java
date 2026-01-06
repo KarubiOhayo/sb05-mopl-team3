@@ -8,6 +8,7 @@ import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import io.mopl.api.playlist.dto.PlaylistCreateRequest;
 import io.mopl.api.playlist.dto.PlaylistDto;
+import io.mopl.api.playlist.dto.PlaylistUpdateRequest;
 import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.playlist.repository.PlaylistRepository;
 import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
@@ -15,6 +16,7 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class PlaylistService {
   private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
   private final ContentRepository contentRepository;
   private final PlaylistContentRepository playlistContentRepository;
+  private final PlaylistQueryService playlistQueryService;
 
   // Playlist 생성
   @Transactional
@@ -145,6 +148,31 @@ public class PlaylistService {
 
     playlistContentRepository.deleteById(id);
     log.info("playlist_content_removed playlistId={} contentId={}", playlistId, contentId);
+  }
+
+  // Playlist 삭제
+  @Transactional
+  public void removePlaylist(UUID playlistId, UUID userId) {
+    validateSubscriptionInputs(playlistId, userId);
+
+    Playlist playlist = findPlaylistOrThrow(playlistId);
+    assertOwner(playlist, userId);
+    playlistRepository.deleteById(playlistId);
+    log.info("playlist_deleted playlistId={} userId={}", playlistId, userId);
+  }
+
+  // Playlist 수정
+  @Transactional
+  public PlaylistDto playlistUpdate(
+      UUID playlistId, @Valid PlaylistUpdateRequest request, UUID userId) {
+    validateSubscriptionInputs(playlistId, userId);
+
+    Playlist playlist = findPlaylistOrThrow(playlistId);
+    assertOwner(playlist, userId);
+
+    playlist.update(request.getTitle(), request.getDescription());
+
+    return playlistQueryService.findPlaylist(playlistId, userId);
   }
 
   // -- 헬퍼 메서드 --
