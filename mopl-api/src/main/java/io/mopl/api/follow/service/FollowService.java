@@ -49,7 +49,7 @@ public class FollowService {
 
   @Transactional(readOnly = true)
   public boolean followedByMe(UUID followeeId, UUID userId) {
-    validateUserAndFolloweeId(followeeId, userId);
+    validateIdsAndFolloweeExists(followeeId, userId);
     if (followeeId.equals(userId)) {
       return false;
     }
@@ -58,7 +58,7 @@ public class FollowService {
 
   @Transactional(readOnly = true)
   public long count(UUID followeeId, UUID userId) {
-    validateUserAndFolloweeId(followeeId, userId);
+    validateIdsAndFolloweeExists(followeeId, userId);
     return followRepository.countByFolloweeId(followeeId);
   }
 
@@ -88,7 +88,7 @@ public class FollowService {
         .build();
   }
 
-  private void validateUserAndFolloweeId(UUID followeeId, UUID userId) {
+  private void validateIdsAndFolloweeExists(UUID followeeId, UUID userId) {
     if (userId == null || followeeId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
