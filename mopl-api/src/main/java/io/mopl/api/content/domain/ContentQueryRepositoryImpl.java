@@ -62,7 +62,8 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     UUID nextIdAfter = null;
 
     if (hasNext && !fetched.isEmpty()) {
-      Content last = fetched.get(fetched.size() - 1);
+      // Content last = fetched.get(fetched.size() - 1);
+      Content last = fetched.getLast();
 
       nextIdAfter = last.getId();
       if (sortBy == SortBy.CREATED_AT) {
@@ -197,10 +198,14 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     DESC;
 
     static SortDirection from(String direction) {
-      return switch (direction) {
-        case "ASCENDING" -> ASC;
-        default -> DESC;
-      };
+      // return switch (direction) {
+      //   case "ASCENDING" -> ASC;
+      //   default -> DESC;
+      // };
+		if (direction.equals("ASCENDING")) {
+			return ASC;
+		}
+		return DESC;
     }
   }
 }
