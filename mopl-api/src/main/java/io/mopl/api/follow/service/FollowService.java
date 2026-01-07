@@ -47,6 +47,7 @@ public class FollowService {
             });
   }
 
+  @Transactional(readOnly = true)
   public boolean followedByMe(UUID followeeId, UUID userId) {
     validateUserAndFolloweeId(followeeId, userId);
     if (followeeId.equals(userId)) {
@@ -55,13 +56,15 @@ public class FollowService {
     return followRepository.findByFollowerIdAndFolloweeId(userId, followeeId).isPresent();
   }
 
+  @Transactional(readOnly = true)
   public long count(UUID followeeId, UUID userId) {
     validateUserAndFolloweeId(followeeId, userId);
     return followRepository.countByFolloweeId(followeeId);
   }
 
+  @Transactional
   public void cancel(UUID followId, UUID userId) {
-    if (userId == null || followId == null) {
+    if (followId == null || userId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
 
