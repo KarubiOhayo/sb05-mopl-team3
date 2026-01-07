@@ -42,6 +42,16 @@ spring:
           writetimeout: 5000
           ssl:
             trust: smtp.gmail.com
+security:
+  cookie:
+    same-site: Lax
+    csrf:
+      name: XSRF-TOKEN
+      http-only: false
+    refresh-token:
+      name: REFRESH_TOKEN
+      http-only: true
+      max-age: 604800
 
 management:
   endpoints:

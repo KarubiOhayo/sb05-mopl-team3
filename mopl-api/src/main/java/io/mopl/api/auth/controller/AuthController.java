@@ -7,6 +7,7 @@ import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
 import io.mopl.api.auth.service.RefreshTokenService;
+import io.mopl.api.common.config.CookieSecurityProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -32,6 +33,7 @@ public class AuthController {
   private final AuthService authService;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
+  private final CookieSecurityProperties cookieSecurityProperties;
 
   private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
@@ -66,10 +68,10 @@ public class AuthController {
   private void clearRefreshTokenCookie(HttpServletResponse response) {
     Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
     cookie.setHttpOnly(true);
-    cookie.setSecure(false); // TODO: production 환경에서는 true
+    cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
     cookie.setMaxAge(0);
-    cookie.setAttribute("SameSite", "Strict");
+    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
     response.addCookie(cookie);
   }
@@ -88,10 +90,10 @@ public class AuthController {
   private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
     Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
     cookie.setHttpOnly(true);
-    cookie.setSecure(false); // TODO: production 환경에서는 true
+    cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
     cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
-    cookie.setAttribute("SameSite", "Strict");
+    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
     response.addCookie(cookie);
   }
