@@ -102,7 +102,7 @@ public class ProfileImageUploadService {
     String extension =
         originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
     long timestamp = System.currentTimeMillis();
-    return userId + "_" + timestamp + extension;
+    return userId + "_" + timestamp + "." + extension;
   }
 
   /** Public URL 생성 */
