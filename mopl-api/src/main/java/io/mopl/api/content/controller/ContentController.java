@@ -30,7 +30,7 @@ public class ContentController {
   }
 
   @GetMapping
-  public ResponseEntity<CursorResponseContentDto> findAll(/*@Valid*/ @ModelAttribute ContentSearchRequest contentSearchRequest) {
+  public ResponseEntity<CursorResponseContentDto> findAll(@Valid @ModelAttribute ContentSearchRequest contentSearchRequest) {
     return ResponseEntity.ok(contentService.findAll(contentSearchRequest));
   }
 
