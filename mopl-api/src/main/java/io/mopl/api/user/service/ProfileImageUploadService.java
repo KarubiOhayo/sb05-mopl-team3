@@ -82,8 +82,18 @@ public class ProfileImageUploadService {
 
   /** 허용된 확장자인지 확인 */
   private boolean isAllowedExtension(String originalFilename) {
-    String extension =
-        originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+
+    if (originalFilename == null || originalFilename.isBlank()) {
+      return false;
+    }
+
+    int dotIndex = originalFilename.lastIndexOf('.');
+
+    if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
+      return false;
+    }
+
+    String extension = originalFilename.substring(dotIndex + 1).toLowerCase();
     return ALLOWED_EXTENSIONS.contains(extension);
   }
 
