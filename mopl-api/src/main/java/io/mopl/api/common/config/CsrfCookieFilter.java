@@ -37,6 +37,7 @@ public class CsrfCookieFilter extends GenericFilterBean {
       cookie.setHttpOnly(false);
       cookie.setSecure(false); // TODO: Production에서는 true
       cookie.setMaxAge(-1);
+      cookie.setAttribute("SameSite", "Lax");
 
       httpResponse.addCookie(cookie);
       log.debug("CSRF 쿠키 설정: {}", token.substring(0, Math.min(10, token.length())) + "...");
