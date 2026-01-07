@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -48,7 +49,8 @@ public class ProfileImageUploadService {
 
       return generatePublicUrl(key);
 
-    } catch (IOException e) {
+    } catch (IOException | SdkException e) {
+      log.error("프로필 이미지 업로드 실패 - userId: {}", userId, e);
       throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
