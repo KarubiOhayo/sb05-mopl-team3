@@ -25,7 +25,7 @@ spring:
 
 security:
   cookie:
-    secure: false
+    secure: ${SECURITY_COOKIE_SECURE:false}
 
 server:
   port: ${MOPL_PORT:8080}

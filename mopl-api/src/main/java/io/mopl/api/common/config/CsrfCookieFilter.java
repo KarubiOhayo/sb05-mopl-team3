@@ -36,7 +36,7 @@ public class CsrfCookieFilter extends GenericFilterBean {
     if (csrfToken != null) {
       String token = csrfToken.getToken();
 
-      Cookie cookie = new Cookie(CSRF_COOKIE_NAME, token);
+      Cookie cookie = new Cookie(cookieSecurityProperties.getCsrf().getName(), token);
       cookie.setPath("/");
       cookie.setHttpOnly(cookieSecurityProperties.getCsrf().isHttpOnly());
       cookie.setSecure(cookieSecurityProperties.isSecure());

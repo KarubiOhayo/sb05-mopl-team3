@@ -21,7 +21,7 @@ spring:
 
 security:
   cookie:
-    secure: true
+    secure: ${SECURITY_COOKIE_SECURE:true}
 
 logging:
   level:

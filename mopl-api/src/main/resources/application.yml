@@ -44,14 +44,14 @@ spring:
             trust: smtp.gmail.com
 security:
   cookie:
-    same-site: Lax
+    same-site: ${COOKIE_SAME_SITE:Lax}
     csrf:
-      name: XSRF-TOKEN
-      http-only: false
+      name: ${CSRF_COOKIE_NAME:XSRF-TOKEN}
+      http-only: ${CSRF_HTTP_ONLY:false}
     refresh-token:
-      name: REFRESH_TOKEN
-      http-only: true
-      max-age: 604800
+      name: ${REFRESH_TOKEN_NAME:REFRESH_TOKEN}
+      http-only: ${REFRESH_TOKEN_HTTP_ONLY:true}
+      max-age: ${REFRESH_TOKEN_MAX_AGE:604800}
 
 management:
   endpoints:
