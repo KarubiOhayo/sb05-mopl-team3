@@ -11,16 +11,13 @@ import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,11 +77,11 @@ public class ContentService {
 
     ContentPage page = contentRepository.findContentPage(contentSearchRequest);
 
-    long totalCount = contentRepository.countContents(
-        contentSearchRequest.getTypeEqual(),
-        contentSearchRequest.getKeywordLike(),
-        contentSearchRequest.getTagsIn()
-    );
+    long totalCount =
+        contentRepository.countContents(
+            contentSearchRequest.getTypeEqual(),
+            contentSearchRequest.getKeywordLike(),
+            contentSearchRequest.getTagsIn());
 
     List<Content> contents = page.getContents();
     List<UUID> contentIds = contents.stream().map(Content::getId).toList();
@@ -96,19 +93,21 @@ public class ContentService {
       tagsByContentId.computeIfAbsent(contentId, k -> new ArrayList<>()).add(tagName);
     }
 
-    List<ContentDto> data = contents.stream()
-        .map(c -> new ContentDto(
-            c.getId(),
-            c.getType(),
-            c.getTitle(),
-            c.getDescription(),
-            c.getThumbnailUrl(),
-            tagsByContentId.getOrDefault(c.getId(), List.of()),
-            c.getAverageRating(),
-            c.getReviewCount(),
-            c.getWatcherCount()
-        ))
-        .toList();
+    List<ContentDto> data =
+        contents.stream()
+            .map(
+                c ->
+                    new ContentDto(
+                        c.getId(),
+                        c.getType(),
+                        c.getTitle(),
+                        c.getDescription(),
+                        c.getThumbnailUrl(),
+                        tagsByContentId.getOrDefault(c.getId(), List.of()),
+                        c.getAverageRating(),
+                        c.getReviewCount(),
+                        c.getWatcherCount()))
+            .toList();
 
     return CursorResponseContentDto.builder()
         .data(data)
