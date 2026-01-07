@@ -7,6 +7,7 @@ import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
 import io.mopl.api.auth.service.RefreshTokenService;
+import io.mopl.api.common.config.CookieSecurityProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -32,7 +33,9 @@ public class AuthController {
   private final AuthService authService;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
+  private final CookieSecurityProperties cookieSecurityProperties;
 
+  // 주의: 이 상수값은 application.yml의 REFRESH_TOKEN_NAME 기본값과 일치해야 함
   private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
   /** 로그인 Content-Type: application/x-www-form-urlencoded */
@@ -64,12 +67,12 @@ public class AuthController {
 
   /** 리프레시 토큰 쿠키 제거 */
   private void clearRefreshTokenCookie(HttpServletResponse response) {
-    Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
+    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), null);
     cookie.setHttpOnly(true);
-    cookie.setSecure(false); // TODO: production 환경에서는 true
+    cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
     cookie.setMaxAge(0);
-    cookie.setAttribute("SameSite", "Strict");
+    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
     response.addCookie(cookie);
   }
@@ -86,21 +89,20 @@ public class AuthController {
 
   /** 리프레시 토큰 쿠키 설정 */
   private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-    Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
+    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
     cookie.setHttpOnly(true);
-    cookie.setSecure(false); // TODO: production 환경에서는 true
+    cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
     cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
-    cookie.setAttribute("SameSite", "Strict");
+    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
     response.addCookie(cookie);
   }
 
   /** CSRF 토큰 조회 */
   @GetMapping("/csrf-token")
-  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    csrfToken.getToken();
-    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
+    return ResponseEntity.noContent().build();
   }
 
   /** 비밀번호 초기화 후 이메일 전송 */
