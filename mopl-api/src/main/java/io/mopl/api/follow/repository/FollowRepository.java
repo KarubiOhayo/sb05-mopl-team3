@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
   Optional<Follow> findByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
+
+  long countByFolloweeId(UUID followeeId);
 }

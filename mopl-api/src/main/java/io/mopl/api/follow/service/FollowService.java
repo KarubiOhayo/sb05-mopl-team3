@@ -47,11 +47,48 @@ public class FollowService {
             });
   }
 
+  public boolean followedByMe(UUID followeeId, UUID userId) {
+    validateUserAndFolloweeId(followeeId, userId);
+    if (followeeId.equals(userId)) {
+      return false;
+    }
+    return followRepository.findByFollowerIdAndFolloweeId(userId, followeeId).isPresent();
+  }
+
+  public long count(UUID followeeId, UUID userId) {
+    validateUserAndFolloweeId(followeeId, userId);
+    return followRepository.countByFolloweeId(followeeId);
+  }
+
+  public void cancel(UUID followId, UUID userId) {
+    if (userId == null || followId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+
+    Follow follow =
+        followRepository
+            .findById(followId)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.FORBIDDEN));
+
+    if (!follow.getFollowerId().equals(userId)) {
+      throw new BusinessException(CommonErrorCode.FORBIDDEN);
+    }
+    followRepository.deleteById(followId);
+  }
+
+  // -- 헬퍼 메서드 --
   private FollowDto toDto(Follow follow) {
     return FollowDto.builder()
         .id(follow.getId())
         .followerId(follow.getFollowerId())
         .followeeId(follow.getFolloweeId())
         .build();
+  }
+
+  private void validateUserAndFolloweeId(UUID followeeId, UUID userId) {
+    if (userId == null || followeeId == null) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+    userService.getUserSummary(followeeId);
   }
 }
