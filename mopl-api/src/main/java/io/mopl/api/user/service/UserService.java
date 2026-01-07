@@ -114,12 +114,17 @@ public class UserService {
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      if (user.getProfileImageUrl() != null) {
-        profileImageUploadService.deleteImageByUrl(user.getProfileImageUrl());
-      }
+      String oldImageUrl = user.getProfileImageUrl();
 
       String newImageUrl = profileImageUploadService.uploadProfileImage(profileImage, userId);
       user.setProfileImageUrl(newImageUrl);
+      if (oldImageUrl != null) {
+        try {
+          profileImageUploadService.deleteImageByUrl(oldImageUrl);
+        } catch (Exception e) {
+          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageUrl, e);
+        }
+      }
     }
 
     User savedUser = userRepository.save(user);
