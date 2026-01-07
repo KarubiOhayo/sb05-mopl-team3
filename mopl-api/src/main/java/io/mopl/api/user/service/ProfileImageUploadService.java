@@ -4,8 +4,10 @@ import io.mopl.api.common.config.S3Properties;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,21 +29,28 @@ public class ProfileImageUploadService {
   private final S3Properties s3Properties;
 
   private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");
+  private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
   private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   /** 프로필 이미지 업로드 */
   public String uploadProfileImage(MultipartFile file, UUID userId) {
     validateImage(file);
 
-    String fileName = generateProfileImageFileName(userId);
+    String fileName =
+        generateProfileImageFileName(userId, Objects.requireNonNull(file.getOriginalFilename()));
     String key = s3Properties.getProfileImagePath() + fileName;
+
+    String contentType = file.getContentType();
+    if (contentType == null || contentType.isBlank()) {
+      contentType = DEFAULT_CONTENT_TYPE;
+    }
 
     try {
       PutObjectRequest putObjectRequest =
           PutObjectRequest.builder()
               .bucket(s3Properties.getBucket())
               .key(key)
-              .contentType(file.getContentType())
+              .contentType(contentType)
               .serverSideEncryption(ServerSideEncryption.AES256)
               .build();
 
@@ -79,9 +88,11 @@ public class ProfileImageUploadService {
   }
 
   /** 프로필 이미지 파일명 생성 */
-  private String generateProfileImageFileName(UUID userId) {
+  private String generateProfileImageFileName(UUID userId, String originalFilename) {
+    String extension =
+        originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
     long timestamp = System.currentTimeMillis();
-    return userId + "_" + timestamp + ".jpg";
+    return userId + "_" + timestamp + extension;
   }
 
   /** Public URL 생성 */
@@ -95,12 +106,11 @@ public class ProfileImageUploadService {
   private String extractKeyFromUrl(String url) {
     // URL 형식: https://{bucket}.s3.{region}.amazonaws.com/{key}
     try {
-      String[] parts = url.split("\\?")[0].split(s3Properties.getBucket() + "/");
-      if (parts.length > 1) {
-        return parts[1];
-      }
-      return url.split("amazonaws.com/")[1].split("\\?")[0];
+      URI uri = URI.create(url);
+      String path = uri.getPath();
+      return path.startsWith("/") ? path.substring(1) : path;
     } catch (Exception e) {
+      log.error("S3 키 추출 실패 - url: {}", url, e);
       throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
