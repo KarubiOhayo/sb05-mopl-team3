@@ -68,7 +68,7 @@ public class FollowService {
     Follow follow =
         followRepository
             .findById(followId)
-            .orElseThrow(() -> new BusinessException(CommonErrorCode.FORBIDDEN));
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
 
     if (!follow.getFollowerId().equals(userId)) {
       throw new BusinessException(CommonErrorCode.FORBIDDEN);
