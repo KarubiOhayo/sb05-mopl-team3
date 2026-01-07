@@ -21,6 +21,7 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final CsrfCookieFilter csrfCookieFilter;
+  private final CookieSecurityProperties cookieSecurityProperties;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -42,9 +43,10 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+
+    csrfTokenRepository.setCookieName(cookieSecurityProperties.getCsrf().getName());
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
-    // Plain CSRF Token Handler 사용 (XOR 인코딩 비활성화)
     CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
     requestHandler.setCsrfRequestAttributeName("_csrf");
 

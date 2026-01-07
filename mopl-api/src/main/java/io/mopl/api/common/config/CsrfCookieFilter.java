@@ -22,8 +22,6 @@ public class CsrfCookieFilter extends GenericFilterBean {
 
   private final CookieSecurityProperties cookieSecurityProperties;
 
-  private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
-
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {

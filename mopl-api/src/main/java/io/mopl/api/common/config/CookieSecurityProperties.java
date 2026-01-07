@@ -13,10 +13,10 @@ import org.springframework.stereotype.Component;
 public class CookieSecurityProperties {
 
   /** HTTPS에서만 쿠키 전송 여부 (프로덕션: true, 개발: false) */
-  private boolean secure = false;
+  private boolean secure;
 
   /** SameSite 속성 (Strict, Lax, None) */
-  private String sameSite = "Lax";
+  private String sameSite;
 
   /** CSRF 토큰 쿠키 설정 */
   private CsrfCookie csrf = new CsrfCookie();
@@ -27,15 +27,15 @@ public class CookieSecurityProperties {
   @Getter
   @Setter
   public static class CsrfCookie {
-    private String name = "XSRF-TOKEN";
-    private boolean httpOnly = false;
+    private String name;
+    private boolean httpOnly;
   }
 
   @Getter
   @Setter
   public static class RefreshTokenCookie {
-    private String name = "REFRESH_TOKEN";
-    private boolean httpOnly = true;
-    private int maxAge = 604800; // 7일
+    private String name;
+    private boolean httpOnly;
+    private int maxAge;
   }
 }

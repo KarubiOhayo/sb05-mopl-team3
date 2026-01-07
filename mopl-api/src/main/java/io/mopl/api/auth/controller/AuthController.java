@@ -66,7 +66,7 @@ public class AuthController {
 
   /** 리프레시 토큰 쿠키 제거 */
   private void clearRefreshTokenCookie(HttpServletResponse response) {
-    Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
+    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), null);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
@@ -88,7 +88,7 @@ public class AuthController {
 
   /** 리프레시 토큰 쿠키 설정 */
   private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-    Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
+    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
     cookie.setPath("/api/auth");
