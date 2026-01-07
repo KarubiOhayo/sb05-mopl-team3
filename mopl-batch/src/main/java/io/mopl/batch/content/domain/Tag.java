@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/** 콘텐츠에 부여되는 태그 엔티티. */
 @Entity
 @Table(name = "tags")
 @Getter
@@ -31,6 +32,11 @@ public class Tag {
   @Column(nullable = false, length = 100)
   private String name;
 
+  /**
+   * 저장 전에 ID가 없다면 UUID v7로 생성한다.
+   *
+   * <p>태그 생성 시점에만 호출된다.
+   */
   @PrePersist
   public void generateId() {
     if (this.id == null) {

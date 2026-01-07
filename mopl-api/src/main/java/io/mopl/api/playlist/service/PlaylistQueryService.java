@@ -2,15 +2,21 @@ package io.mopl.api.playlist.service;
 
 import io.mopl.api.content.dto.ContentSummary;
 import io.mopl.api.playlist.domain.Playlist;
+import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import io.mopl.api.playlist.dto.CursorResponsePlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistDto;
+import io.mopl.api.playlist.dto.PlaylistPage;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;
-import io.mopl.api.playlist.repository.PlaylistPage;
 import io.mopl.api.playlist.repository.PlaylistQueryRepository;
+import io.mopl.api.playlist.repository.PlaylistRepository;
+import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
 import io.mopl.api.playlist.service.loader.PlaylistContentLoader;
 import io.mopl.api.playlist.service.loader.PlaylistOwnerLoader;
 import io.mopl.api.playlist.service.loader.PlaylistSubscriptionLoader;
 import io.mopl.api.user.dto.UserSummary;
+import io.mopl.api.user.service.UserService;
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +36,11 @@ public class PlaylistQueryService {
   private final PlaylistOwnerLoader playlistOwnerLoader;
   private final PlaylistSubscriptionLoader playlistSubscriptionLoader;
   private final PlaylistContentLoader playlistContentLoader;
+  private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
+  private final PlaylistRepository playlistRepository;
+  private final UserService userService;
 
+  // Playlist 조회
   public CursorResponsePlaylistDto findPlaylists(PlaylistSearchRequest request, UUID me) {
 
     // 1) 파라미터 기본값/안전장치
@@ -110,6 +120,35 @@ public class PlaylistQueryService {
         .totalCount(totalCount)
         .sortBy(sortBy)
         .sortDirection(sortDirection)
+        .build();
+  }
+
+  // playlist 단건 조회
+  public PlaylistDto findPlaylist(UUID playlistId, UUID me) {
+    Playlist playlist =
+        playlistRepository
+            .findById(playlistId)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+
+    UserSummary owner = userService.getUserSummary(playlist.getOwnerId());
+
+    boolean subscribedByMe = false;
+    if (me != null) {
+      PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, me);
+      subscribedByMe = playlistSubscriptionRepository.existsById(id);
+    }
+
+    List<ContentSummary> contents = playlistContentLoader.loadContentsByPlaylistId(playlistId);
+
+    return PlaylistDto.builder()
+        .id(playlistId)
+        .owner(owner)
+        .title(playlist.getTitle())
+        .description(playlist.getDescription())
+        .updatedAt(playlist.getUpdatedAt())
+        .subscriberCount(playlist.getSubscriberCount())
+        .subscribedByMe(subscribedByMe)
+        .contents(contents)
         .build();
   }
 }

@@ -21,6 +21,7 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final CsrfCookieFilter csrfCookieFilter;
+  private final CookieSecurityProperties cookieSecurityProperties;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -42,9 +43,10 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+
+    csrfTokenRepository.setCookieName(cookieSecurityProperties.getCsrf().getName());
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
-    // Plain CSRF Token Handler 사용 (XOR 인코딩 비활성화)
     CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
     requestHandler.setCsrfRequestAttributeName("_csrf");
 
@@ -56,9 +58,10 @@ public class SecurityConfig {
                         request -> {
                           String method = request.getMethod();
                           String path = request.getRequestURI();
-                          // CSRF 검증 제외: 회원가입, 로그인만
+                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화만
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"));
+                              || (method.equals("POST") && path.equals("/api/users"))
+                              || (method.equals("POST") && path.equals("/api/auth/reset-password"));
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -78,6 +81,19 @@ public class SecurityConfig {
                         "/vite.svg")
                     .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
+                    .permitAll()
+
+                    /* ========== SPA 프론트엔드 라우트 ========== */
+                    .requestMatchers(
+                        "/profiles/**",
+                        "/playlists/**",
+                        "/contents/**",
+                        "/conversations/**",
+                        "/notifications/**")
+                    .permitAll()
+
+                    /* ========== CSRF 토큰 발급 ========== */
+                    .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token")
                     .permitAll()
 
                     /* ========== 인증 관리 ========== */
