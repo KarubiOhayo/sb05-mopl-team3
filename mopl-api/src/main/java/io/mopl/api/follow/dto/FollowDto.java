@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class FollowDto {
 
   private UUID id;
-  private UUID followeeId;
-  private UUID followerId;
+  private UUID followeeId; // 팔로우 대상 사용자 ID
+  private UUID followerId; // 팔로워 사용자 ID
 }
