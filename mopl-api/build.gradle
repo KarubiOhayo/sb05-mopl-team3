@@ -46,5 +46,5 @@ dependencies {
 
     // AWS S3 SDK
     implementation platform('software.amazon.awssdk:bom:2.41.1')
-    implementation 'software.amazon.awssdk:s3:2.40.17'
+    implementation 'software.amazon.awssdk:s3'
 }
