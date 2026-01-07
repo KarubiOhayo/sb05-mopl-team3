@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface UserRepositoryCustom {
 
   /** 사용자 목록을 커서 기반 페이지네이션으로 조회 */
-  UserPage findUserPage(
+  UserPage findUsersPage(
       String emailLike,
       String roleEqual,
       Boolean isLocked,
