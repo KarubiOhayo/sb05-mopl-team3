@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
-  Optional<Follow> findByFollowerIdAndFolloweeId(UUID userId, UUID followeeId);
+  Optional<Follow> findByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
 }
