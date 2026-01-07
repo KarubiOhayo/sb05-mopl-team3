@@ -70,6 +70,7 @@ public class ContentService {
     log.info("컨텐츠 삭제 완료: contentId: {}", contentId);
   }
 
+  @Transactional(readOnly = true)
   public CursorResponseContentDto findAll(ContentSearchRequest contentSearchRequest) {
 
     String sortBy = contentSearchRequest.getSortByOrDefault();
