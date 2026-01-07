@@ -4,9 +4,8 @@ import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.content.service.ContentService;
-import java.util.UUID;
-
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +29,8 @@ public class ContentController {
   }
 
   @GetMapping
-  public ResponseEntity<CursorResponseContentDto> findAll(@Valid @ModelAttribute ContentSearchRequest contentSearchRequest) {
+  public ResponseEntity<CursorResponseContentDto> findAll(
+      @Valid @ModelAttribute ContentSearchRequest contentSearchRequest) {
     return ResponseEntity.ok(contentService.findAll(contentSearchRequest));
   }
 
