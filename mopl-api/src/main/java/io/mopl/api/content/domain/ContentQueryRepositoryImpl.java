@@ -21,8 +21,8 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   private static final QContent c = QContent.content;
-  QContentTag ct = QContentTag.contentTag;
-  QTag t = QTag.tag;
+  private static final QContentTag ct = QContentTag.contentTag;
+  private static final QTag t = QTag.tag;
   private final JPAQueryFactory queryFactory;
 
   @Override
