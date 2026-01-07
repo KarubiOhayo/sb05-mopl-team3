@@ -197,10 +197,10 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     DESC;
 
     static SortDirection from(String direction) {
-		if (direction.equals("ASCENDING")) {
-			return ASC;
-		}
-		return DESC;
+      if (direction.equals("ASCENDING")) {
+        return ASC;
+      }
+      return DESC;
     }
   }
 }
