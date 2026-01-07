@@ -91,7 +91,7 @@ public class SecurityConfig {
                     .permitAll()
 
                     /* ========== CSRF 토큰 발급 ========== */
-                    .requestMatchers(HttpMethod.GET, "/api/csrf")
+                    .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token")
                     .permitAll()
 
                     /* ========== 인증 관리 ========== */
