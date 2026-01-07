@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class ContentSearchRequest {
 	@Pattern(
-		regexp = "^(movie|tvSeries|sport)$?",
+		regexp = "^(movie|tvSeries|sport)?$",
 		message = "typeEqual must be movie, tvSeries or sport."
 	)
 	private String typeEqual;
@@ -27,13 +27,13 @@ public class ContentSearchRequest {
 	private Integer limit;
 
 	@Pattern(
-		regexp = "^(ASCENDING|DESCENDING)$?",
+		regexp = "^(ASCENDING|DESCENDING)?$",
 		message = "sortDirection must be ASCENDING or DESCENDING."
 	)
 	private String sortDirection;
 
 	@Pattern(
-		regexp = "^(createdAt|watcherCount|rate)$?",
+		regexp = "^(createdAt|watcherCount|rate)?$",
 		message = "sortBy must be createdAt or watcherCount or rate."
 	)
 	private String sortBy;
