@@ -53,9 +53,9 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
 			.limit(request.getLimitOrDefault() + 1)
 			.fetch();
 
-		boolean hasNext = fetched.size() > request.getLimit();
+		boolean hasNext = fetched.size() > request.getLimitOrDefault();
 		if (hasNext) {
-			fetched = fetched.subList(0, request.getLimit());
+			fetched = fetched.subList(0, request.getLimitOrDefault());
 		}
 
 		String nextCursor = null;
@@ -164,8 +164,7 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
 			where.and(
 				c.title.containsIgnoreCase(keywordLike)
 					.or(descriptionAsString.containsIgnoreCase(keywordLike)));
-			// where.and(c.title.containsIgnoreCase(keywordLike)
-			// 	.or(c.description.containsIgnoreCase(keywordLike)));
+
 		}
 		if (tagsIn != null && !tagsIn.isEmpty()) {
 			int tagCount = (int) tagsIn.stream().distinct().count();
@@ -180,14 +179,6 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
 						.having(t.name.countDistinct().eq((long) tagCount))
 				)
 			);
-			// where.and(
-			// 	c.id.in(
-			// 		JPAExpressions.select(ct.id.contentId)
-			// 			.from(ct)
-			// 			.join(t).on(ct.id.tagId.eq(t.id))
-			// 			.where(t.name.in(tagsIn))
-			// 	)
-			// );
 		}
 
 		return where;
