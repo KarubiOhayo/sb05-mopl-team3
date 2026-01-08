@@ -52,8 +52,6 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
       where.and(cursorCondition);
     }
 
-    OrderSpecifier<?> primaryOrder = buildPrimaryOrder(sortBy, sortDirection, u);
-
     List<User> fetched =
         queryFactory
             .selectFrom(u)
