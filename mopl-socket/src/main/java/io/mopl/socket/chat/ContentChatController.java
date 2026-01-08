@@ -1,7 +1,9 @@
 package io.mopl.socket.chat;
 
+import io.mopl.core.error.BusinessException;
 import io.mopl.socket.chat.dto.ContentChatDto;
 import io.mopl.socket.chat.dto.ContentChatSendRequest;
+import io.mopl.socket.common.error.SocketErrorCode;
 import io.mopl.socket.user.dto.UserSummary;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import java.security.Principal;
@@ -47,6 +49,6 @@ public class ContentChatController {
     if (principal instanceof SocketUserPrincipal socketUser) {
       return socketUser;
     }
-    throw new IllegalStateException("WebSocket 인증 정보가 없습니다");
+    throw new BusinessException(SocketErrorCode.MISSING_AUTHENTICATION);
   }
 }

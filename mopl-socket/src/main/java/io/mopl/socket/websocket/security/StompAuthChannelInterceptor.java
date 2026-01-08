@@ -1,13 +1,14 @@
 package io.mopl.socket.websocket.security;
 
+import io.mopl.core.error.BusinessException;
 import io.mopl.socket.auth.jwt.JwtTokenProvider;
+import io.mopl.socket.common.error.SocketErrorCode;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -31,7 +32,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
   private final JwtTokenProvider jwtTokenProvider;
 
   @Override
-  public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+  public Message<?> preSend(Message<?> message, MessageChannel channel) {
     StompHeaderAccessor accessor =
         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
@@ -43,7 +44,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
       String token = resolveToken(accessor);
       if (!StringUtils.hasText(token) || !jwtTokenProvider.validateToken(token)) {
         log.warn("WebSocket CONNECT 인증 실패");
-        throw new IllegalArgumentException("Invalid WebSocket token");
+        throw new BusinessException(SocketErrorCode.INVALID_TOKEN);
       }
 
       SocketUserPrincipal principal =

@@ -6,6 +6,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import io.mopl.core.error.BusinessException;
+import io.mopl.socket.common.error.SocketErrorCode;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -70,8 +72,8 @@ public class JwtTokenProvider {
       JWTClaimsSet claims = parseClaims(token);
       return claims.getStringClaim("email");
     } catch (ParseException e) {
-      log.error("JWT에서 email 추출 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT에서 email 추출에 실패했습니다", e);
+      log.error("JWT에서 이메일 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
     }
   }
 
@@ -81,8 +83,8 @@ public class JwtTokenProvider {
       JWTClaimsSet claims = parseClaims(token);
       return claims.getStringClaim("role");
     } catch (ParseException e) {
-      log.error("JWT에서 role 추출 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT에서 role 추출에 실패했습니다", e);
+      log.error("JWT에서 권한 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
     }
   }
 
@@ -92,8 +94,8 @@ public class JwtTokenProvider {
       JWTClaimsSet claims = parseClaims(token);
       return claims.getStringClaim("name");
     } catch (ParseException e) {
-      log.error("JWT에서 name 추출 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT에서 name 추출에 실패했습니다", e);
+      log.error("JWT에서 이름 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
     }
   }
 
@@ -103,8 +105,8 @@ public class JwtTokenProvider {
       JWTClaimsSet claims = parseClaims(token);
       return claims.getStringClaim("profileImageUrl");
     } catch (ParseException e) {
-      log.error("JWT에서 profileImageUrl 추출 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT에서 profileImageUrl 추출에 실패했습니다", e);
+      log.error("JWT에서 프로필 이미지 URL 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
     }
   }
 
@@ -125,7 +127,7 @@ public class JwtTokenProvider {
 
       return true;
     } catch (Exception e) {
-      log.error("Invalid JWT token: {}", e.getMessage());
+      log.error("유효하지 않은 JWT 토큰: {}", e.getMessage());
       return false;
     }
   }
@@ -137,7 +139,7 @@ public class JwtTokenProvider {
       String type = claims.getStringClaim("type");
       return "refresh".equals(type);
     } catch (ParseException e) {
-      log.error("토큰 타입 검증에 실패했습니다", e);
+      log.error("토큰 타입 검증 실패", e);
       return false;
     }
   }
@@ -149,7 +151,7 @@ public class JwtTokenProvider {
       return signedJWT.getJWTClaimsSet();
     } catch (ParseException e) {
       log.error("JWT 파싱 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT 파싱에 실패했습니다", e);
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
     }
   }
 }

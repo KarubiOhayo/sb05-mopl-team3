@@ -158,7 +158,7 @@ public class WatchingSessionService {
       String json = objectMapper.writeValueAsString(userInfo);
       redisTemplate.opsForValue().set(userInfoKey(userId), json);
     } catch (Exception e) {
-      log.error("Failed to save user info to Redis", e);
+      log.error("Redis에 사용자 정보 저장 실패", e);
     }
   }
 
@@ -168,7 +168,7 @@ public class WatchingSessionService {
       try {
         return objectMapper.readValue(json, UserSummary.class);
       } catch (Exception e) {
-        log.error("Failed to parse user info from Redis", e);
+        log.error("Redis에서 사용자 정보 파싱 실패", e);
       }
     }
     // Fallback

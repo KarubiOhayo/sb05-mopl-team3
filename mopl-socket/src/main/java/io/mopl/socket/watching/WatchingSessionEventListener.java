@@ -57,8 +57,7 @@ public class WatchingSessionEventListener {
 
     SocketUserPrincipal socketUser = resolvePrincipal(event.getUser());
     if (socketUser == null) {
-      log.warn(
-          "Subscribe event ignored due to missing user principal. destination={}", destination);
+      log.warn("사용자 인증 정보가 없어 구독 이벤트가 무시되었습니다. destination={}", destination);
       return;
     }
 
@@ -163,7 +162,8 @@ public class WatchingSessionEventListener {
     if (principal instanceof SocketUserPrincipal socketUser) {
       return socketUser;
     }
-    log.warn("Unknown principal type: {}", principal.getClass().getName());
+    // log.warn("Unknown principal type: {}", principal.getClass().getName()); // 인증되지 않은 세션일 수 있으므로
+    // 로그 레벨 조정 또는 제거
     return null;
   }
 

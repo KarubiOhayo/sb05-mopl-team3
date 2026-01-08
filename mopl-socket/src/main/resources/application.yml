@@ -3,6 +3,8 @@ spring:
     name: mopl-socket
   profiles:
     default: dev
+  messages:
+    basename: core-messages,ValidationMessages
   kafka:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
