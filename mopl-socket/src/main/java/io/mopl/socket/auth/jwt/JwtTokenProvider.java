@@ -1,8 +1,6 @@
 package io.mopl.socket.auth.jwt;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -60,57 +58,6 @@ public class JwtTokenProvider {
     }
   }
 
-  /** Access Token 생성 */
-  public String createAccessToken(UUID userId, String email, String role) {
-    try {
-      Date now = new Date();
-      Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
-
-      JWTClaimsSet claimsSet =
-          new JWTClaimsSet.Builder()
-              .subject(userId.toString())
-              .claim("email", email)
-              .claim("role", role)
-              .issueTime(now)
-              .expirationTime(validity)
-              .build();
-
-      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
-
-      signedJWT.sign(signer);
-
-      return signedJWT.serialize();
-    } catch (JOSEException e) {
-      log.error("JWT 토큰 생성 실패: {}", e.getMessage());
-      throw new RuntimeException("JWT 토큰 생성에 실패했습니다", e);
-    }
-  }
-
-  /** Refresh Token 생성 (JWT 기반) */
-  public String createRefreshToken(UUID userId) {
-    try {
-      Date now = new Date();
-      Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
-
-      JWTClaimsSet claimsSet =
-          new JWTClaimsSet.Builder()
-              .subject(userId.toString())
-              .claim("type", "refresh")
-              .issueTime(now)
-              .expirationTime(validity)
-              .build();
-
-      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
-
-      signedJWT.sign(signer);
-
-      return signedJWT.serialize();
-    } catch (JOSEException e) {
-      log.error("리프레시 토큰 생성 실패: {}", e.getMessage());
-      throw new RuntimeException("리프레시 토큰 생성에 실패했습니다", e);
-    }
-  }
-
   /** 토큰에서 userId 추출 */
   public UUID getUserId(String token) {
     JWTClaimsSet claims = parseClaims(token);
@@ -136,6 +83,28 @@ public class JwtTokenProvider {
     } catch (ParseException e) {
       log.error("JWT에서 role 추출 실패: {}", e.getMessage());
       throw new RuntimeException("JWT에서 role 추출에 실패했습니다", e);
+    }
+  }
+
+  /** 토큰에서 name 추출 */
+  public String getName(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("name");
+    } catch (ParseException e) {
+      log.error("JWT에서 name 추출 실패: {}", e.getMessage());
+      throw new RuntimeException("JWT에서 name 추출에 실패했습니다", e);
+    }
+  }
+
+  /** 토큰에서 profileImageUrl 추출 */
+  public String getProfileImageUrl(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("profileImageUrl");
+    } catch (ParseException e) {
+      log.error("JWT에서 profileImageUrl 추출 실패: {}", e.getMessage());
+      throw new RuntimeException("JWT에서 profileImageUrl 추출에 실패했습니다", e);
     }
   }
 
