@@ -61,19 +61,26 @@ public class JwtTokenProvider {
   }
 
   /** Access Token 생성 */
-  public String createAccessToken(UUID userId, String email, String role) {
+  public String createAccessToken(
+      UUID userId, String email, String role, String name, String profileImageUrl) {
     try {
       Date now = new Date();
       Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
 
-      JWTClaimsSet claimsSet =
+      JWTClaimsSet.Builder claimsSetBuilder =
           new JWTClaimsSet.Builder()
               .subject(userId.toString())
               .claim("email", email)
               .claim("role", role)
+              .claim("name", name)
               .issueTime(now)
-              .expirationTime(validity)
-              .build();
+              .expirationTime(validity);
+
+      if (profileImageUrl != null) {
+        claimsSetBuilder.claim("profileImageUrl", profileImageUrl);
+      }
+
+      JWTClaimsSet claimsSet = claimsSetBuilder.build();
 
       SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
 

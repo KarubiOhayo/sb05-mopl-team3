@@ -57,7 +57,12 @@ public class AuthService {
     validatePassword(request.getPassword(), user);
 
     String accessToken =
-        jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        jwtTokenProvider.createAccessToken(
+            user.getId(),
+            user.getEmail(),
+            user.getRole().name(),
+            user.getName(),
+            user.getProfileImageUrl());
 
     String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
@@ -97,7 +102,12 @@ public class AuthService {
     }
 
     String newAccessToken =
-        jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        jwtTokenProvider.createAccessToken(
+            user.getId(),
+            user.getEmail(),
+            user.getRole().name(),
+            user.getName(),
+            user.getProfileImageUrl());
 
     String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken);
