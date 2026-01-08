@@ -64,8 +64,14 @@ public class UserSearchRequest {
       if ("createdAt".equals(sort)) {
         Instant.parse(cursor);
         return true;
+      } else if ("isLocked".equals(sort)) {
+        if (!"true".equals(cursor) && !"false".equals(cursor)) {
+          return false;
+        }
+        return true;
+      } else {
+        return !cursor.isBlank();
       }
-      return true;
     } catch (Exception e) {
       return false;
     }
