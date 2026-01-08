@@ -116,9 +116,6 @@ fabric.properties
 ### Java ###
 # Compiled class file
 
-# Log file
-*.log
-
 # BlueJ files
 *.ctxt
 
@@ -255,3 +252,5 @@ logs/
 # Prometheus/Grafana 로컬 데이터
 /docker/prometheus/data/
 /docker/grafana/data/
+
+AGENT.md

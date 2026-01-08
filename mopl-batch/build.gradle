@@ -5,11 +5,17 @@ plugins {
 dependencies {
     implementation project(':mopl-core')
     implementation project(':mopl-infrastructure:db')
+    implementation project(':mopl-infrastructure:kafka')
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // UUID v7
+    implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
 }

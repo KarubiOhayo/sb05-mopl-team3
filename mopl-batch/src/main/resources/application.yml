@@ -12,6 +12,31 @@ spring:
         format_sql: true
   jackson:
     time-zone: UTC
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: io.mopl.core.event.*
+
+tmdb:
+  access-token: ${TMDB_ACCESS_TOKEN:your-access-token-here}
+  language: ${TMDB_LANGUAGE:ko-KR}
+  max-pages:
+    movie: ${TMDB_MAX_PAGES_MOVIE:10}
+    tv-series: ${TMDB_MAX_PAGES_TV_SERIES:10}
+
+tsdb:
+  api-key: ${TSDB_API_KEY:123} # TSDB의 무료 API key는 123
+
+batch:
+  schedule:
+    movie-collect-cron: ${BATCH_MOVIE_COLLECT_CRON:0 0 4 * * *}
+    tv-series-collect-cron: ${BATCH_TV_SERIES_COLLECT_CRON:0 0 3 * * *}
+    soccer-collect-cron: ${BATCH_SOCCER_COLLECT_CRON:0 0 2 * * *}
 
 management:
   endpoints:

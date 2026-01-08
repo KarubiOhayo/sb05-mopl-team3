@@ -1,5 +1,6 @@
 package io.mopl.api.user.dto;
 
+import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRole;
 import java.time.Instant;
 import java.util.UUID;
@@ -21,4 +22,16 @@ public class UserDto {
   private String profileImageUrl;
   private UserRole role;
   private boolean locked;
+
+  public static UserDto from(User user) {
+    return UserDto.builder()
+        .id(user.getId())
+        .createdAt(user.getCreatedAt())
+        .email(user.getEmail())
+        .name(user.getName())
+        .profileImageUrl(user.getProfileImageUrl())
+        .role(user.getRole())
+        .locked(user.isLocked())
+        .build();
+  }
 }

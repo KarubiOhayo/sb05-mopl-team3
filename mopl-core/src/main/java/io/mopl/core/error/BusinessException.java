@@ -1,5 +1,6 @@
 package io.mopl.core.error;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 
@@ -10,14 +11,19 @@ public class BusinessException extends RuntimeException {
   private final Map<String, String> details;
 
   public BusinessException(ErrorCode errorCode) {
-    super(errorCode.getMessage());
+    super(errorCode.getMessageKey());
     this.errorCode = errorCode;
-    this.details = Map.of();
+    this.details = new HashMap<>();
   }
 
-  public BusinessException(ErrorCode errorCode, Map<String, String> details) {
-    super(errorCode.getMessage());
+  public BusinessException(ErrorCode errorCode, Throwable cause) {
+    super(errorCode.getMessageKey());
     this.errorCode = errorCode;
-    this.details = details == null ? Map.of() : Map.copyOf(details);
+    this.details = new HashMap<>();
+  }
+
+  public BusinessException addDetail(String key, String value) {
+    this.details.put(key, value);
+    return this;
   }
 }

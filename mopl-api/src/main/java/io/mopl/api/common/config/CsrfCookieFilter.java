@@ -1,0 +1,53 @@
+package io.mopl.api.common.config;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.GenericFilterBean;
+
+/** CSRF 토큰 쿠키 생성 필터 */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class CsrfCookieFilter extends GenericFilterBean {
+
+  private final CookieSecurityProperties cookieSecurityProperties;
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+    CsrfToken csrfToken = (CsrfToken) httpRequest.getAttribute(CsrfToken.class.getName());
+
+    if (csrfToken != null) {
+      String token = csrfToken.getToken();
+
+      Cookie cookie = new Cookie(cookieSecurityProperties.getCsrf().getName(), token);
+      cookie.setPath("/");
+      cookie.setHttpOnly(cookieSecurityProperties.getCsrf().isHttpOnly());
+      cookie.setSecure(cookieSecurityProperties.isSecure());
+      cookie.setMaxAge(-1);
+      cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
+
+      httpResponse.addCookie(cookie);
+      log.debug(
+          "CSRF 쿠키 설정: secure={}, sameSite={}",
+          cookieSecurityProperties.isSecure(),
+          cookieSecurityProperties.getSameSite());
+    }
+
+    chain.doFilter(request, response);
+  }
+}
