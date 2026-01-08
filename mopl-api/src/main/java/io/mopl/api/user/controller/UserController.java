@@ -11,11 +11,10 @@ import io.mopl.api.user.service.UserQueryService;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +30,10 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "User", description = "사용자 관리 API")
+@Slf4j
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
   private final UserService userService;
@@ -48,11 +47,11 @@ public class UserController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
+  /** 회원가입 */
   @PostMapping
-  public ResponseEntity<UserDto> signUp(@Valid @RequestBody UserCreateRequest request) {
-    UserDto userDto = userService.createUser(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
+  public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreateRequest request) {
+    UserDto response = userService.createUser(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @GetMapping("/{userId}")
