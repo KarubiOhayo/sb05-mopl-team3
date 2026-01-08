@@ -26,6 +26,4 @@ public interface UserRepository extends JpaRepository<User, UUID>, UserRepositor
       "UPDATE User u SET u.tempPasswordHash = null, u.tempPasswordExpiresAt = null "
           + "WHERE u.tempPasswordHash IS NOT NULL AND u.tempPasswordExpiresAt <= :now")
   int clearExpiredTempPasswords(@Param("now") Instant now);
-
-  String role(UserRole role);
 }
