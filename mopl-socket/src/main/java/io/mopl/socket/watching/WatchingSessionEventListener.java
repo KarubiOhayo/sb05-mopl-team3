@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -24,6 +25,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WatchingSessionEventListener {
@@ -54,7 +56,16 @@ public class WatchingSessionEventListener {
     }
 
     SocketUserPrincipal socketUser = resolvePrincipal(event.getUser());
-    long watcherCount = watchingSessionService.join(contentId, socketUser.userId());
+    if (socketUser == null) {
+      log.warn(
+          "Subscribe event ignored due to missing user principal. destination={}", destination);
+      return;
+    }
+
+    // 이름과 프로필 이미지도 함께 저장
+    long watcherCount =
+        watchingSessionService.join(
+            contentId, socketUser.userId(), socketUser.name(), socketUser.profileImageUrl());
 
     WatchingSessionChange change =
         WatchingSessionChange.builder()
@@ -83,6 +94,10 @@ public class WatchingSessionEventListener {
     }
 
     SocketUserPrincipal socketUser = resolvePrincipal(event.getUser());
+    if (socketUser == null) {
+      return;
+    }
+
     long watcherCount = watchingSessionService.leave(contentId, socketUser.userId());
 
     WatchingSessionChange change =
@@ -103,6 +118,10 @@ public class WatchingSessionEventListener {
     }
 
     SocketUserPrincipal socketUser = resolvePrincipal(principal);
+    if (socketUser == null) {
+      return;
+    }
+
     Optional<String> contentId = watchingSessionService.getWatchingContentId(socketUser.userId());
     if (contentId.isEmpty()) {
       subscriptionRegistry.removeSession(event.getSessionId());
@@ -134,6 +153,9 @@ public class WatchingSessionEventListener {
   }
 
   private SocketUserPrincipal resolvePrincipal(Principal principal) {
+    if (principal == null) {
+      return null;
+    }
     if (principal instanceof UsernamePasswordAuthenticationToken auth
         && auth.getPrincipal() instanceof SocketUserPrincipal socketUser) {
       return socketUser;
@@ -141,21 +163,23 @@ public class WatchingSessionEventListener {
     if (principal instanceof SocketUserPrincipal socketUser) {
       return socketUser;
     }
-    throw new IllegalStateException("WebSocket 인증 정보가 없습니다");
+    log.warn("Unknown principal type: {}", principal.getClass().getName());
+    return null;
   }
 
   private WatchingSessionDto buildSession(String contentId, SocketUserPrincipal socketUser) {
     UserSummary watcher =
         UserSummary.builder()
             .userId(socketUser.userId())
-            .name(socketUser.email())
-            .profileImageUrl(null)
+            .name(socketUser.name())
+            .profileImageUrl(socketUser.profileImageUrl())
             .build();
 
     ContentSummary content = ContentSummary.builder().id(UUID.fromString(contentId)).build();
 
     return WatchingSessionDto.builder()
-        .id(UUID.randomUUID())
+        // 세션 ID를 랜덤 UUID 대신 userId로 고정하여 프론트엔드 상태 동기화 문제 해결
+        .id(socketUser.userId())
         .createdAt(Instant.now())
         .watcher(watcher)
         .content(content)
