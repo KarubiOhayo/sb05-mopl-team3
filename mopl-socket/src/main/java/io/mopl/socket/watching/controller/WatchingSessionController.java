@@ -24,6 +24,6 @@ public class WatchingSessionController {
   @GetMapping("/contents/{contentId}/watching-sessions")
   public ResponseEntity<CursorResponse<WatchingSessionDto>> getWatchingSessions(
       @PathVariable UUID contentId, @ModelAttribute WatchingSessionSearchRequest request) {
-    return null;
+    return ResponseEntity.ok(watchingSessionService.findByContentId(contentId, request));
   }
 }

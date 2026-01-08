@@ -10,6 +10,11 @@ public final class RedisKeyPrefix {
   /** 이메일 인증 코드: email:verify:{email} */
   public static final String EMAIL_VERIFICATION = "email:verify:";
 
+  /** 시청 세션: watching:content/user:{contentId/userId} */
+  public static final String CONTENT_PREFIX = "watching:content:";
+
+  public static final String USER_PREFIX = "watching:user:";
+
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
     throw new AssertionError("Cannot instantiate constants class");
