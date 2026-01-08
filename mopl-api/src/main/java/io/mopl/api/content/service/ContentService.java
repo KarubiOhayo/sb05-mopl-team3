@@ -38,22 +38,35 @@ public class ContentService {
   private final ReviewRepository reviewRepository;
   private final PlaylistContentRepository playlistContentRepository;
   private final TagRepository tagRepository;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
 
 	@Transactional
 	@PreAuthorize("hasRole('ADMIN')")
 	public ContentDto create(ContentCreateRequest contentCreateRequest, MultipartFile thumbnail) {
-		log.info("컨텐츠 생성을 시작합니다.");
+		log.info("컨텐츠 생성 시작 - type: {}, titleLen: {}, tags: {}, thumbnail: {}",
+			contentCreateRequest.getType(),
+			contentCreateRequest.getTitle() != null ? contentCreateRequest.getTitle().length() : 0,
+			contentCreateRequest.getTags() != null ? contentCreateRequest.getTags().size() : 0,
+			(thumbnail != null && !thumbnail.isEmpty()));
+
 		String title = contentCreateRequest.getTitle();
 		String description = contentCreateRequest.getDescription();
+
+		String thumbnailUrl = null;
+		if (thumbnail != null && !thumbnail.isEmpty()) {
+			thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+			log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
+		}
 
 		Content content = Content.builder()
 			.type(contentCreateRequest.getType())
 			.title(title)
 			.description(description)
-			// null 대신 dml에 있는 thumbnail_url 주소 아무거나 넣기
-			.thumbnailUrl(null)
+			.thumbnailUrl(thumbnailUrl)
 			.build();
 		contentRepository.save(content);
+
+		log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
 
 		List<String> tagNames = contentCreateRequest.getTags();
 
