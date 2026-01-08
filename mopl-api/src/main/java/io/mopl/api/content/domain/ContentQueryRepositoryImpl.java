@@ -151,9 +151,10 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
         case "movie" -> where.and(c.type.eq(ContentType.MOVIE));
         case "tvSeries" -> where.and(c.type.eq(ContentType.TV_SERIES));
         case "sport" -> where.and(c.type.eq(ContentType.SPORT));
-        default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-            .addDetail("reason", "유효하지 않은 typeEqual 값입니다.")
-            .addDetail("typeEqual", typeEqual);
+        default ->
+            throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+                .addDetail("reason", "유효하지 않은 typeEqual 값입니다.")
+                .addDetail("typeEqual", typeEqual);
       }
     }
     if (keywordLike != null && !keywordLike.isBlank()) {
@@ -191,9 +192,10 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
         case "createdAt" -> CREATED_AT;
         case "rate" -> RATE;
         case "watcherCount" -> WATCHER_COUNT;
-        default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-             .addDetail("reason", "유효하지 않은 sortBy 값입니다.")
-             .addDetail("sortBy", from);
+        default ->
+            throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+                .addDetail("reason", "유효하지 않은 sortBy 값입니다.")
+                .addDetail("sortBy", from);
       };
     }
   }
@@ -206,9 +208,10 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
       return switch (direction) {
         case "ASCENDING" -> ASC;
         case "DESCENDING" -> DESC;
-        default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-            .addDetail("reason", "유효하지 않은 sortDirection 값입니다.")
-            .addDetail("direction", direction);
+        default ->
+            throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+                .addDetail("reason", "유효하지 않은 sortDirection 값입니다.")
+                .addDetail("direction", direction);
       };
     }
   }
