@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -8,6 +9,7 @@ import io.mopl.api.user.domain.UserRole;
 import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.api.user.dto.UserLockUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
@@ -28,6 +30,7 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
+  private final RefreshTokenService refreshTokenService;
 
   /** 회원가입 */
   @Transactional
@@ -130,5 +133,20 @@ public class UserService {
     User savedUser = userRepository.save(user);
 
     return UserDto.from(savedUser);
+  }
+
+  /** 계정 잠금 상태 변경 */
+  @Transactional
+  public void lockUser(UUID userId, UserLockUpdateRequest request) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    user.setLocked(request.getLocked());
+
+    if (request.getLocked()) {
+      refreshTokenService.deleteRefreshToken(userId);
+    }
   }
 }
