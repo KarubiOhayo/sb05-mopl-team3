@@ -40,6 +40,7 @@ public class User {
   @Column(nullable = false, unique = true)
   private String email;
 
+  @Setter
   @Column(length = 100)
   private String name;
 
@@ -63,11 +64,12 @@ public class User {
   @Builder.Default
   private boolean locked = false;
 
+  @Setter
   @Column(name = "profile_image_url", length = 2048)
   private String profileImageUrl;
 
-  @Column(name = "temp_password_hash", length = 255)
   @Setter
+  @Column(name = "temp_password_hash", length = 255)
   private String tempPasswordHash;
 
   @Setter
