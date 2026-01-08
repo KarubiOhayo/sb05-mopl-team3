@@ -267,11 +267,20 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     if (value == null || value.isBlank()) {
       return SortDirection.DESC;
     }
+
+    String normalized = value.toUpperCase();
+
+    if ("ASCENDING".equals(normalized)) {
+      return SortDirection.ASC;
+    } else if ("DESCENDING".equals(normalized)) {
+      return SortDirection.DESC;
+    }
+
     try {
-      return SortDirection.valueOf(value.toUpperCase());
+      return SortDirection.valueOf(normalized);
     } catch (IllegalArgumentException e) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
-          .addDetail("reason", "잘못된 sortDirection 값입니다.")
+          .addDetail("reason", "잘못된 sortDirection 값입니다. ASCENDING 또는 DESCENDING을 사용하세요.")
           .addDetail("sortDirection", value);
     }
   }
