@@ -146,12 +146,14 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   private BooleanBuilder buildBaseWhere(String typeEqual, String keywordLike, List<String> tagsIn) {
     BooleanBuilder where = new BooleanBuilder();
 
-    // typeEqual이 movie, tvSeries, sport가 아닌 다른 값이 들어올 경우, 전체 contentType에 대한 컨텐츠를 검색하도록 함
     if (typeEqual != null && !typeEqual.isBlank()) {
       switch (typeEqual) {
         case "movie" -> where.and(c.type.eq(ContentType.MOVIE));
         case "tvSeries" -> where.and(c.type.eq(ContentType.TV_SERIES));
         case "sport" -> where.and(c.type.eq(ContentType.SPORT));
+        default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+            .addDetail("reason", "유효하지 않은 typeEqual 값입니다.")
+            .addDetail("typeEqual", typeEqual);
       }
     }
     if (keywordLike != null && !keywordLike.isBlank()) {
