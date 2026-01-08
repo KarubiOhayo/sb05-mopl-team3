@@ -164,7 +164,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     // gt = greater than, lt = less then, eq = equal
     if (sortDirection == SortDirection.DESCENDING) {
-      return field.lt(cursor).or(field.eq(cursor).and(idField.eq(idAfter)));
+      return field.lt(cursor).or(field.eq(cursor).and(idField.gt(idAfter)));
     }
     return field.gt(cursor).or(field.eq(cursor).and(idField.gt(idAfter)));
   }
@@ -187,7 +187,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     if (sortDirection == SortDirection.DESCENDING) {
-      return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
+      return field.lt(c).or(field.eq(c).and(idField.gt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
   }
@@ -200,17 +200,15 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
       com.querydsl.core.types.dsl.ComparablePath<UUID> idField,
       SortDirection sortDirection) {
 
-    boolean c;
-    try {
-      c = Boolean.parseBoolean(cursor);
-    } catch (Exception e) {
+    if (!"true".equalsIgnoreCase(cursor) && !"false".equalsIgnoreCase(cursor)) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
           .addDetail("reason", "잘못된 cursor 형식입니다 (Boolean 필요)")
           .addDetail("cursor", cursor);
     }
+    boolean c = Boolean.parseBoolean(cursor);
 
     if (sortDirection == SortDirection.DESCENDING) {
-      return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
+      return field.lt(c).or(field.eq(c).and(idField.gt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
   }
@@ -233,7 +231,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     if (sortDirection == SortDirection.DESCENDING) {
-      return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
+      return field.lt(c).or(field.eq(c).and(idField.gt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
   }
