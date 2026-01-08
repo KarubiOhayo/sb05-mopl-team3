@@ -190,7 +190,10 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
       return switch (from) {
         case "createdAt" -> CREATED_AT;
         case "rate" -> RATE;
-        default -> WATCHER_COUNT;
+        case "watcherCount" -> WATCHER_COUNT;
+        default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+             .addDetail("reason", "유효하지 않은 sortBy 값입니다.")
+             .addDetail("sortBy", from);
       };
     }
   }
