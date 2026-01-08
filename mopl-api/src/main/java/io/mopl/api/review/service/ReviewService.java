@@ -62,7 +62,7 @@ public class ReviewService {
   }
 
   @Transactional(readOnly = true)
-  public List<ReviewDto> findByContentId(UUID contentId, UUID userId) {
+  public List<ReviewDto> findByContentId(UUID contentId) {
     // 1. 리뷰 목록 조회 (쿼리 1번)
     List<Review> reviews = reviewRepository.findByContentId(contentId);
 

@@ -53,9 +53,7 @@ public class ReviewController {
   public ResponseEntity<List<ReviewDto>> getReviews(
       @RequestParam UUID contentId, @AuthenticationPrincipal AuthUser authUser) {
 
-    UUID userId = (authUser != null) ? authUser.getUserId() : null;
-
-    List<ReviewDto> reviews = reviewService.findByContentId(contentId, userId);
+    List<ReviewDto> reviews = reviewService.findByContentId(contentId);
     return ResponseEntity.ok(reviews);
   }
 }
