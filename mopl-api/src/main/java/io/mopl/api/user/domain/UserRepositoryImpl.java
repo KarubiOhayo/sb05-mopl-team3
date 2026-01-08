@@ -6,7 +6,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.ComparablePath;
 import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.lettuce.core.search.arguments.AggregateArgs.SortDirection;
+import io.mopl.api.common.dto.SortDirection;
 import io.mopl.api.user.dto.UserPage;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
@@ -165,7 +165,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
       SortDirection sortDirection) {
 
     // gt = greater than, lt = less then, eq = equal
-    if (sortDirection == SortDirection.DESC) {
+    if (sortDirection == SortDirection.DESCENDING) {
       return field.lt(cursor).or(field.eq(cursor).and(idField.eq(idAfter)));
     }
     return field.gt(cursor).or(field.eq(cursor).and(idField.gt(idAfter)));
@@ -188,7 +188,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
           .addDetail("cursor", cursor);
     }
 
-    if (sortDirection == SortDirection.DESC) {
+    if (sortDirection == SortDirection.DESCENDING) {
       return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
@@ -211,7 +211,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
           .addDetail("cursor", cursor);
     }
 
-    if (sortDirection == SortDirection.DESC) {
+    if (sortDirection == SortDirection.DESCENDING) {
       return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
@@ -234,7 +234,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
           .addDetail("cursor", cursor);
     }
 
-    if (sortDirection == SortDirection.DESC) {
+    if (sortDirection == SortDirection.DESCENDING) {
       return field.lt(c).or(field.eq(c).and(idField.lt(idAfter)));
     }
     return field.gt(c).or(field.eq(c).and(idField.gt(idAfter)));
@@ -244,12 +244,13 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
   private OrderSpecifier<?> buildPrimaryOrder(SortBy sortBy, SortDirection sortDirection, QUser u) {
 
     return switch (sortBy) {
-      case NAME -> (sortDirection == SortDirection.DESC) ? u.name.desc() : u.name.asc();
-      case EMAIL -> (sortDirection == SortDirection.DESC) ? u.email.desc() : u.email.asc();
+      case NAME -> (sortDirection == SortDirection.DESCENDING) ? u.name.desc() : u.name.asc();
+      case EMAIL -> (sortDirection == SortDirection.DESCENDING) ? u.email.desc() : u.email.asc();
       case CREATED_AT ->
-          (sortDirection == SortDirection.DESC) ? u.createdAt.desc() : u.createdAt.asc();
-      case IS_LOCKED -> (sortDirection == SortDirection.DESC) ? u.locked.desc() : u.locked.asc();
-      case ROLE -> (sortDirection == SortDirection.DESC) ? u.role.desc() : u.role.asc();
+          (sortDirection == SortDirection.DESCENDING) ? u.createdAt.desc() : u.createdAt.asc();
+      case IS_LOCKED ->
+          (sortDirection == SortDirection.DESCENDING) ? u.locked.desc() : u.locked.asc();
+      case ROLE -> (sortDirection == SortDirection.DESCENDING) ? u.role.desc() : u.role.asc();
     };
   }
 
@@ -284,19 +285,11 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
   /** 정렬 방향 */
   private SortDirection parseSortDirection(String value) {
     if (value == null || value.isBlank()) {
-      return SortDirection.DESC;
-    }
-
-    String normalized = value.toUpperCase();
-
-    if ("ASCENDING".equals(normalized)) {
-      return SortDirection.ASC;
-    } else if ("DESCENDING".equals(normalized)) {
-      return SortDirection.DESC;
+      return SortDirection.DESCENDING;
     }
 
     try {
-      return SortDirection.valueOf(normalized);
+      return SortDirection.valueOf(value.toUpperCase());
     } catch (IllegalArgumentException e) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
           .addDetail("reason", "잘못된 sortDirection 값입니다. ASCENDING 또는 DESCENDING을 사용하세요.")
