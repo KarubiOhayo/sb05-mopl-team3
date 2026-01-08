@@ -12,6 +12,7 @@ import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +58,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         queryFactory
             .selectFrom(u)
             .where(where)
-            .orderBy(primaryOrder, (sortDirection == SortDirection.DESC) ? u.id.desc() : u.id.asc())
+            .orderBy(buildOrderSpecifiers(sortBy, sortDirection, u).toArray(new OrderSpecifier[0]))
             .limit(limit + 1)
             .fetch();
 
@@ -83,6 +84,24 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     return new UserPage(fetched, hasNext, nextCursor, nextIdAfter);
+  }
+
+  private List<OrderSpecifier<?>> buildOrderSpecifiers(
+      SortBy sortBy, SortDirection sortDirection, QUser u) {
+
+    List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+    orders.add(buildPrimaryOrder(sortBy, sortDirection, u));
+
+    if (sortBy != SortBy.NAME) {
+      orders.add(u.name.asc());
+    } else {
+      orders.add(u.createdAt.desc());
+    }
+
+    orders.add(u.id.asc());
+
+    return orders;
   }
 
   @Override
