@@ -52,7 +52,7 @@ public class UserController {
   /** 사용자 계정 잠금 */
   @PatchMapping("/{userId}/locked")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<UserLockUpdateRequest> lockUser(
+  public ResponseEntity<Void> lockUser(
       @PathVariable UUID userId, @Valid @RequestBody UserLockUpdateRequest request) {
     userService.lockUser(userId, request);
     return ResponseEntity.noContent().build();
