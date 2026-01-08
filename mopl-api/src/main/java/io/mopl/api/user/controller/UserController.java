@@ -2,9 +2,12 @@ package io.mopl.api.user.controller;
 
 import io.mopl.api.common.config.AuthUser;
 import io.mopl.api.user.dto.ChangePasswordRequest;
+import io.mopl.api.user.dto.CursorResponseUserDto;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.api.user.dto.UserSearchRequest;
 import io.mopl.api.user.dto.UserUpdateRequest;
+import io.mopl.api.user.service.UserQueryService;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
@@ -15,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +37,15 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
   private final UserService userService;
+  private final UserQueryService userQueryService;
+
+  /** 사용자 목록 조회 */
+  @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<CursorResponseUserDto> findUsers(@Valid UserSearchRequest request) {
+    CursorResponseUserDto response = userQueryService.findUsers(request);
+    return ResponseEntity.ok(response);
+  }
 
   /** 회원가입 */
   @PostMapping
