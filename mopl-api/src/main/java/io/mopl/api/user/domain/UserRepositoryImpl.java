@@ -103,7 +103,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     BooleanBuilder where = new BooleanBuilder();
 
     if (emailLike != null && !emailLike.isBlank()) {
-      where.and(u.email.containsIgnoreCase(emailLike));
+      where.and(u.email.containsIgnoreCase(emailLike).or(u.name.containsIgnoreCase(emailLike)));
     }
 
     if (roleEqual != null && !roleEqual.isBlank()) {
