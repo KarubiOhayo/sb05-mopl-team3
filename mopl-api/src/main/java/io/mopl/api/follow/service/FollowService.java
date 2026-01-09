@@ -3,13 +3,16 @@ package io.mopl.api.follow.service;
 import io.mopl.api.follow.domain.Follow;
 import io.mopl.api.follow.dto.FollowDto;
 import io.mopl.api.follow.dto.FollowRequest;
+import io.mopl.api.follow.event.FollowCreatedInternalEvent;
 import io.mopl.api.follow.repository.FollowRepository;
+import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ public class FollowService {
 
   private final FollowRepository followRepository;
   private final UserService userService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public FollowDto create(@Valid FollowRequest request, UUID userId) {
@@ -40,9 +44,12 @@ public class FollowService {
         .map(this::toDto)
         .orElseGet(
             () -> {
+              UserSummary follower = userService.getUserSummary(userId);
               Follow saved =
                   followRepository.save(
                       Follow.builder().followerId(userId).followeeId(followeeId).build());
+              eventPublisher.publishEvent(
+                  new FollowCreatedInternalEvent(userId, followeeId, follower.getName()));
               return toDto(saved);
             });
   }
