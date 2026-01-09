@@ -31,7 +31,7 @@ public class ContentController {
 
 	@PostMapping
 	public ResponseEntity<ContentDto> create(
-		@RequestPart("request") ContentCreateRequest contentCreateRequest,
+		@Valid @RequestPart("request") ContentCreateRequest contentCreateRequest,
 		@RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
 	) {
 		ContentDto created = contentService.create(contentCreateRequest, thumbnail);
