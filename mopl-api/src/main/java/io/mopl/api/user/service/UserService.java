@@ -162,7 +162,6 @@ public class UserService {
 
       if (Boolean.TRUE.equals(request.getLocked())) {
         refreshTokenService.deleteRefreshToken(userId);
-      } else {
       }
     } catch (Exception e) {
       log.error(
