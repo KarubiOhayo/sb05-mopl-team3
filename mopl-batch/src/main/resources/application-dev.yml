@@ -12,6 +12,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${MOPL_DDL_AUTO:update}
+  kafka:
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:29092}
   batch:
     job:
       enabled: ${MOPL_BATCH_JOB_ENABLED:false}

@@ -5,9 +5,11 @@ import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.domain.UserRole;
+import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserSummary;
+import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -24,6 +27,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final ProfileImageUploadService profileImageUploadService;
 
   /** 회원가입 */
   @Transactional
@@ -52,6 +56,17 @@ public class UserService {
     }
   }
 
+  /** 사용자 상세 조회 */
+  @Transactional(readOnly = true)
+  public UserDto getUserDetails(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    return UserDto.from(user);
+  }
+
   /** 사용자 확인 */
   @Transactional(readOnly = true)
   public UserSummary getUserSummary(UUID userId) {
@@ -65,5 +80,55 @@ public class UserService {
         .name(user.getName())
         .profileImageUrl(user.getProfileImageUrl())
         .build();
+  }
+
+  /** 비밀번호 변경 */
+  @Transactional
+  public void changePassword(UUID userId, ChangePasswordRequest request) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (user.getAuthProvider() != AuthProvider.LOCAL) {
+      throw new BusinessException(UserErrorCode.OAUTH_USER_CANNOT_CHANGE_PASSWORD);
+    }
+
+    String encodedPassword = passwordEncoder.encode(request.getPassword());
+    user.setPasswordHash(encodedPassword);
+
+    user.setTempPasswordHash(null);
+    user.setTempPasswordExpiresAt(null);
+  }
+
+  /** 프로필 변경 */
+  @Transactional
+  public UserDto updateProfile(UUID userId, UserUpdateRequest request, MultipartFile profileImage) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (request.getName() != null && !request.getName().isBlank()) {
+      user.setName(request.getName().trim());
+    }
+
+    if (profileImage != null && !profileImage.isEmpty()) {
+      String oldImageUrl = user.getProfileImageUrl();
+
+      String newImageUrl = profileImageUploadService.uploadProfileImage(profileImage, userId);
+      user.setProfileImageUrl(newImageUrl);
+      if (oldImageUrl != null) {
+        try {
+          profileImageUploadService.deleteImageByUrl(oldImageUrl);
+        } catch (Exception e) {
+          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageUrl, e);
+        }
+      }
+    }
+
+    User savedUser = userRepository.save(user);
+
+    return UserDto.from(savedUser);
   }
 }

@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
 public enum ContentType {
-  movie("movie"),
-  tvSeries("tvSeries"),
-  sport("sport");
+  MOVIE("movie"),
+  TV_SERIES("tvSeries"),
+  SPORT("sport");
 
   private final String value;
 
