@@ -22,19 +22,22 @@ public class FollowNotificationListener {
 
   @KafkaListener(topics = KafkaTopics.USER_FOLLOWED)
   public void handle(UserFollowedEvent event, Acknowledgment acknowledgment) {
-    log.info("follow event received: {}", event);
-    Notification notification =
-        Notification.builder()
-            .eventId(UUID.fromString(event.eventId()))
-            .receiverId(UUID.fromString(event.followeeId()))
-            .title(event.followerName() + " 님이 나를 팔로우했어요.")
-            .content("")
-            .level(NotificationLevel.INFO)
-            .build();
     try {
+      log.info("follow event received: eventId={}", event.eventId());
+      Notification notification =
+          Notification.builder()
+              .eventId(UUID.fromString(event.eventId()))
+              .receiverId(UUID.fromString(event.followeeId()))
+              .title(event.followerName() + " 님이 나를 팔로우했어요.")
+              .content("")
+              .level(NotificationLevel.INFO)
+              .build();
       notificationRepository.save(notification);
     } catch (DataIntegrityViolationException e) {
       // duplicate, ignore
+    } catch (IllegalArgumentException e) {
+      log.error(
+          "Invalid UUID format: eventId={}, followeeId={}", event.eventId(), event.followeeId(), e);
     } finally {
       acknowledgment.acknowledge();
     }
