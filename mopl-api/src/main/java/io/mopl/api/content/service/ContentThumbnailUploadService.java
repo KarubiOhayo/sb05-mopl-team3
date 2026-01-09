@@ -112,16 +112,23 @@ public class ContentThumbnailUploadService {
       return null;
     }
 
-    GetObjectRequest getObjectRequest =
-        GetObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
+    try {
+      GetObjectRequest getObjectRequest =
+          GetObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
 
-    GetObjectPresignRequest presignRequest =
-        GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofSeconds(s3Properties.getPresignedUrlExpirationSeconds()))
-            .getObjectRequest(getObjectRequest)
-            .build();
+      GetObjectPresignRequest presignRequest =
+          GetObjectPresignRequest.builder()
+              .signatureDuration(
+                  Duration.ofSeconds(s3Properties.getPresignedUrlExpirationSeconds()))
+              .getObjectRequest(getObjectRequest)
+              .build();
 
-    PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
-    return presigned.url().toString();
+      PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+      log.debug("Presigned URL 생성 완료 - key = {}", key);
+      return presigned.url().toString();
+    } catch (SdkException e) {
+      log.error("Presigned URL 생성 실패 - key = {}", key, e);
+      return null;
+    }
   }
 }
