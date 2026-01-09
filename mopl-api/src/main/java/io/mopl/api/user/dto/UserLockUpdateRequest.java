@@ -13,7 +13,7 @@ import lombok.Setter;
 public class UserLockUpdateRequest {
 
   @NotNull(message = "잠금 상태는 필수입니다")
-  private boolean locked;
+  private Boolean locked;
 
   public boolean getLocked() {
     return locked;

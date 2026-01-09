@@ -1,5 +1,6 @@
 package io.mopl.api.auth.jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mopl.api.common.config.AuthUser;
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.user.domain.User;
@@ -28,7 +29,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
