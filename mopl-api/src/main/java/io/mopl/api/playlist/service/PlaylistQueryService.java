@@ -1,9 +1,10 @@
 package io.mopl.api.playlist.service;
 
+import io.mopl.api.common.dto.CursorResponse;
+import io.mopl.api.common.dto.SortDirection;
 import io.mopl.api.content.dto.ContentSummary;
 import io.mopl.api.playlist.domain.Playlist;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
-import io.mopl.api.playlist.dto.CursorResponsePlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistPage;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;
@@ -41,50 +42,39 @@ public class PlaylistQueryService {
   private final UserService userService;
 
   // Playlist 조회
-  public CursorResponsePlaylistDto findPlaylists(PlaylistSearchRequest request, UUID me) {
+  public CursorResponse<PlaylistDto> findPlaylists(PlaylistSearchRequest request, UUID me) {
 
-    // 1) 파라미터 기본값/안전장치
-    int limit = request.getLimitOrDefault();
+    // 정렬 기본값 확보
     String sortBy = request.getSortByOrDefault();
     String sortDirection = request.getSortDirectionOrDefault();
 
-    // 2) QueryDSL로 "플레이리스트 목록" 조회
-    PlaylistPage page =
-        playlistQueryRepository.findPlaylistsPage(
-            request.getKeywordLike(),
-            request.getOwnerIdEqual(),
-            request.getSubscriberIdEqual(),
-            request.getCursor(),
-            request.getIdAfter(),
-            limit,
-            sortDirection,
-            sortBy);
+    // 요청 객체 그대로 리포지토리에 전달
+    PlaylistPage page = playlistQueryRepository.findPlaylistsPage(request);
 
+    // totalCount는 동일 필터 조건으로 계산
     long totalCount =
         playlistQueryRepository.countPlaylists(
             request.getKeywordLike(), request.getOwnerIdEqual(), request.getSubscriberIdEqual());
 
     List<Playlist> playlists = page.getPlaylists();
 
-    // 3) 로더용 ID 수집
+    // ownerId, playlistId 수집
     Set<UUID> ownerIds = new HashSet<>();
     List<UUID> playlistIds = new ArrayList<>();
-
     for (Playlist playlist : playlists) {
       ownerIds.add(playlist.getOwnerId());
       playlistIds.add(playlist.getId());
     }
 
-    // 4) 로더로 "한 번에" 부가정보 로딩
+    // 연관 데이터 일괄 조회
     Map<UUID, UserSummary> ownerMap = playlistOwnerLoader.loadOwners(ownerIds);
     Set<UUID> subscribedPlaylistIds =
         playlistSubscriptionLoader.loadSubscribedPlaylistIdsByMe(me, playlistIds);
     Map<UUID, List<ContentSummary>> contentsMap =
         playlistContentLoader.loadContentsByPlaylistIds(playlistIds);
 
-    // 5) PlaylistDto 조립
+    // 응답 DTO 조립
     List<PlaylistDto> data = new ArrayList<>();
-
     for (Playlist playlist : playlists) {
       UUID playlistId = playlist.getId();
 
@@ -111,15 +101,14 @@ public class PlaylistQueryService {
       data.add(dto);
     }
 
-    // 6) CursorResponse 조립
-    return CursorResponsePlaylistDto.builder()
+    return CursorResponse.<PlaylistDto>builder()
         .data(data)
         .nextCursor(page.getNextCursor())
         .nextIdAfter(page.getNextIdAfter())
         .hasNext(page.isHasNext())
         .totalCount(totalCount)
         .sortBy(sortBy)
-        .sortDirection(sortDirection)
+        .sortDirection(SortDirection.valueOf(sortDirection))
         .build();
   }
 

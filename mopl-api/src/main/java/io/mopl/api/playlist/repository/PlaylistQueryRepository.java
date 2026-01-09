@@ -1,20 +1,12 @@
 package io.mopl.api.playlist.repository;
 
 import io.mopl.api.playlist.dto.PlaylistPage;
+import io.mopl.api.playlist.dto.PlaylistSearchRequest;
 import java.util.UUID;
 
 public interface PlaylistQueryRepository {
 
-  PlaylistPage findPlaylistsPage(
-      String keywordLike,
-      UUID ownerIdEqual,
-      UUID subscriberIdEqual,
-      String cursor,
-      UUID idAfter,
-      int limit,
-      String sortDirection, // ASCENDING | DESCENDING
-      String sortBy // updatedAt | subscribeCount
-      );
+  PlaylistPage findPlaylistsPage(PlaylistSearchRequest playlistSearchRequest);
 
   long countPlaylists(String keywordLike, UUID ownerIdEqual, UUID subscriberIdEqual);
 }
