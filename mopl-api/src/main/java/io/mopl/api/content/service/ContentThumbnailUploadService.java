@@ -102,7 +102,7 @@ public class ContentThumbnailUploadService {
     return "content_" + UUID.randomUUID() + "." + extension;
   }
 
-  private String generatePresignedUrl(String key) {
+  public String generatePresignedUrl(String key) {
     GetObjectRequest getObjectRequest =
         GetObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
 
