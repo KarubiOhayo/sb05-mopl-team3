@@ -3,7 +3,12 @@ package io.mopl.api.content.service;
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.Content;
 import io.mopl.api.content.domain.ContentRepository;
+import io.mopl.api.content.domain.ContentTag;
+import io.mopl.api.content.domain.ContentTagId;
 import io.mopl.api.content.domain.ContentTagRepository;
+import io.mopl.api.content.domain.Tag;
+import io.mopl.api.content.domain.TagRepository;
+import io.mopl.api.content.dto.ContentCreateRequest;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
@@ -21,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -31,6 +37,65 @@ public class ContentService {
   private final ContentTagRepository contentTagRepository;
   private final ReviewRepository reviewRepository;
   private final PlaylistContentRepository playlistContentRepository;
+  private final TagRepository tagRepository;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
+
+  @Transactional
+  @PreAuthorize("hasRole('ADMIN')")
+  public ContentDto create(ContentCreateRequest contentCreateRequest, MultipartFile thumbnail) {
+    log.info(
+        "컨텐츠 생성 시작 - type: {}, titleLen: {}, tags: {}, thumbnail: {}",
+        contentCreateRequest.getType(),
+        contentCreateRequest.getTitle() != null ? contentCreateRequest.getTitle().length() : 0,
+        contentCreateRequest.getTags() != null ? contentCreateRequest.getTags().size() : 0,
+        (thumbnail != null && !thumbnail.isEmpty()));
+
+    String title = contentCreateRequest.getTitle();
+    String description = contentCreateRequest.getDescription();
+
+    String thumbnailUrl = null;
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
+    }
+
+    Content content =
+        Content.builder()
+            .type(contentCreateRequest.getType())
+            .title(title)
+            .description(description)
+            .thumbnailUrl(thumbnailUrl)
+            .build();
+    contentRepository.save(content);
+
+    log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
+
+    List<String> tagNames = contentCreateRequest.getTags();
+
+    if (tagNames != null && !tagNames.isEmpty()) {
+      for (String tagName : tagNames) {
+        Tag newTag =
+            tagRepository.findByName(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
+
+        ContentTag contentTag =
+            ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
+
+        contentTagRepository.save(contentTag);
+      }
+    }
+
+    log.info("컨텐츠 생성을 완료했습니다.");
+    return new ContentDto(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        content.getThumbnailUrl(),
+        tagNames,
+        0.0,
+        0,
+        0L);
+  }
 
   @Transactional(readOnly = true)
   public ContentDto findById(UUID contentId) {
@@ -44,12 +109,14 @@ public class ContentService {
     List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
+    String thumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
     return new ContentDto(
         content.getId(),
         content.getType(),
         content.getTitle(),
         content.getDescription(),
-        content.getThumbnailUrl(),
+        thumbnailUrl,
         tagNames,
         content.getAverageRating(),
         content.getReviewCount(),
@@ -103,7 +170,7 @@ public class ContentService {
                         c.getType(),
                         c.getTitle(),
                         c.getDescription(),
-                        c.getThumbnailUrl(),
+                        contentThumbnailUploadService.generatePresignedUrl(c.getThumbnailUrl()),
                         tagsByContentId.getOrDefault(c.getId(), List.of()),
                         c.getAverageRating(),
                         c.getReviewCount(),

@@ -80,3 +80,4 @@ aws:
     region: ${AWS_S3_REGION:ap-northeast-2}
     bucket: ${AWS_S3_BUCKET:mopl-bucket}
     profile-image-path: ${AWS_S3_PROFILE_PATH:profiles/}
+    content-thumbnail-path: ${AWS_S3_CONTENT_THUMBNAIL_PATH:thumbnails/custom/}
