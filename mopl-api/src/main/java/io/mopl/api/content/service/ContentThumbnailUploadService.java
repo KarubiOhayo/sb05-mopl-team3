@@ -103,6 +103,15 @@ public class ContentThumbnailUploadService {
   }
 
   public String generatePresignedUrl(String key) {
+    // thumbnail에 더미 값이 들어 있는 데이터를 거르기 위한 if 문 (후에 수정할 것)
+    if (key == null || key.isBlank()) {
+      return null;
+    }
+
+    if (key.startsWith("https") || key.startsWith("http")) {
+      return null;
+    }
+
     GetObjectRequest getObjectRequest =
         GetObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
 

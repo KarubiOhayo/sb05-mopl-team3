@@ -107,12 +107,13 @@ public class ContentService {
     List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
+    String thumbnailUrl = contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
     return new ContentDto(
         content.getId(),
         content.getType(),
         content.getTitle(),
         content.getDescription(),
-        content.getThumbnailUrl(),
+        thumbnailUrl,
         tagNames,
         content.getAverageRating(),
         content.getReviewCount(),
@@ -166,7 +167,7 @@ public class ContentService {
                         c.getType(),
                         c.getTitle(),
                         c.getDescription(),
-                        c.getThumbnailUrl(),
+                        contentThumbnailUploadService.generatePresignedUrl(c.getThumbnailUrl()),
                         tagsByContentId.getOrDefault(c.getId(), List.of()),
                         c.getAverageRating(),
                         c.getReviewCount(),
