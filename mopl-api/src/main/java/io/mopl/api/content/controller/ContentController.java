@@ -1,15 +1,13 @@
 package io.mopl.api.content.controller;
 
+import io.mopl.api.content.dto.ContentCreateRequest;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.content.service.ContentService;
 import jakarta.validation.Valid;
 import java.util.UUID;
-
-import io.mopl.api.content.dto.ContentCreateRequest;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,14 +27,13 @@ public class ContentController {
 
   private final ContentService contentService;
 
-	@PostMapping
-	public ResponseEntity<ContentDto> create(
-		@Valid @RequestPart("request") ContentCreateRequest contentCreateRequest,
-		@RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
-	) {
-		ContentDto created = contentService.create(contentCreateRequest, thumbnail);
-		return ResponseEntity.status(HttpStatus.CREATED).body(created);
-	}
+  @PostMapping
+  public ResponseEntity<ContentDto> create(
+      @Valid @RequestPart("request") ContentCreateRequest contentCreateRequest,
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail) {
+    ContentDto created = contentService.create(contentCreateRequest, thumbnail);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+  }
 
   @GetMapping("/{contentId}")
   public ResponseEntity<ContentDto> findById(@PathVariable("contentId") UUID contentId) {

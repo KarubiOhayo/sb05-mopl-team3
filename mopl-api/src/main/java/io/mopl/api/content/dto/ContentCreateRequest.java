@@ -1,10 +1,9 @@
 package io.mopl.api.content.dto;
 
 import io.mopl.api.content.domain.ContentType;
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

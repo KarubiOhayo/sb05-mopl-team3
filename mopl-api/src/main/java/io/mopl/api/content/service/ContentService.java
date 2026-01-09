@@ -40,52 +40,60 @@ public class ContentService {
   private final TagRepository tagRepository;
   private final ContentThumbnailUploadService contentThumbnailUploadService;
 
-	@Transactional
-	@PreAuthorize("hasRole('ADMIN')")
-	public ContentDto create(ContentCreateRequest contentCreateRequest, MultipartFile thumbnail) {
-		log.info("컨텐츠 생성 시작 - type: {}, titleLen: {}, tags: {}, thumbnail: {}",
-			contentCreateRequest.getType(),
-			contentCreateRequest.getTitle() != null ? contentCreateRequest.getTitle().length() : 0,
-			contentCreateRequest.getTags() != null ? contentCreateRequest.getTags().size() : 0,
-			(thumbnail != null && !thumbnail.isEmpty()));
+  @Transactional
+  @PreAuthorize("hasRole('ADMIN')")
+  public ContentDto create(ContentCreateRequest contentCreateRequest, MultipartFile thumbnail) {
+    log.info(
+        "컨텐츠 생성 시작 - type: {}, titleLen: {}, tags: {}, thumbnail: {}",
+        contentCreateRequest.getType(),
+        contentCreateRequest.getTitle() != null ? contentCreateRequest.getTitle().length() : 0,
+        contentCreateRequest.getTags() != null ? contentCreateRequest.getTags().size() : 0,
+        (thumbnail != null && !thumbnail.isEmpty()));
 
-		String title = contentCreateRequest.getTitle();
-		String description = contentCreateRequest.getDescription();
+    String title = contentCreateRequest.getTitle();
+    String description = contentCreateRequest.getDescription();
 
-		String thumbnailUrl = null;
-		if (thumbnail != null && !thumbnail.isEmpty()) {
-			thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
-			log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
-		}
+    String thumbnailUrl = null;
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
+    }
 
-		Content content = Content.builder()
-			.type(contentCreateRequest.getType())
-			.title(title)
-			.description(description)
-			.thumbnailUrl(thumbnailUrl)
-			.build();
-		contentRepository.save(content);
+    Content content =
+        Content.builder()
+            .type(contentCreateRequest.getType())
+            .title(title)
+            .description(description)
+            .thumbnailUrl(thumbnailUrl)
+            .build();
+    contentRepository.save(content);
 
-		log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
+    log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
 
-		List<String> tagNames = contentCreateRequest.getTags();
+    List<String> tagNames = contentCreateRequest.getTags();
 
-		for (String tagName : tagNames) {
-			Tag newTag = tagRepository.findByName(tagName)
-				.orElseGet(()-> tagRepository.save(new Tag(tagName)));
+    for (String tagName : tagNames) {
+      Tag newTag =
+          tagRepository.findByName(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
 
-			ContentTag contentTag = ContentTag.builder()
-				.id(new ContentTagId(content.getId(), newTag.getId()))
-				.build();
+      ContentTag contentTag =
+          ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
 
-			contentTagRepository.save(contentTag);
-		}
+      contentTagRepository.save(contentTag);
+    }
 
-		log.info("컨텐츠 생성을 완료했습니다.");
-		return new ContentDto(content.getId(), content.getType(), content.getTitle(),
-			content.getDescription(), content.getThumbnailUrl(), tagNames,
-			0.0, 0, 0L);
-	}
+    log.info("컨텐츠 생성을 완료했습니다.");
+    return new ContentDto(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        content.getThumbnailUrl(),
+        tagNames,
+        0.0,
+        0,
+        0L);
+  }
 
   @Transactional(readOnly = true)
   public ContentDto findById(UUID contentId) {

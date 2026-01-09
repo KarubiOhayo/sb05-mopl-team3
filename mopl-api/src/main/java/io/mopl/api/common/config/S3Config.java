@@ -36,8 +36,8 @@ public class S3Config {
   public S3Presigner s3Presigner() {
     S3Presigner.Builder builder = S3Presigner.builder().region(Region.of(s3properties.getRegion()));
     if (hasText(s3properties.getAccessKey()) && hasText(s3properties.getSecretKey())) {
-      AwsBasicCredentials credentials = AwsBasicCredentials.create(s3properties.getAccessKey(),
-          s3properties.getSecretKey());
+      AwsBasicCredentials credentials =
+          AwsBasicCredentials.create(s3properties.getAccessKey(), s3properties.getSecretKey());
       builder.credentialsProvider(StaticCredentialsProvider.create(credentials));
     } else {
       builder.credentialsProvider(DefaultCredentialsProvider.builder().build());
