@@ -1,6 +1,5 @@
 package io.mopl.api.auth.jwt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mopl.api.common.config.AuthUser;
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.user.domain.User;
@@ -29,6 +28,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Component
@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final RedisTemplate<String, Boolean> redisTemplate;
   private final UserRepository userRepository;
   private final MessageSource messageSource;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
 
   @Override
   protected void doFilterInternal(
@@ -70,11 +70,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
       }
     } catch (BusinessException e) {
-      log.warn("계정 잠금 상태로 인한 요청 차단: {}", e.getMessage());
+      log.warn("계정 잠금 상태로 인한 요청 차단");
       sendErrorResponse(response, e);
       return;
     } catch (Exception e) {
-      log.error("JWT 인증 실패: {}", e.getMessage());
+      log.error("JWT 인증 실패");
     }
 
     filterChain.doFilter(request, response);
