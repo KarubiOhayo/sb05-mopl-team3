@@ -72,14 +72,16 @@ public class ContentService {
 
     List<String> tagNames = contentCreateRequest.getTags();
 
-    for (String tagName : tagNames) {
-      Tag newTag =
-          tagRepository.findByName(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
+    if (tagNames != null && !tagNames.isEmpty()) {
+      for (String tagName : tagNames) {
+        Tag newTag =
+            tagRepository.findByName(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
 
-      ContentTag contentTag =
-          ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
+        ContentTag contentTag =
+            ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
 
-      contentTagRepository.save(contentTag);
+        contentTagRepository.save(contentTag);
+      }
     }
 
     log.info("컨텐츠 생성을 완료했습니다.");
