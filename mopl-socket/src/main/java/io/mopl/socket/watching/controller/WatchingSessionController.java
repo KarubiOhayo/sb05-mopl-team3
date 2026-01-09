@@ -26,4 +26,9 @@ public class WatchingSessionController {
       @PathVariable UUID contentId, @ModelAttribute WatchingSessionSearchRequest request) {
     return ResponseEntity.ok(watchingSessionService.findByContentId(contentId, request));
   }
+
+  @GetMapping("/users/{watcherId}/watching-sessions")
+  public ResponseEntity<WatchingSessionDto> getWatchingSession(@PathVariable UUID watcherId) {
+    return ResponseEntity.ok(watchingSessionService.findByWatcherId(watcherId));
+  }
 }

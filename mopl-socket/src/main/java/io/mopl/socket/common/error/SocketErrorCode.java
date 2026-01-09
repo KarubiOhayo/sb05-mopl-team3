@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum SocketErrorCode implements ErrorCode {
   INVALID_TOKEN(401, "socket.error.token.invalid"),
-  MISSING_AUTHENTICATION(401, "socket.error.authentication.missing");
+  MISSING_AUTHENTICATION(401, "socket.error.authentication.missing"),
+  WATCHING_SESSION_NOT_FOUND(404, "socket.error.watching-session.not-found");
 
   private final int status;
   private final String messageKey;

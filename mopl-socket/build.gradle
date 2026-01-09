@@ -6,6 +6,7 @@ dependencies {
     implementation project(':mopl-core')
     implementation project(':mopl-infrastructure:redis')
     implementation project(':mopl-infrastructure:kafka')
+    implementation project(':mopl-infrastructure:db')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-security'

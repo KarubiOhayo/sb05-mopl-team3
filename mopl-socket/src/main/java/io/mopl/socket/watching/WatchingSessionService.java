@@ -1,12 +1,16 @@
 package io.mopl.socket.watching;
 
+import io.mopl.core.error.BusinessException;
 import io.mopl.redis.constants.RedisKeyPrefix;
 import io.mopl.socket.common.dto.CursorResponse;
 import io.mopl.socket.common.dto.SortDirection;
+import io.mopl.socket.common.error.SocketErrorCode;
+import io.mopl.socket.content.domain.ContentRepository;
 import io.mopl.socket.content.dto.ContentSummary;
 import io.mopl.socket.user.dto.UserSummary;
 import io.mopl.socket.watching.dto.WatchingSessionDto;
 import io.mopl.socket.watching.dto.WatchingSessionSearchRequest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +32,7 @@ public class WatchingSessionService {
 
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
+  private final ContentRepository contentRepository;
 
   // userId를 받아 현재 시청중인 contentId를 반환하는 메서드
   public Optional<String> getWatchingContentId(UUID userId) {
@@ -44,6 +49,9 @@ public class WatchingSessionService {
     if (previousContentId != null && !previousContentId.equals(contentId)) {
       leave(previousContentId, userId);
     }
+
+    // 컨텐츠 정보 캐싱 (최초 1회 DB 조회)
+    getContentInfo(UUID.fromString(contentId));
 
     // 레디스에 시청 세션 정보를 등록 (Sorted Set 사용, Score = 현재 시간)
     // ZSet을 사용하면 입장 시간 순으로 정렬되어 커서 페이지네이션이 가능해짐
@@ -112,6 +120,9 @@ public class WatchingSessionService {
           .build();
     }
 
+    // 컨텐츠 정보 미리 조회 (한 번만)
+    ContentSummary contentInfo = getContentInfo(contentId);
+
     // 4. DTO 변환
     List<WatchingSessionDto> sessions =
         watcherIds.stream()
@@ -129,7 +140,7 @@ public class WatchingSessionService {
                       .id(UUID.randomUUID()) // 세션 ID는 임시 생성
                       .createdAt(joinedAt)
                       .watcher(watcher)
-                      .content(ContentSummary.builder().id(contentId).build())
+                      .content(contentInfo)
                       .build();
                 })
             .collect(Collectors.toList());
@@ -148,6 +159,26 @@ public class WatchingSessionService {
         .nextCursor(nextCursor)
         .hasNext(hasNext)
         .totalCount(totalCount.intValue())
+        .build();
+  }
+
+  public WatchingSessionDto findByWatcherId(UUID watcherId) {
+    String contentId =
+        getWatchingContentId(watcherId)
+            .orElseThrow(() -> new BusinessException(SocketErrorCode.WATCHING_SESSION_NOT_FOUND));
+
+    UserSummary watcher = getUserInfo(watcherId);
+    ContentSummary content = getContentInfo(UUID.fromString(contentId));
+
+    String key = contentKey(contentId);
+    Double score = redisTemplate.opsForZSet().score(key, watcherId.toString());
+    Instant joinedAt = score != null ? Instant.ofEpochMilli(score.longValue()) : Instant.now();
+
+    return WatchingSessionDto.builder()
+        .id(watcherId) // userId를 세션 ID로 사용
+        .createdAt(joinedAt)
+        .watcher(watcher)
+        .content(content)
         .build();
   }
 
@@ -175,6 +206,43 @@ public class WatchingSessionService {
     return UserSummary.builder().userId(userId).name("Unknown").build();
   }
 
+  public ContentSummary getContentInfo(UUID contentId) {
+    String key = contentInfoKey(contentId);
+    String json = redisTemplate.opsForValue().get(key);
+
+    if (json != null) {
+      try {
+        return objectMapper.readValue(json, ContentSummary.class);
+      } catch (Exception e) {
+        log.error("Redis에서 컨텐츠 정보 파싱 실패", e);
+      }
+    }
+
+    // Cache Miss: DB 조회
+    return contentRepository
+        .findById(contentId)
+        .map(
+            content -> {
+              ContentSummary summary =
+                  ContentSummary.builder()
+                      .id(content.getId())
+                      .title(content.getTitle())
+                      .type(content.getType())
+                      .thumbnailUrl(content.getThumbnailUrl())
+                      .build();
+
+              // Redis 저장 (TTL 24시간)
+              try {
+                String cacheValue = objectMapper.writeValueAsString(summary);
+                redisTemplate.opsForValue().set(key, cacheValue, Duration.ofHours(24));
+              } catch (Exception e) {
+                log.error("Redis에 컨텐츠 정보 캐싱 실패", e);
+              }
+              return summary;
+            })
+        .orElse(ContentSummary.builder().id(contentId).title("알 수 없음").build());
+  }
+
   private String contentKey(String contentId) {
     return RedisKeyPrefix.CONTENT_PREFIX + contentId;
   }
@@ -184,6 +252,10 @@ public class WatchingSessionService {
   }
 
   private String userInfoKey(UUID userId) {
-    return "watching:user-info:" + userId;
+    return RedisKeyPrefix.USER_INFO_PREFIX + userId;
+  }
+
+  private String contentInfoKey(UUID contentId) {
+    return RedisKeyPrefix.CONTENT_INFO_PREFIX + contentId;
   }
 }

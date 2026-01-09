@@ -15,6 +15,10 @@ public final class RedisKeyPrefix {
 
   public static final String USER_PREFIX = "watching:user:";
 
+  public static final String CONTENT_INFO_PREFIX = "watching:content-info:";
+
+  public static final String USER_INFO_PREFIX = "watching:user-info:";
+
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
     throw new AssertionError("Cannot instantiate constants class");
