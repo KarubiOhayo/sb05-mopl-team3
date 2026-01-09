@@ -35,7 +35,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
   private final RefreshTokenService refreshTokenService;
-  private final RedisTemplate<Object, Object> redisTemplate;
+  private final RedisTemplate<String, Boolean> redisTemplate;
   private final JwtTokenProvider jwtTokenProvider;
 
   /** 회원가입 */
