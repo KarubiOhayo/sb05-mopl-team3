@@ -65,8 +65,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
       }
     } catch (BusinessException e) {
       log.warn("계정 잠금 상태로 인한 요청 차단: {}", e.getMessage());

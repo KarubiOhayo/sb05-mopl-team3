@@ -151,16 +151,25 @@ public class UserService {
 
     user.setLocked(request.getLocked());
 
-    String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
-    redisTemplate
-        .opsForValue()
-        .set(
-            redisKey,
-            request.getLocked(),
-            Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+    try {
+      String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+      redisTemplate
+          .opsForValue()
+          .set(
+              redisKey,
+              request.getLocked(),
+              Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
 
-    if (Boolean.TRUE.equals(request.getLocked())) {
-      refreshTokenService.deleteRefreshToken(userId);
+      if (Boolean.TRUE.equals(request.getLocked())) {
+        refreshTokenService.deleteRefreshToken(userId);
+      } else {
+      }
+    } catch (Exception e) {
+      log.error(
+          "Redis 업데이트 실패 (DB는 정상 처리됨, 다음 인증 시 자동 복구): userId={}, locked={}",
+          userId,
+          request.getLocked(),
+          e);
     }
   }
 }
