@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
@@ -13,10 +14,13 @@ import io.mopl.api.user.dto.UserLockUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
+import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +35,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
   private final RefreshTokenService refreshTokenService;
+  private final RedisTemplate<Object, Object> redisTemplate;
+  private final JwtTokenProvider jwtTokenProvider;
 
   /** 회원가입 */
   @Transactional
@@ -145,7 +151,15 @@ public class UserService {
 
     user.setLocked(request.getLocked());
 
-    if (request.getLocked()) {
+    String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+    redisTemplate
+        .opsForValue()
+        .set(
+            redisKey,
+            request.getLocked(),
+            Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+
+    if (Boolean.TRUE.equals(request.getLocked())) {
       refreshTokenService.deleteRefreshToken(userId);
     }
   }
