@@ -88,7 +88,7 @@ public class ContentThumbnailUploadService {
 	}
 
 	private String generateThumbnailFileName(String originalFilename) {
-		String extension = originalFilename.substring(originalFilename.lastIndexOf('.')).toLowerCase();
+		String extension = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
 		return "content_" + UUID.randomUUID() + "."	+ extension;
 	}
 
