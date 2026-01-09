@@ -16,4 +16,6 @@ public class S3Properties {
   private String region;
   private String bucket;
   private String profileImagePath = "profiles/";
+  private String contentThumbnailPath = "thumbnails/custom/";
+  private long presignedUrlExpirationSeconds = 3600;
 }
