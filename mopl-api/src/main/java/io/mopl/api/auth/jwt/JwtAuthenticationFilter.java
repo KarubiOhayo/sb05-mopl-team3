@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -37,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final RedisTemplate<String, Boolean> redisTemplate;
   private final UserRepository userRepository;
   private final MessageSource messageSource;
+  private final ObjectMapper objectMapper;
 
   @Override
   protected void doFilterInternal(
@@ -80,19 +83,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   /** Filter에서 에러 응답 직접 작성 (MessageSource 사용) */
   private void sendErrorResponse(HttpServletResponse response, BusinessException e)
       throws IOException {
-    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    String exceptionName = ((Enum<?>) e.getErrorCode()).name();
+    Map<String, String> errorResponse =
+        Map.of(
+            "exceptionName", ((Enum<?>) e.getErrorCode()).name(),
+            "message", resolveMessage(e.getErrorCode().getMessageKey()));
 
-    String message = resolveMessage(e.getErrorCode().getMessageKey());
-
-    String jsonResponse =
-        String.format(
-            "{\"exceptionName\":\"%s\",\"message\":\"%s\"}", exceptionName, escapeJson(message));
-
-    response.getWriter().write(jsonResponse);
+    objectMapper.writeValue(response.getWriter(), errorResponse);
   }
 
   /** MessageSource로 메시지 resolve */
@@ -102,19 +102,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     } catch (Exception e) {
       return messageKey;
     }
-  }
-
-  /** JSON 특수문자 이스케이프 */
-  private String escapeJson(String value) {
-    if (value == null) {
-      return "";
-    }
-    return value
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t");
   }
 
   /** Redis에서 계정 잠금 상태 확인 */

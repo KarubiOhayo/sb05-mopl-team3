@@ -163,7 +163,8 @@ public class UserService {
       if (Boolean.TRUE.equals(request.getLocked())) {
         refreshTokenService.deleteRefreshToken(userId);
       }
-    } catch (Exception e) {
+    } catch (org.springframework.data.redis.RedisConnectionFailureException
+        | org.springframework.data.redis.RedisSystemException e) {
       log.error(
           "Redis 업데이트 실패 (DB는 정상 처리됨, 다음 인증 시 자동 복구): userId={}, locked={}",
           userId,
