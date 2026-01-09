@@ -1,16 +1,24 @@
 package io.mopl.api.auth.jwt;
 
 import io.mopl.api.common.config.AuthUser;
+import io.mopl.api.common.error.AuthErrorCode;
+import io.mopl.api.common.error.UserErrorCode;
+import io.mopl.api.user.domain.User;
+import io.mopl.api.user.domain.UserRepository;
+import io.mopl.core.error.BusinessException;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +33,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtTokenProvider jwtTokenProvider;
+  private final RedisTemplate<String, Boolean> redisTemplate;
+  private final UserRepository userRepository;
 
   @Override
   protected void doFilterInternal(
@@ -69,5 +79,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     return null;
+  }
+
+  /** Redis에서 계정 잠금 상태 확인 */
+  private void checkUserLocked(UUID userId) {
+    String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+    Boolean isLocked = redisTemplate.opsForValue().get(redisKey);
+
+    if (isLocked == null) {
+      User user =
+          userRepository
+              .findById(userId)
+              .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+      isLocked = user.isLocked();
+
+      redisTemplate
+          .opsForValue()
+          .set(
+              redisKey,
+              isLocked,
+              Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+    }
+
+    if (Boolean.TRUE.equals(isLocked)) {
+      throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+    }
   }
 }
