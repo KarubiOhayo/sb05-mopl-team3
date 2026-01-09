@@ -1,6 +1,7 @@
 package io.mopl.api.content.service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -17,8 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Slf4j
 @Service
@@ -27,6 +32,7 @@ public class ContentThumbnailUploadService {
 
 	private final S3Client s3Client;
 	private final S3Properties s3Properties;
+	private final S3Presigner s3Presigner;
 
 	private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");
 	private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
@@ -58,7 +64,7 @@ public class ContentThumbnailUploadService {
 			s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
 			log.info("썸네일 업로드 성공 - key: {}", key);
 
-			return generatePublicUrl(key);
+			return key;
 		} catch (IOException | SdkException e) {
 			log.error("컨텐츠 썸네일 업로드 실패", e);
 		    throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
@@ -92,9 +98,18 @@ public class ContentThumbnailUploadService {
 		return "content_" + UUID.randomUUID() + "."	+ extension;
 	}
 
-	private String generatePublicUrl(String key) {
-		return String.format(
-			"https://%s.s3.%s.amazonaws.com/%s",
-			s3Properties.getBucket(), s3Properties.getRegion(), key);
+	private String generatePresignedUrl(String key) {
+		GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+			.bucket(s3Properties.getBucket())
+			.key(key)
+			.build();
+
+		GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+			.signatureDuration(Duration.ofSeconds(s3Properties.getPresignedUrlExpirationSeconds()))
+			.getObjectRequest(getObjectRequest)
+			.build();
+
+		PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+		return presigned.url().toString();
 	}
 }
