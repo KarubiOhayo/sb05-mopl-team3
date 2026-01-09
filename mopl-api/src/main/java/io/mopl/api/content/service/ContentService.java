@@ -107,7 +107,8 @@ public class ContentService {
     List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
-    String thumbnailUrl = contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
+    String thumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
     return new ContentDto(
         content.getId(),
         content.getType(),
