@@ -157,7 +157,16 @@ public class ContentService {
 		String title = contentUpdateRequest.getTitle();
 		String description = contentUpdateRequest.getDescription();
 
-		content.update(title, description, null);
+		String deletedUrl = content.getThumbnailUrl();
+		String updatedUrl = deletedUrl;
+
+		if (thumbnail != null && !thumbnail.isEmpty()) {
+			updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+		}
+		content.update(title, description, updatedUrl);
+		if (thumbnail != null && !thumbnail.isEmpty()) {
+			contentThumbnailUploadService.deleteThumbnail(deletedUrl);
+		}
 
 		List<String> requestedTags = contentUpdateRequest.getTags();
 		if (requestedTags != null) {
