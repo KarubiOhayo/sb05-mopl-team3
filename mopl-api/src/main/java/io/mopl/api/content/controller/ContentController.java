@@ -55,7 +55,7 @@ public class ContentController {
 		consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ContentDto> update(
 		@PathVariable("contentId") UUID contentId,
-		@RequestPart("request") ContentUpdateRequest contentUpdateRequest,
+		@Valid @RequestPart("request") ContentUpdateRequest contentUpdateRequest,
 		@RequestPart(value = "thumbnail", required = false)  MultipartFile thumbnail
 	) {
 		ContentDto updatedContent = contentService.update(contentId, contentUpdateRequest, thumbnail);
