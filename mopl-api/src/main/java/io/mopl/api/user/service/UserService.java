@@ -35,7 +35,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
   private final RefreshTokenService refreshTokenService;
-  private final RedisTemplate<String, Boolean> redisTemplate;
+  private final RedisTemplate<String, String> redisTemplate;
   private final JwtTokenProvider jwtTokenProvider;
 
   /** 회원가입 */
@@ -157,14 +157,13 @@ public class UserService {
           .opsForValue()
           .set(
               redisKey,
-              request.getLocked(),
+              String.valueOf(request.getLocked()),
               Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
 
       if (Boolean.TRUE.equals(request.getLocked())) {
         refreshTokenService.deleteRefreshToken(userId);
       }
-    } catch (org.springframework.data.redis.RedisConnectionFailureException
-        | org.springframework.data.redis.RedisSystemException e) {
+    } catch (Exception e) {
       log.error(
           "Redis 업데이트 실패 (DB는 정상 처리됨, 다음 인증 시 자동 복구): userId={}, locked={}",
           userId,

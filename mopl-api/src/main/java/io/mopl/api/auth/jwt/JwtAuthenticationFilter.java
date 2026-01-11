@@ -13,11 +13,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,7 +28,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Component
@@ -36,10 +35,9 @@ import tools.jackson.databind.json.JsonMapper;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtTokenProvider jwtTokenProvider;
-  private final RedisTemplate<String, Boolean> redisTemplate;
-  private final UserRepository userRepository;
+  private final RedisTemplate<String, String> redisTemplate;
   private final MessageSource messageSource;
-  private final JsonMapper objectMapper;
+  private final ApplicationContext applicationContext;
 
   @Override
   protected void doFilterInternal(
@@ -87,12 +85,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    Map<String, String> errorResponse =
-        Map.of(
-            "exceptionName", ((Enum<?>) e.getErrorCode()).name(),
-            "message", resolveMessage(e.getErrorCode().getMessageKey()));
+    String exceptionName = ((Enum<?>) e.getErrorCode()).name();
 
-    objectMapper.writeValue(response.getWriter(), errorResponse);
+    String message = resolveMessage(e.getErrorCode().getMessageKey());
+
+    String jsonResponse =
+        String.format(
+            "{\"exceptionName\":\"%s\",\"message\":\"%s\"}", exceptionName, escapeJson(message));
+
+    response.getWriter().write(jsonResponse);
   }
 
   /** MessageSource로 메시지 resolve */
@@ -104,12 +105,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
   }
 
+  /** JSON 특수문자 이스케이프 */
+  private String escapeJson(String value) {
+    if (value == null) {
+      return "";
+    }
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t");
+  }
+
   /** Redis에서 계정 잠금 상태 확인 */
   private void checkUserLocked(UUID userId) {
     String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
-    Boolean isLocked = redisTemplate.opsForValue().get(redisKey);
+    String lockedValue = redisTemplate.opsForValue().get(redisKey);
 
-    if (isLocked == null) {
+    Boolean isLocked;
+    if (lockedValue == null) {
+      UserRepository userRepository = applicationContext.getBean(UserRepository.class);
       User user =
           userRepository
               .findById(userId)
@@ -121,8 +137,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
           .opsForValue()
           .set(
               redisKey,
-              isLocked,
+              String.valueOf(isLocked),
               Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+    } else {
+      // String을 Boolean으로 변환
+      isLocked = Boolean.valueOf(lockedValue);
     }
 
     if (Boolean.TRUE.equals(isLocked)) {
