@@ -206,7 +206,7 @@ public class ContentService {
       }
     }
 
-    if (hasNewThumbnail) {
+    if (hasNewThumbnail && deletedUrl != null) {
       eventPublisher.publishEvent(new ThumbnailDeleteAfterCommitEvent(deletedUrl));
     }
 
