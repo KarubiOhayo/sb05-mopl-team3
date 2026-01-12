@@ -59,7 +59,6 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
       List<String> tags =
           item.getGenreIds().stream().map(TmdbGenre::getNameById).collect(Collectors.toList());
       content.setTags(tags);
-      content.getTags().add("TV 시리즈");
     }
 
     return content;
