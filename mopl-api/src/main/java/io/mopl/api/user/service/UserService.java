@@ -199,7 +199,6 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    UserRole oldRole = user.getRole();
     user.setRole(request.getRole());
 
     try {
