@@ -176,7 +176,7 @@ public class UserService {
           return false;
         }
         try {
-          Thread.sleep(100 * attempt);
+          Thread.sleep(100L * attempt);
         } catch (InterruptedException ie) {
           Thread.currentThread().interrupt();
           log.error("Redis Key 삭제 재시도 중단됨: key = {}", redisKey);
