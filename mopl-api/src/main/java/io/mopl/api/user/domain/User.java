@@ -60,6 +60,7 @@ public class User {
   @Enumerated(EnumType.STRING)
   private UserRole role;
 
+  @Setter
   @Column(nullable = false)
   @Builder.Default
   private boolean locked = false;

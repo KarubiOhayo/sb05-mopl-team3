@@ -1,6 +1,6 @@
 package io.mopl.api.playlist.controller;
 
-import io.mopl.api.playlist.dto.CursorResponsePlaylistDto;
+import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.playlist.dto.PlaylistCreateRequest;
 import io.mopl.api.playlist.dto.PlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;
@@ -32,7 +32,7 @@ public class PlaylistController {
   private final PlaylistService playlistService;
 
   @GetMapping
-  public CursorResponsePlaylistDto findPlaylists(
+  public CursorResponse<PlaylistDto> findPlaylists(
       @Valid @ModelAttribute PlaylistSearchRequest request,
       @AuthenticationPrincipal(expression = "userId") UUID userId) {
     return playlistQueryService.findPlaylists(request, userId);
