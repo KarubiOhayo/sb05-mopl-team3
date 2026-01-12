@@ -5,11 +5,11 @@ import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
 import io.mopl.worker.notification.domain.NotificationRepository;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -33,9 +33,7 @@ public class FollowNotificationListener {
 
       String title =
           messageSource.getMessage(
-              "notification.follow.title",
-              new Object[] {event.followerName()},
-              LocaleContextHolder.getLocale());
+              "notification.follow.title", new Object[] {event.followerName()}, Locale.KOREAN);
 
       Notification notification =
           Notification.builder()
