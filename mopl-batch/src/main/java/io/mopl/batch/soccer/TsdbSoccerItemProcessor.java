@@ -59,7 +59,6 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
       content.getTags().add(item.getVenue());
     }
     content.getTags().add("Soccer");
-    content.getTags().add("스포츠");
 
     return content;
   }
