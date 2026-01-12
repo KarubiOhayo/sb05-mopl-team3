@@ -215,16 +215,18 @@ public class ContentService {
     }
 
     log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
+    String thumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
     return new ContentDto(
         content.getId(),
         content.getType(),
         content.getTitle(),
         content.getDescription(),
-        content.getThumbnailUrl(),
+        thumbnailUrl,
         requestedTags,
-        0.0,
-        0,
-        0L);
+        content.getAverageRating(),
+        content.getReviewCount(),
+        content.getWatcherCount());
   }
 
   @Transactional(readOnly = true)
