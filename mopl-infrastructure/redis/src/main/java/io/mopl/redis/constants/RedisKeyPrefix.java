@@ -4,11 +4,11 @@ public final class RedisKeyPrefix {
 
   // ===== 인증 =====
 
-  /** 리프레시 토큰 : rt:{userId} */
+  /** 리프레시 토큰: rt:{userId} */
   public static final String REFRESH_TOKEN = "rt:";
 
-  /** 이메일 인증 코드: email:verify:{email} */
-  public static final String EMAIL_VERIFICATION = "email:verify:";
+  /** 사용자 잠금 상태: user:locked:{userId} */
+  public static final String USER_LOCKED = "user:locked:";
 
   /** 시청 세션: watching:content/user:{contentId/userId} */
   public static final String CONTENT_PREFIX = "watching:content:";

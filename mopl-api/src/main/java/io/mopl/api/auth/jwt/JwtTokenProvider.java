@@ -27,6 +27,7 @@ public class JwtTokenProvider {
   @Value("${jwt.secret}")
   private String secret;
 
+  @Getter
   @Value("${jwt.access-token-validity-in-seconds}")
   private long accessTokenValidityInSeconds;
 
