@@ -10,6 +10,11 @@ public final class RedisKeyPrefix {
   /** 사용자 잠금 상태: user:locked:{userId} */
   public static final String USER_LOCKED = "user:locked:";
 
+  /** 임시 비밀번호: temp_password:{userId} */
+  public static final String TEMP_PASSWORD = "temp_password:";
+
+  // ===== 시청 세션 =====
+
   /** 시청 세션: watching:content/user:{contentId/userId} */
   public static final String CONTENT_PREFIX = "watching:content:";
 
