@@ -18,7 +18,7 @@ public class PlaylistEventPublisher {
 
   public void publishCreated(PlaylistCreatedEvent event) {
     kafkaTemplate
-        .send(KafkaTopics.PLAYLIST_CREATED, event.ownerId(), event)
+        .send(KafkaTopics.PLAYLIST_CREATED, event.playlistId(), event)
         .whenComplete(
             (result, ex) -> {
               if (ex != null) {
@@ -29,7 +29,7 @@ public class PlaylistEventPublisher {
 
   public void publishSubscribed(PlaylistSubscribedEvent event) {
     kafkaTemplate
-        .send(KafkaTopics.PLAYLIST_SUBSCRIBED, event.ownerId(), event)
+        .send(KafkaTopics.PLAYLIST_SUBSCRIBED, event.playlistId(), event)
         .whenComplete(
             (result, ex) -> {
               if (ex != null) {
