@@ -174,6 +174,7 @@ CREATE TABLE direct_messages (
 
 CREATE TABLE notifications (
   id CHAR(36) NOT NULL,
+  event_id CHAR(36) NOT NULL,
   receiver_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
@@ -181,6 +182,7 @@ CREATE TABLE notifications (
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_notifications_event_id (event_id),
   CONSTRAINT fk_notifications_receiver
     FOREIGN KEY (receiver_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE
