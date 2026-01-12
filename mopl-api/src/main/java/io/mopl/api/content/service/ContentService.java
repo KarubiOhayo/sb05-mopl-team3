@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
+import io.mopl.api.content.event.ContentThumbnailDeleteEvent;
 import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
@@ -46,6 +48,7 @@ public class ContentService {
   private final PlaylistContentRepository playlistContentRepository;
   private final TagRepository tagRepository;
   private final ContentThumbnailUploadService contentThumbnailUploadService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   @PreAuthorize("hasRole('ADMIN')")
@@ -160,12 +163,20 @@ public class ContentService {
 		String deletedUrl = content.getThumbnailUrl();
 		String updatedUrl = deletedUrl;
 
-		if (thumbnail != null && !thumbnail.isEmpty()) {
+		boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
+		if (hasNewThumbnail) {
 			updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
 		}
-		content.update(title, description, updatedUrl);
-		if (thumbnail != null && !thumbnail.isEmpty()) {
-			contentThumbnailUploadService.deleteThumbnail(deletedUrl);
+		try {
+			content.update(title, description, updatedUrl);
+			if (hasNewThumbnail) {
+				eventPublisher.publishEvent(new ContentThumbnailDeleteEvent(deletedUrl));
+			}
+		} catch (RuntimeException e) {
+			if(hasNewThumbnail) {
+				contentThumbnailUploadService.deleteThumbnail(updatedUrl);
+			}
+			throw e;
 		}
 
 		List<String> requestedTags = contentUpdateRequest.getTags();
