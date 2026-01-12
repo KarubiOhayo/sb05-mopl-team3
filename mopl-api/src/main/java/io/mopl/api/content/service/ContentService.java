@@ -193,7 +193,7 @@ public class ContentService {
       if (!toAdd.isEmpty()) {
         List<Tag> existingTags = tagRepository.findByNameIn(toAdd);
         Map<String, Tag> tagByName =
-            existingTags.stream().collect(Collectors.toMap(Tag::getName, t -> t));
+            existingTags.stream().collect(Collectors.toMap(Tag::getName, t -> t, (a,b) -> a));
 
         for (String tagName : toAdd) {
           Tag tag = tagByName.get(tagName);
