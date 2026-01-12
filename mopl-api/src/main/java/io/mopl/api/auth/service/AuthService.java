@@ -12,8 +12,13 @@ import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +179,8 @@ public class AuthService {
 
   /** Rate Limiting 체크 */
   private void checkRateLimit(String email) {
-    String key = RESET_LIMIT_KEY_PREFIX + email;
+    String hashedEmail = hashEmail(email);
+    String key = RESET_LIMIT_KEY_PREFIX + hashedEmail;
 
     Long attempts = stringRedisTemplate.opsForValue().increment(key);
 
@@ -184,6 +190,18 @@ public class AuthService {
 
     if (attempts > MAX_RESET_ATTEMPTS) {
       throw new BusinessException(AuthErrorCode.TOO_MANY_RESET_REQUESTS);
+    }
+  }
+
+  /** 이메일을 SHA-256으로 해싱 */
+  private String hashEmail(String email) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(email.toLowerCase().getBytes(StandardCharsets.UTF_8));
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+    } catch (NoSuchAlgorithmException e) {
+      log.error("SHA-256 알고리즘을 사용할 수 없습니다", e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
