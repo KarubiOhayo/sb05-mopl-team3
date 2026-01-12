@@ -87,11 +87,13 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
   }
 
   @Override
-  public long countPlaylists(String keywordLike, UUID ownerIdEqual, UUID subscriberIdEqual) {
+  public long countPlaylists(PlaylistSearchRequest request) {
     QPlaylist p = QPlaylist.playlist;
 
     // 목록 조회와 동일한 필터로 count 계산
-    BooleanBuilder where = buildBaseWhere(keywordLike, ownerIdEqual, subscriberIdEqual, p);
+    BooleanBuilder where =
+        buildBaseWhere(
+            request.getKeywordLike(), request.getOwnerIdEqual(), request.getSubscriberIdEqual(), p);
 
     Long count = queryFactory.select(p.count()).from(p).where(where).fetchOne();
 
@@ -179,7 +181,7 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
     SUBSCRIBE_COUNT;
 
     static SortBy from(String raw) {
-      if (raw == null) {
+      if (raw == null || raw.isBlank()) {
         return UPDATED_AT;
       }
       if ("updatedAt".equals(raw)) {
@@ -199,7 +201,7 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
     DESC;
 
     static SortDirection from(String raw) {
-      if (raw == null) {
+      if (raw == null || raw.isBlank()) {
         return DESC;
       }
       if ("ASCENDING".equals(raw)) {

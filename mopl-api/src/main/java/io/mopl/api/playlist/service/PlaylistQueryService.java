@@ -41,24 +41,22 @@ public class PlaylistQueryService {
   private final PlaylistRepository playlistRepository;
   private final UserService userService;
 
-  // Playlist 조회
+  // 플레이리스트 목록 조회
   public CursorResponse<PlaylistDto> findPlaylists(PlaylistSearchRequest request, UUID me) {
 
-    // 정렬 기본값 확보
+    // 정렬 기본값
     String sortBy = request.getSortByOrDefault();
     String sortDirection = request.getSortDirectionOrDefault();
 
-    // 요청 객체 그대로 리포지토리에 전달
+    // 요청 객체 그대로 리포지토리 전달
     PlaylistPage page = playlistQueryRepository.findPlaylistsPage(request);
 
     // totalCount는 동일 필터 조건으로 계산
-    long totalCount =
-        playlistQueryRepository.countPlaylists(
-            request.getKeywordLike(), request.getOwnerIdEqual(), request.getSubscriberIdEqual());
+    long totalCount = playlistQueryRepository.countPlaylists(request);
 
     List<Playlist> playlists = page.getPlaylists();
 
-    // ownerId, playlistId 수집
+    // ownerId, playlistId 수집 (배치 로딩용)
     Set<UUID> ownerIds = new HashSet<>();
     List<UUID> playlistIds = new ArrayList<>();
     for (Playlist playlist : playlists) {
@@ -66,7 +64,7 @@ public class PlaylistQueryService {
       playlistIds.add(playlist.getId());
     }
 
-    // 연관 데이터 일괄 조회
+    // 연관 데이터 일괄 로딩
     Map<UUID, UserSummary> ownerMap = playlistOwnerLoader.loadOwners(ownerIds);
     Set<UUID> subscribedPlaylistIds =
         playlistSubscriptionLoader.loadSubscribedPlaylistIdsByMe(me, playlistIds);
@@ -108,11 +106,20 @@ public class PlaylistQueryService {
         .hasNext(page.isHasNext())
         .totalCount(totalCount)
         .sortBy(sortBy)
-        .sortDirection(SortDirection.valueOf(sortDirection))
+        .sortDirection(parseSortDirection(sortDirection))
         .build();
   }
 
-  // playlist 단건 조회
+  private SortDirection parseSortDirection(String raw) {
+    try {
+      return SortDirection.valueOf(raw);
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+          .addDetail("reason", "Invalid sortDirection. Use ASCENDING or DESCENDING.");
+    }
+  }
+
+  // 플레이리스트 단건 조회
   public PlaylistDto findPlaylist(UUID playlistId, UUID me) {
     Playlist playlist =
         playlistRepository
