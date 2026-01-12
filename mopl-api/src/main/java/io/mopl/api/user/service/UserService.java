@@ -10,6 +10,7 @@ import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserLockUpdateRequest;
+import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
@@ -188,5 +189,23 @@ public class UserService {
       }
     }
     return false;
+  }
+
+  /** 사용자 권한 변경 */
+  @Transactional
+  public void updateUserRole(UUID userId, UserRoleUpdateRequest request) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    UserRole oldRole = user.getRole();
+    user.setRole(request.getRole());
+
+    try {
+      refreshTokenService.deleteRefreshToken(userId);
+    } catch (Exception e) {
+      log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패");
+    }
   }
 }
