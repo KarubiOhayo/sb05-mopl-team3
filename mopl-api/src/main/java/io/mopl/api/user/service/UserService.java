@@ -148,16 +148,42 @@ public class UserService {
 
     user.setLocked(request.getLocked());
 
-    try {
-      String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+    String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+    boolean redisSuccess = deleteRedisKeyWithRetry(redisKey, 3);
 
-      redisTemplate.delete(redisKey);
-
-      if (Boolean.TRUE.equals(request.getLocked())) {
-        refreshTokenService.deleteRefreshToken(userId);
-      }
-    } catch (Exception e) {
-      log.error("캐시 무효화 실패 (DB는 정상 처리됨, TTL 만료 시 자동 복구)", e);
+    if (!redisSuccess) {
+      log.error("@@@ CRITICAL: Redis 캐시 삭제 실패 (3회 재시도)");
     }
+
+    if (Boolean.TRUE.equals(request.getLocked())) {
+      try {
+        refreshTokenService.deleteRefreshToken(userId);
+      } catch (Exception e) {
+        log.error("Refresh Token 삭제 실패");
+      }
+    }
+  }
+
+  /** Redis 키 삭제 (재시도 로직 포함) */
+  private boolean deleteRedisKeyWithRetry(String redisKey, int maxAttempts) {
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        redisTemplate.delete(redisKey);
+        return true;
+      } catch (Exception e) {
+        if (attempt == maxAttempts) {
+          log.error("Redis Key 삭제 최종 실패: key = {}", redisKey);
+          return false;
+        }
+        try {
+          Thread.sleep(100 * attempt);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          log.error("Redis Key 삭제 재시도 중단됨: key = {}", redisKey);
+          return false;
+        }
+      }
+    }
+    return false;
   }
 }
