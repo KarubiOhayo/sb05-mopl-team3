@@ -42,11 +42,9 @@ public class AuthService {
   private final StringRedisTemplate stringRedisTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
-  private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:";
   private static final int MAX_RESET_ATTEMPTS = 3;
   private static final long RESET_LIMIT_DURATION = 300; // 5분
-
-  private static final long TEMP_PASSWORD_EXPIRATION = 180;
+  private static final long TEMP_PASSWORD_EXPIRATION = 180; // 3분
 
   /** 로그인 */
   @Transactional
@@ -180,7 +178,7 @@ public class AuthService {
   /** Rate Limiting 체크 */
   private void checkRateLimit(String email) {
     String hashedEmail = hashEmail(email);
-    String key = RESET_LIMIT_KEY_PREFIX + hashedEmail;
+    String key = RedisKeyPrefix.PASSWORD_RESET_LIMIT + hashedEmail;
 
     Long attempts = stringRedisTemplate.opsForValue().increment(key);
 
