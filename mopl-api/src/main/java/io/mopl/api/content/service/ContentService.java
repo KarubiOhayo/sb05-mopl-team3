@@ -204,6 +204,8 @@ public class ContentService {
               ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
         }
       }
+    } else {
+      requestedTags = contentTagRepository.findTagNamesByContentId(contentId);
     }
 
     if (hasNewThumbnail && deletedUrl != null) {
