@@ -17,11 +17,20 @@ public class ContentThumbnailDeleteEventListener {
 
   @Async
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-  public void handle(ContentThumbnailDeleteEvent event) {
+  public void handle(ThumbnailDeleteAfterCommitEvent event) {
     try {
       contentThumbnailUploadService.deleteThumbnail(event.getDeletedUrl());
     } catch (Exception e) {
       log.error("기존 썸네일 삭제가 실패하였습니다. key = {}", event.getDeletedUrl(), e);
+    }
+  }
+
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
+  public void handleAfterRollback(ThumbnailUploadedEvent event) {
+    try {
+      contentThumbnailUploadService.deleteThumbnail(event.getThumbnailUrl());
+    } catch (Exception e) {
+      log.error("롤백 삭제가 실패하였습니다. key = {}", event.getThumbnailUrl(), e);
     }
   }
 }

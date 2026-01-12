@@ -14,7 +14,8 @@ import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
-import io.mopl.api.content.event.ContentThumbnailDeleteEvent;
+import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
+import io.mopl.api.content.event.ThumbnailUploadedEvent;
 import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
@@ -166,18 +167,9 @@ public class ContentService {
     boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
     if (hasNewThumbnail) {
       updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedUrl));
     }
-    try {
-      content.update(title, description, updatedUrl);
-      if (hasNewThumbnail) {
-        eventPublisher.publishEvent(new ContentThumbnailDeleteEvent(deletedUrl));
-      }
-    } catch (RuntimeException e) {
-      if (hasNewThumbnail) {
-        contentThumbnailUploadService.deleteThumbnail(updatedUrl);
-      }
-      throw e;
-    }
+    content.update(title, description, updatedUrl);
 
     List<String> requestedTags = contentUpdateRequest.getTags();
     if (requestedTags != null) {
@@ -212,6 +204,10 @@ public class ContentService {
               ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
         }
       }
+    }
+
+    if (hasNewThumbnail) {
+      eventPublisher.publishEvent(new ThumbnailDeleteAfterCommitEvent(deletedUrl));
     }
 
     log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
