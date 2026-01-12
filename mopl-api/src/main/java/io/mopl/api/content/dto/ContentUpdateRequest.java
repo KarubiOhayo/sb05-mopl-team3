@@ -1,8 +1,7 @@
 package io.mopl.api.content.dto;
 
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,5 +18,6 @@ public class ContentUpdateRequest {
 
   @NotBlank(message = "설명은 필수입니다.")
   private String description;
+
   private List<String> tags;
 }

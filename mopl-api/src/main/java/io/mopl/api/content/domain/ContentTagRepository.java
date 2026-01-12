@@ -2,7 +2,6 @@ package io.mopl.api.content.domain;
 
 import java.util.List;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,7 +26,8 @@ public interface ContentTagRepository extends JpaRepository<ContentTag, ContentT
           + "where ct.id.contentId in :contentIds")
   List<Object[]> findTagNamesByContentIds(@Param("contentIds") List<UUID> contentIds);
 
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
-	@Query("delete from ContentTag ct where ct.id.contentId = :contentId and ct.id.tagId in :tagIds")
-	void deleteByContentIdAndTagIdIn(@Param("contentId") UUID contentId, @Param("tagIds") List<UUID> removeTagIds);
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("delete from ContentTag ct where ct.id.contentId = :contentId and ct.id.tagId in :tagIds")
+  void deleteByContentIdAndTagIdIn(
+      @Param("contentId") UUID contentId, @Param("tagIds") List<UUID> removeTagIds);
 }

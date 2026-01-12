@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ContentThumbnailDeleteEvent {
-	private String deletedUrl;
+  private String deletedUrl;
 }
