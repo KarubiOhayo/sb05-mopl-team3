@@ -63,8 +63,10 @@ public class UserController {
   @PatchMapping("/{userId}/role")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> updateUserRole(
-      @PathVariable UUID userId, @Valid @RequestBody UserRoleUpdateRequest request) {
-    userService.updateUserRole(userId, request);
+      @PathVariable UUID userId,
+      @Valid @RequestBody UserRoleUpdateRequest request,
+      @AuthenticationPrincipal AuthUser authUser) {
+    userService.updateUserRole(userId, request, authUser.getUserId());
     return ResponseEntity.noContent().build();
   }
 

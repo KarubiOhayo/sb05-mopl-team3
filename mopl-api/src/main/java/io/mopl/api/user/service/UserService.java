@@ -193,11 +193,22 @@ public class UserService {
 
   /** 사용자 권한 변경 */
   @Transactional
-  public void updateUserRole(UUID userId, UserRoleUpdateRequest request) {
+  public void updateUserRole(UUID userId, UserRoleUpdateRequest request, UUID currentUserId) {
+    if (userId.equals(currentUserId)) {
+      throw new BusinessException(UserErrorCode.CANNOT_UPDATE_OWN_ROLE);
+    }
+
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (user.getRole() == UserRole.ADMIN && request.getRole() != UserRole.ADMIN) {
+      long adminCount = userRepository.countByRole(UserRole.ADMIN);
+      if (adminCount == 1) {
+        throw new BusinessException(UserErrorCode.LAST_ADMIN_PROTECTION);
+      }
+    }
 
     user.setRole(request.getRole());
 
