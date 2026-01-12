@@ -13,7 +13,9 @@ import io.mopl.api.user.dto.UserLockUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -149,37 +151,38 @@ public class UserService {
     user.setLocked(request.getLocked());
 
     String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
-    boolean redisSuccess = deleteRedisKeyWithRetry(redisKey, 3);
+    String newRedisKey = String.valueOf(request.getLocked());
+
+    boolean redisSuccess = setRedisKeyWithRetry(redisKey, newRedisKey, Duration.ofHours(24), 3);
 
     if (!redisSuccess) {
-      log.error("@@@ CRITICAL: Redis 캐시 삭제 실패 (3회 재시도)");
-    }
-
-    if (Boolean.TRUE.equals(request.getLocked())) {
-      try {
-        refreshTokenService.deleteRefreshToken(userId);
-      } catch (Exception e) {
-        log.error("Refresh Token 삭제 실패");
+      if (Boolean.TRUE.equals(request.getLocked())) {
+        log.error("@@@ CRITICAL: 계정 잠금 시 Redis Key 갱신 실패 - 트랜잭션 롤백");
+        throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+      } else {
+        log.error("@@@ WARNING: 계정 잠금해제 시 Redis Key 갱신 실패 - DB는 정상 처리, 최대 24시간 후 복구");
       }
     }
   }
 
-  /** Redis 키 삭제 (재시도 로직 포함) */
-  private boolean deleteRedisKeyWithRetry(String redisKey, int maxAttempts) {
+  private boolean setRedisKeyWithRetry(
+      String redisKey, String newRedisKey, Duration ttl, int maxAttempts) {
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        redisTemplate.delete(redisKey);
+        redisTemplate.opsForValue().set(redisKey, newRedisKey, ttl);
         return true;
       } catch (Exception e) {
         if (attempt == maxAttempts) {
-          log.error("Redis Key 삭제 최종 실패: key = {}", redisKey);
+          log.error("Redis Key 설정 최종 실패: Key = {}", redisKey);
           return false;
         }
+        log.warn("Redis Key 설정 실패, 재시도 중 {}/{}", attempt, maxAttempts);
+
         try {
-          Thread.sleep(100L * attempt);
+          Thread.sleep(100 * attempt);
         } catch (InterruptedException ie) {
           Thread.currentThread().interrupt();
-          log.error("Redis Key 삭제 재시도 중단됨: key = {}", redisKey);
+          log.error("Redis Key 재설정 중단됨");
           return false;
         }
       }
