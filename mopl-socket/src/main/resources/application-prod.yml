@@ -11,3 +11,6 @@ logging:
   level:
     root: INFO
     io.mopl: INFO
+
+jwt:
+  secret: ${JWT_SECRET}
