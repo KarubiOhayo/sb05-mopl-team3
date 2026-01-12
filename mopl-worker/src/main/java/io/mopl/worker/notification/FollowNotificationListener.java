@@ -50,6 +50,7 @@ public class FollowNotificationListener {
 
       if (message != null && message.contains("uq_notifications_event_id")) {
         // 중복 이벤트 → 무시
+        log.debug("중복 이벤트 무시 (eventId={})", event.eventId());
       } else if (message != null && message.contains("fk_notifications_receiver")) {
         log.error("수신자 외래키 위반 (eventId={})", event.eventId(), e);
       } else {
