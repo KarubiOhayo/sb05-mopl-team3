@@ -127,12 +127,14 @@ public class ContentService {
   @PreAuthorize("hasRole('ADMIN')")
   public void delete(UUID contentId) {
     log.info("컨텐츠 삭제 시작: contentId: {}", contentId);
-    contentRepository
-        .findById(contentId)
-        .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
+    Content content =
+        contentRepository
+            .findById(contentId)
+            .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
     reviewRepository.deleteByContentId(contentId);
     playlistContentRepository.deleteByIdContentId(contentId);
     contentTagRepository.deleteByIdContentId(contentId);
+    contentThumbnailUploadService.deleteThumbnail(content.getThumbnailUrl());
     contentRepository.deleteById(contentId);
     log.info("컨텐츠 삭제 완료: contentId: {}", contentId);
   }
