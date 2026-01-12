@@ -62,8 +62,13 @@ public class JwtTokenProvider {
 
   /** 토큰에서 userId 추출 */
   public UUID getUserId(String token) {
-    JWTClaimsSet claims = parseClaims(token);
-    return UUID.fromString(claims.getSubject());
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return UUID.fromString(claims.getSubject());
+    } catch (IllegalArgumentException e) {
+      log.error("JWT에서 userId 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
   }
 
   /** 토큰에서 email 추출 */
