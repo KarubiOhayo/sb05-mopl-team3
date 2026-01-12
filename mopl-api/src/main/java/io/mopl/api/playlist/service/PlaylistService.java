@@ -81,14 +81,13 @@ public class PlaylistService {
   public void subscribe(UUID playlistId, UUID userId) {
     validatePlaylistAndUserIds(playlistId, userId);
 
-    assertPlaylistExists(playlistId);
+    Playlist playlist = findPlaylistOrThrow(playlistId);
 
     PlaylistSubscriptionId id = new PlaylistSubscriptionId(playlistId, userId);
     if (playlistSubscriptionRepository.existsById(id)) {
       return;
     }
     UserSummary subscriber = userService.getUserSummary(userId);
-    Playlist playlist = findPlaylistOrThrow(playlistId);
 
     PlaylistSubscription subscription = PlaylistSubscription.builder().id(id).build();
     playlistSubscriptionRepository.save(subscription);
