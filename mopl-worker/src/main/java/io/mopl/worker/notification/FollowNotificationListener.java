@@ -23,7 +23,9 @@ public class FollowNotificationListener {
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
 
-  @KafkaListener(topics = KafkaTopics.USER_FOLLOWED)
+  @KafkaListener(
+      topics = KafkaTopics.USER_FOLLOWED,
+      properties = "spring.json.value.default.type=io.mopl.core.event.follow.UserFollowedEvent")
   public void handle(UserFollowedEvent event, Acknowledgment acknowledgment) {
     try {
       log.info("follow event received: eventId={}", event.eventId());

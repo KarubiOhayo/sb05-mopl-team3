@@ -10,6 +10,15 @@ public final class RedisKeyPrefix {
   /** 사용자 잠금 상태: user:locked:{userId} */
   public static final String USER_LOCKED = "user:locked:";
 
+  /** 시청 세션: watching:content/user:{contentId/userId} */
+  public static final String CONTENT_PREFIX = "watching:content:";
+
+  public static final String USER_PREFIX = "watching:user:";
+
+  public static final String CONTENT_INFO_PREFIX = "watching:content-info:";
+
+  public static final String USER_INFO_PREFIX = "watching:user-info:";
+
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
     throw new AssertionError("Cannot instantiate constants class");
