@@ -29,5 +29,5 @@ public interface ContentTagRepository extends JpaRepository<ContentTag, ContentT
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("delete from ContentTag ct where ct.id.contentId = :contentId and ct.id.tagId in :tagIds")
   void deleteByContentIdAndTagIdIn(
-      @Param("contentId") UUID contentId, @Param("tagIds") List<UUID> removeTagIds);
+      @Param("contentId") UUID contentId, @Param("tagIds") List<UUID> tagIds);
 }
