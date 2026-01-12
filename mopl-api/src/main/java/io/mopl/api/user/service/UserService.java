@@ -1,6 +1,5 @@
 package io.mopl.api.user.service;
 
-import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
@@ -35,7 +34,6 @@ public class UserService {
   private final ProfileImageUploadService profileImageUploadService;
   private final RefreshTokenService refreshTokenService;
   private final RedisTemplate<String, String> redisTemplate;
-  private final JwtTokenProvider jwtTokenProvider;
 
   /** 회원가입 */
   @Transactional
