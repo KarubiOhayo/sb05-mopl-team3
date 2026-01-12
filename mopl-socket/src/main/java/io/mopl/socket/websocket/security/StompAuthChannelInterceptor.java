@@ -87,7 +87,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
       if (StringUtils.hasText(value) && value.startsWith(BEARER_PREFIX)) {
         return value.substring(BEARER_PREFIX.length());
       }
-      return value;
+      return null;
     }
 
     List<String> accessToken = accessor.getNativeHeader(ACCESS_TOKEN);
