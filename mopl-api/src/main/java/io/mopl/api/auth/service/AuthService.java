@@ -12,9 +12,8 @@ import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -38,9 +37,11 @@ public class AuthService {
   private final StringRedisTemplate stringRedisTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
-  private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:limit:";
+  private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:";
   private static final int MAX_RESET_ATTEMPTS = 3;
   private static final long RESET_LIMIT_DURATION = 300; // 5분
+
+  private static final long TEMP_PASSWORD_EXPIRATION = 180;
 
   /** 로그인 */
   @Transactional
@@ -121,16 +122,20 @@ public class AuthService {
   }
 
   /** 비밀번호 검증 */
-  private void validatePassword(String rawPassword, User user) {
-    boolean isPasswordValid = passwordEncoder.matches(rawPassword, user.getPasswordHash());
+  private void validatePassword(User user, String rawPassword) {
+    boolean isPasswordValid;
 
-    // 비밀번호 틀렸을 시 임시 비밀번호 체크
-    if (!isPasswordValid && user.getTempPasswordHash() != null) {
-      if (user.getTempPasswordExpiresAt() != null
-          && user.getTempPasswordExpiresAt().isAfter(Instant.now())) {
-        isPasswordValid = passwordEncoder.matches(rawPassword, user.getTempPasswordHash());
+    String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + user.getId();
+    String tempPasswordHash = stringRedisTemplate.opsForValue().get(tempPasswordKey);
+
+    if (tempPasswordHash != null) {
+      isPasswordValid = passwordEncoder.matches(rawPassword, tempPasswordHash);
+      if (isPasswordValid) {
+        return;
       }
     }
+
+    isPasswordValid = passwordEncoder.matches(rawPassword, user.getPasswordHash());
 
     if (!isPasswordValid) {
       throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
@@ -155,8 +160,13 @@ public class AuthService {
     }
 
     String temporaryPassword = generateTemporaryPassword();
-    user.setTempPasswordHash(passwordEncoder.encode(temporaryPassword));
-    user.setTempPasswordExpiresAt(Instant.now().plus(3, ChronoUnit.MINUTES));
+    String encodedPassword = passwordEncoder.encode(temporaryPassword);
+
+    String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + user.getId();
+    assert encodedPassword != null;
+    stringRedisTemplate
+        .opsForValue()
+        .set(tempPasswordKey, encodedPassword, TEMP_PASSWORD_EXPIRATION, TimeUnit.SECONDS);
 
     PasswordResetEvent event =
         new PasswordResetEvent(user.getId(), user.getEmail(), temporaryPassword);
