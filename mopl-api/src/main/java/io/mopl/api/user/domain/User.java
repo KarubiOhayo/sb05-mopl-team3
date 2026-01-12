@@ -69,13 +69,13 @@ public class User {
   @Column(name = "profile_image_url", length = 2048)
   private String profileImageUrl;
 
-  @Setter
-  @Column(name = "temp_password_hash", length = 255)
-  private String tempPasswordHash;
-
-  @Setter
-  @Column(name = "temp_password_expires_at")
-  private Instant tempPasswordExpiresAt;
+  //  @Setter
+  //  @Column(name = "temp_password_hash", length = 255)
+  //  private String tempPasswordHash;
+  //
+  //  @Setter
+  //  @Column(name = "temp_password_expires_at")
+  //  private Instant tempPasswordExpiresAt;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
