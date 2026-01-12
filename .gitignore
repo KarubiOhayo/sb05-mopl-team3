@@ -254,3 +254,4 @@ logs/
 /docker/grafana/data/
 
 AGENT.md
+/project-mopl-fe-1.0.0/

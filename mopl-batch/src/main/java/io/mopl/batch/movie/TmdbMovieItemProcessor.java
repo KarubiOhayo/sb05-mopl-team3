@@ -59,7 +59,6 @@ public class TmdbMovieItemProcessor implements ItemProcessor<TmdbMovieResponse, 
       List<String> tags =
           item.getGenreIds().stream().map(TmdbGenre::getNameById).collect(Collectors.toList());
       content.setTags(tags);
-      content.getTags().add("영화");
     }
 
     return content;
