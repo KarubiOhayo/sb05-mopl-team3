@@ -15,7 +15,6 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'software.amazon.awssdk:s3:2.40.17'
 
     testImplementation 'org.springframework.kafka:spring-kafka-test'
