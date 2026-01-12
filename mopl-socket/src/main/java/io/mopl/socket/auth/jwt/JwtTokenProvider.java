@@ -1,0 +1,162 @@
+package io.mopl.socket.auth.jwt;
+
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.KeyLengthException;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import io.mopl.core.error.BusinessException;
+import io.mopl.socket.common.error.SocketErrorCode;
+import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.UUID;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JwtTokenProvider {
+
+  @Value("${jwt.secret}")
+  private String secret;
+
+  @Value("${jwt.access-token-validity-in-seconds}")
+  private long accessTokenValidityInSeconds;
+
+  @Getter
+  @Value("${jwt.refresh-token-validity-in-seconds:604800}")
+  private long refreshTokenValidityInSeconds;
+
+  private MACSigner signer;
+  private MACVerifier verifier;
+  private long accessTokenValidityInMilliseconds;
+  private long refreshTokenValidityInMilliseconds;
+
+  @PostConstruct
+  protected void init() {
+    try {
+      byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+      if (secretBytes.length < 32) {
+        throw new IllegalArgumentException("JWT secret 키는 최소 32바이트(256비트) 이상이어야 합니다");
+      }
+      this.signer = new MACSigner(secretBytes);
+      this.verifier = new MACVerifier(secretBytes);
+      this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
+      this.refreshTokenValidityInMilliseconds = refreshTokenValidityInSeconds * 1000;
+    } catch (KeyLengthException e) {
+      log.error("JWT secret 키 길이가 유효하지 않습니다: {}", e.getMessage());
+      throw new IllegalArgumentException(
+          "JWT secret 키는 HS256 알고리즘을 위해 최소 32바이트(256비트) 이상이어야 합니다", e);
+    } catch (JOSEException e) {
+      log.error("JWT signer/verifier 초기화 실패: {}", e.getMessage());
+      throw new IllegalArgumentException("JWT 컴포넌트 초기화 실패", e);
+    }
+  }
+
+  /** 토큰에서 userId 추출 */
+  public UUID getUserId(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return UUID.fromString(claims.getSubject());
+    } catch (IllegalArgumentException e) {
+      log.error("JWT에서 userId 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+
+  /** 토큰에서 email 추출 */
+  public String getEmail(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("email");
+    } catch (ParseException e) {
+      log.error("JWT에서 이메일 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+
+  /** 토큰에서 role 추출 */
+  public String getRole(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("role");
+    } catch (ParseException e) {
+      log.error("JWT에서 권한 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+
+  /** 토큰에서 name 추출 */
+  public String getName(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("name");
+    } catch (ParseException e) {
+      log.error("JWT에서 이름 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+
+  /** 토큰에서 profileImageUrl 추출 */
+  public String getProfileImageUrl(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      return claims.getStringClaim("profileImageUrl");
+    } catch (ParseException e) {
+      log.error("JWT에서 프로필 이미지 URL 추출 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+
+  /** 토큰 유효성 검증 */
+  public boolean validateToken(String token) {
+    try {
+      SignedJWT signedJWT = SignedJWT.parse(token);
+
+      if (!signedJWT.verify(verifier)) {
+        log.error("JWT 서명 검증 실패");
+        return false;
+      }
+
+      Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+      if (expirationTime != null && expirationTime.before(new Date())) {
+        return false;
+      }
+
+      return true;
+    } catch (Exception e) {
+      log.error("유효하지 않은 JWT 토큰: {}", e.getMessage());
+      return false;
+    }
+  }
+
+  /** 리프레시 토큰 타입 검증 */
+  public boolean isRefreshToken(String token) {
+    try {
+      JWTClaimsSet claims = parseClaims(token);
+      String type = claims.getStringClaim("type");
+      return "refresh".equals(type);
+    } catch (ParseException e) {
+      log.error("토큰 타입 검증 실패", e);
+      return false;
+    }
+  }
+
+  /** 토큰 파싱 */
+  private JWTClaimsSet parseClaims(String token) {
+    try {
+      SignedJWT signedJWT = SignedJWT.parse(token);
+      return signedJWT.getJWTClaimsSet();
+    } catch (ParseException e) {
+      log.error("JWT 파싱 실패: {}", e.getMessage());
+      throw new BusinessException(SocketErrorCode.INVALID_TOKEN, e);
+    }
+  }
+}

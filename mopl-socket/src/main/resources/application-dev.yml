@@ -5,6 +5,13 @@ spring:
     import:
       - "optional:file:./.env[.properties]"
       - "optional:file:./mopl-socket/.env[.properties]"
+  datasource:
+    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${MOPL_DB_USERNAME:app}
+    password: ${MOPL_DB_PASSWORD:app}
+  jpa:
+    hibernate:
+      ddl-auto: ${MOPL_DDL_AUTO:update}
   data:
     redis:
       host: ${MOPL_REDIS_HOST:localhost}
@@ -14,3 +21,8 @@ spring:
 
 server:
   port: ${MOPL_PORT:8081}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-validity-in-seconds: ${JWT_VALIDITY:86400} # 디폴트 24시간
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800} # 디폴트 7일
