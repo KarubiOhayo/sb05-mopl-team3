@@ -137,7 +137,7 @@ public class WatchingSessionService {
                   UserSummary watcher = getUserInfo(UUID.fromString(userId));
 
                   return WatchingSessionDto.builder()
-                      .id(UUID.randomUUID()) // 세션 ID는 임시 생성
+                      .id(UUID.fromString(userId))
                       .createdAt(joinedAt)
                       .watcher(watcher)
                       .content(contentInfo)
