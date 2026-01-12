@@ -9,6 +9,9 @@ import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import io.mopl.api.playlist.dto.PlaylistCreateRequest;
 import io.mopl.api.playlist.dto.PlaylistDto;
 import io.mopl.api.playlist.dto.PlaylistUpdateRequest;
+import io.mopl.api.playlist.event.PlaylistContentAddedInternalEvent;
+import io.mopl.api.playlist.event.PlaylistCreatedInternalEvent;
+import io.mopl.api.playlist.event.PlaylistSubscribedInternalEvent;
 import io.mopl.api.playlist.repository.PlaylistContentRepository;
 import io.mopl.api.playlist.repository.PlaylistRepository;
 import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +39,7 @@ public class PlaylistService {
   private final ContentRepository contentRepository;
   private final PlaylistContentRepository playlistContentRepository;
   private final PlaylistQueryService playlistQueryService;
+  private final ApplicationEventPublisher eventPublisher;
 
   // Playlist 생성
   @Transactional
@@ -54,6 +59,10 @@ public class PlaylistService {
             .build();
 
     Playlist saved = playlistRepository.save(playlist);
+
+    // Playlist 생성시 이벤트 발행
+    eventPublisher.publishEvent(
+        new PlaylistCreatedInternalEvent(saved.getId(), userId, owner.getName()));
 
     return PlaylistDto.builder()
         .id(saved.getId())
@@ -78,6 +87,8 @@ public class PlaylistService {
     if (playlistSubscriptionRepository.existsById(id)) {
       return;
     }
+    UserSummary subscriber = userService.getUserSummary(userId);
+    Playlist playlist = findPlaylistOrThrow(playlistId);
 
     PlaylistSubscription subscription = PlaylistSubscription.builder().id(id).build();
     playlistSubscriptionRepository.save(subscription);
@@ -88,6 +99,10 @@ public class PlaylistService {
           playlistId,
           userId);
     }
+    // 구독시 이벤트 발행
+    eventPublisher.publishEvent(
+        new PlaylistSubscribedInternalEvent(
+            playlistId, playlist.getOwnerId(), userId, subscriber.getName()));
   }
 
   // Playlist 구독 취소
@@ -130,7 +145,10 @@ public class PlaylistService {
     if (affected == 0) {
       log.debug(
           "playlist_content_already_exists playlistId={} contentId={}", playlistId, contentId);
+      return;
     }
+    eventPublisher.publishEvent(
+        new PlaylistContentAddedInternalEvent(playlistId, playlist.getOwnerId(), contentId));
   }
 
   // Playlist 컨텐츠 삭제
