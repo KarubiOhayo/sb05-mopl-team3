@@ -55,7 +55,7 @@ public class AuthService {
       throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
     }
 
-    validatePassword(request.getPassword(), user);
+    validatePassword(user, request.getPassword());
 
     String accessToken =
         jwtTokenProvider.createAccessToken(
@@ -89,7 +89,7 @@ public class AuthService {
     String storeRefreshToken = refreshTokenService.getRefreshToken(userId);
 
     if (storeRefreshToken == null || !storeRefreshToken.equals(refreshTokenFromCookie)) {
-      log.warn("리프레시 토큰이 일치하지 않음: userId={}", userId);
+      log.warn("리프레시 토큰이 일치하지 않음");
       throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
     }
 
@@ -117,7 +117,6 @@ public class AuthService {
 
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(newAccessToken).build();
 
-    log.info("토큰 재발급 성공: userId={}", userId);
     return AuthTokens.builder().jwtDto(jwtDto).refreshToken(newRefreshToken).build();
   }
 
