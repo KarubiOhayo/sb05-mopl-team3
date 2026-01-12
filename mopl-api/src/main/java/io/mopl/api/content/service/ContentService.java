@@ -63,7 +63,7 @@ public class ContentService {
 
     String thumbnailUrl = null;
     if (thumbnail != null && !thumbnail.isEmpty()) {
-      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
       log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
     }
 
@@ -166,7 +166,7 @@ public class ContentService {
 
     boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
     if (hasNewThumbnail) {
-      updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, content.getType());
       eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedUrl));
     }
     content.update(title, description, updatedUrl);
