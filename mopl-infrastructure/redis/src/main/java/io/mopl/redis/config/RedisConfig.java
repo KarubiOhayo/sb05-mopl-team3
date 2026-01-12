@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -41,20 +40,6 @@ public class RedisConfig {
 
     template.setValueSerializer(RedisSerializer.json());
     template.setHashValueSerializer(RedisSerializer.json());
-
-    template.afterPropertiesSet();
-    return template;
-  }
-
-  /** Boolean 전용 RedisTemplate Bean */
-  @Bean
-  public RedisTemplate<String, Boolean> redisTemplateForBoolean(
-      RedisConnectionFactory connectionFactory) {
-    RedisTemplate<String, Boolean> template = new RedisTemplate<>();
-    template.setConnectionFactory(connectionFactory);
-
-    template.setKeySerializer(new StringRedisSerializer());
-    template.setValueSerializer(new GenericToStringSerializer<>(Boolean.class));
 
     template.afterPropertiesSet();
     return template;

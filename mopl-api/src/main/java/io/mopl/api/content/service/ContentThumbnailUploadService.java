@@ -131,4 +131,24 @@ public class ContentThumbnailUploadService {
       return null;
     }
   }
+
+  public void deleteThumbnail(String key) {
+    if (key == null || key.isBlank()) {
+      return;
+    }
+
+    // URL이 넘어오면 삭제 불가(키가 필요)
+    if (key.startsWith("https://") || key.startsWith("http://")) {
+      log.warn("Thumbnail key is URL, skip delete. key={}", key);
+      return;
+    }
+
+    try {
+      s3Client.deleteObject(builder -> builder.bucket(s3Properties.getBucket()).key(key));
+      log.info("썸네일 삭제 성공 - key = {}", key);
+    } catch (SdkException e) {
+      log.error("썸네일 삭제 실패 - key = {}", key, e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
