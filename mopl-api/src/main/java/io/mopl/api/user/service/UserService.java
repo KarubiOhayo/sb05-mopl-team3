@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -8,13 +9,18 @@ import io.mopl.api.user.domain.UserRole;
 import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.api.user.dto.UserLockUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
+import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +34,8 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
+  private final RefreshTokenService refreshTokenService;
+  private final RedisTemplate<String, String> redisTemplate;
 
   /** 회원가입 */
   @Transactional
@@ -130,5 +138,55 @@ public class UserService {
     User savedUser = userRepository.save(user);
 
     return UserDto.from(savedUser);
+  }
+
+  /** 계정 잠금 상태 변경 */
+  @Transactional
+  public void lockUser(UUID userId, UserLockUpdateRequest request) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    user.setLocked(request.getLocked());
+
+    String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
+    String newRedisKey = String.valueOf(request.getLocked());
+
+    boolean redisSuccess = setRedisKeyWithRetry(redisKey, newRedisKey, Duration.ofHours(24), 3);
+
+    if (!redisSuccess) {
+      if (Boolean.TRUE.equals(request.getLocked())) {
+        log.error("@@@ CRITICAL: 계정 잠금 시 Redis Key 갱신 실패 - 트랜잭션 롤백");
+        throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+      } else {
+        log.error("@@@ WARNING: 계정 잠금해제 시 Redis Key 갱신 실패 - DB는 정상 처리, 최대 24시간 후 복구");
+      }
+    }
+  }
+
+  private boolean setRedisKeyWithRetry(
+      String redisKey, String newRedisKey, Duration ttl, int maxAttempts) {
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        redisTemplate.opsForValue().set(redisKey, newRedisKey, ttl);
+        return true;
+      } catch (Exception e) {
+        if (attempt == maxAttempts) {
+          log.error("Redis Key 설정 최종 실패: Key = {}", redisKey);
+          return false;
+        }
+        log.warn("Redis Key 설정 실패, 재시도 중 {}/{}", attempt, maxAttempts);
+
+        try {
+          Thread.sleep(100 * attempt);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          log.error("Redis Key 재설정 중단됨");
+          return false;
+        }
+      }
+    }
+    return false;
   }
 }
