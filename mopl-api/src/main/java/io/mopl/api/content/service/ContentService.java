@@ -155,7 +155,7 @@ public class ContentService {
     Content content =
         contentRepository
             .findById(contentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 contentId 값입니다."));
+            .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
 
     String title = contentUpdateRequest.getTitle();
     String description = contentUpdateRequest.getDescription();
