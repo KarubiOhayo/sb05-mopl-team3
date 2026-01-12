@@ -15,7 +15,6 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
 import io.mopl.redis.constants.RedisKeyPrefix;
-import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,22 +152,14 @@ public class UserService {
 
     try {
       String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
-      redisTemplate
-          .opsForValue()
-          .set(
-              redisKey,
-              String.valueOf(request.getLocked()),
-              Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+
+      redisTemplate.delete(redisKey);
 
       if (Boolean.TRUE.equals(request.getLocked())) {
         refreshTokenService.deleteRefreshToken(userId);
       }
     } catch (Exception e) {
-      log.error(
-          "Redis 업데이트 실패 (DB는 정상 처리됨, 다음 인증 시 자동 복구): userId={}, locked={}",
-          userId,
-          request.getLocked(),
-          e);
+      log.error("캐시 무효화 실패 (DB는 정상 처리됨, TTL 만료 시 자동 복구)", e);
     }
   }
 }

@@ -17,7 +17,7 @@ import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -37,7 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtTokenProvider jwtTokenProvider;
   private final RedisTemplate<String, String> redisTemplate;
   private final MessageSource messageSource;
-  private final ApplicationContext applicationContext;
+
+  private final ObjectProvider<UserRepository> userRepositoryProvider;
 
   @Override
   protected void doFilterInternal(
@@ -120,12 +121,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   /** Redis에서 계정 잠금 상태 확인 */
   private void checkUserLocked(UUID userId) {
+    UserRepository userRepository = userRepositoryProvider.getObject();
+
     String redisKey = RedisKeyPrefix.USER_LOCKED + userId;
     String lockedValue = redisTemplate.opsForValue().get(redisKey);
 
     Boolean isLocked;
     if (lockedValue == null) {
-      UserRepository userRepository = applicationContext.getBean(UserRepository.class);
       User user =
           userRepository
               .findById(userId)
@@ -133,12 +135,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       isLocked = user.isLocked();
 
-      redisTemplate
-          .opsForValue()
-          .set(
-              redisKey,
-              String.valueOf(isLocked),
-              Duration.ofSeconds(jwtTokenProvider.getAccessTokenValidityInSeconds()));
+      redisTemplate.opsForValue().set(redisKey, String.valueOf(isLocked), Duration.ofHours(24));
     } else {
       // String을 Boolean으로 변환
       isLocked = Boolean.valueOf(lockedValue);
