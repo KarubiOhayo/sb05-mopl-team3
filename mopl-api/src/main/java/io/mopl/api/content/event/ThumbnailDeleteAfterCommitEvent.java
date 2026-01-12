@@ -5,6 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ContentThumbnailDeleteEvent {
+public class ThumbnailDeleteAfterCommitEvent {
   private String deletedUrl;
 }
