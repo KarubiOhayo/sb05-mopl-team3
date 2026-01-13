@@ -63,7 +63,8 @@ public class ContentService {
 
     String thumbnailUrl = null;
     if (thumbnail != null && !thumbnail.isEmpty()) {
-      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
+      thumbnailUrl =
+          contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
       log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
       eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailUrl));
     }
@@ -91,8 +92,8 @@ public class ContentService {
 
         contentTags.add(contentTag);
       }
-		contentTagRepository.saveAll(contentTags);
-	}
+      contentTagRepository.saveAll(contentTags);
+    }
 
     log.info("컨텐츠 생성을 완료했습니다.");
     return new ContentDto(
@@ -203,7 +204,8 @@ public class ContentService {
           if (tag == null) {
             tag = tagRepository.save(new Tag(tagName));
           }
-          contentTags.add(ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
+          contentTags.add(
+              ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
         }
         contentTagRepository.saveAll(contentTags);
       }
