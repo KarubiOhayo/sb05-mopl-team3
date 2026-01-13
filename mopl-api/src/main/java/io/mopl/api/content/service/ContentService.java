@@ -65,6 +65,7 @@ public class ContentService {
     if (thumbnail != null && !thumbnail.isEmpty()) {
       thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
       log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailUrl));
     }
 
     Content content =
