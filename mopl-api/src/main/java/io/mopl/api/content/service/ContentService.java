@@ -63,8 +63,10 @@ public class ContentService {
 
     String thumbnailUrl = null;
     if (thumbnail != null && !thumbnail.isEmpty()) {
-      thumbnailUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      thumbnailUrl =
+          contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
       log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailUrl));
     }
 
     Content content =
@@ -79,7 +81,7 @@ public class ContentService {
     log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
 
     List<String> tagNames = contentCreateRequest.getTags();
-
+    List<ContentTag> contentTags = new ArrayList<>();
     if (tagNames != null && !tagNames.isEmpty()) {
       for (String tagName : tagNames) {
         Tag newTag =
@@ -88,8 +90,9 @@ public class ContentService {
         ContentTag contentTag =
             ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
 
-        contentTagRepository.save(contentTag);
+        contentTags.add(contentTag);
       }
+      contentTagRepository.saveAll(contentTags);
     }
 
     log.info("컨텐츠 생성을 완료했습니다.");
@@ -166,7 +169,7 @@ public class ContentService {
 
     boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
     if (hasNewThumbnail) {
-      updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail);
+      updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, content.getType());
       eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedUrl));
     }
     content.update(title, description, updatedUrl);
@@ -195,14 +198,16 @@ public class ContentService {
         Map<String, Tag> tagByName =
             existingTags.stream().collect(Collectors.toMap(Tag::getName, t -> t, (a, b) -> a));
 
+        List<ContentTag> contentTags = new ArrayList<>();
         for (String tagName : toAdd) {
           Tag tag = tagByName.get(tagName);
           if (tag == null) {
             tag = tagRepository.save(new Tag(tagName));
           }
-          contentTagRepository.save(
+          contentTags.add(
               ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
         }
+        contentTagRepository.saveAll(contentTags);
       }
     } else {
       requestedTags = contentTagRepository.findTagNamesByContentId(contentId);
