@@ -1,7 +1,7 @@
 package io.mopl.api.playlist.service.loader;
 
 import io.mopl.api.playlist.domain.PlaylistSubscription;
-import io.mopl.api.playlist.repository.PlaylistSubscriptionRepository;
+import io.mopl.api.playlist.domain.PlaylistSubscriptionRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

@@ -8,14 +8,11 @@ CREATE TABLE users (
   role VARCHAR(20) NOT NULL DEFAULT 'USER',
   locked TINYINT(1) NOT NULL DEFAULT 0,
   profile_image_url VARCHAR(2048) NULL,
-  temp_password_hash VARCHAR(255) NULL,
-  temp_password_expires_at TIMESTAMP(6) NULL,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id),
-  INDEX idx_temp_password_expires_at (temp_password_expires_at)
+  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE contents (
