@@ -1,5 +1,6 @@
 package io.mopl.api.conversation.domain;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,8 @@ public interface ConversationParticipantRepository
       """)
   Optional<UUID> findConversationIdByParticipants(
       @Param("userId") UUID userId, @Param("withUserId") UUID withUserId);
+
+  @Query("select cp from ConversationParticipant cp where cp.id.conversationId = :conversationId")
+  List<ConversationParticipant> findAllByConversationId(
+      @Param("conversationId") UUID conversationId);
 }

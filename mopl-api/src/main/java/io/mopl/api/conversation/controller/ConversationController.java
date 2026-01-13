@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,10 +29,16 @@ public class ConversationController {
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @Valid @RequestBody ConversationCreateRequest request) {
 
-    UUID withUserId = request == null ? null : request.withUserId();
-    log.info("대화 생성 요청 수신: userId={}, withUserId={}", userId, withUserId);
+    log.info("대화 생성 요청 수신: userId={}, withUserId={}", userId, request.withUserId());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(conversationService.create(userId, withUserId));
+        .body(conversationService.create(userId, request.withUserId()));
+  }
+
+  @GetMapping("/{conversationId}")
+  public ResponseEntity<ConversationDto> findById(
+      @PathVariable UUID conversationId,
+      @AuthenticationPrincipal(expression = "userId") UUID userId) {
+    return ResponseEntity.ok(conversationService.findById(conversationId, userId));
   }
 }
