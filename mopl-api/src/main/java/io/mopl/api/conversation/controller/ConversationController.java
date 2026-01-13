@@ -29,9 +29,7 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> create(
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @Valid @RequestBody ConversationCreateRequest request) {
-
-    log.info("대화 생성 요청 수신: userId={}, withUserId={}", userId, request.withUserId());
-
+    log.debug("대화 | 생성 | 요청 수신: userId={}, withUserId={}", userId, request.withUserId());
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(conversationService.create(userId, request.withUserId()));
   }
@@ -40,6 +38,7 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> findById(
       @PathVariable UUID conversationId,
       @AuthenticationPrincipal(expression = "userId") UUID userId) {
+    log.debug("대화 | 단건 조회 | 요청 수신: conversationId={}, userId={}", conversationId, userId);
     return ResponseEntity.ok(conversationService.findById(conversationId, userId));
   }
 
@@ -47,6 +46,7 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> findByWithUserId(
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @RequestParam("userId") UUID withUserId) {
+    log.debug("대화 | 상대 기준 조회 | 요청 수신: userId={}, withUserId={}", userId, withUserId);
     return ResponseEntity.ok(conversationService.findByWithUserId(userId, withUserId));
   }
 }

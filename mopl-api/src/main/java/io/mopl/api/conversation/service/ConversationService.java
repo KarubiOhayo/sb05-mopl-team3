@@ -39,15 +39,15 @@ public class ConversationService {
   @Transactional
   public ConversationDto create(UUID userId, UUID withUserId) {
     if (userId == null) {
-      log.warn("대화 생성 실패: 인증 사용자 ID가 없습니다.");
+      log.warn("대화 | 생성 | 실패: 인증 사용자 ID 없음");
       throw new BusinessException(UserErrorCode.UNAUTHORIZED);
     }
     if (withUserId == null) {
-      log.warn("대화 생성 실패: withUserId 누락. userId={}", userId);
+      log.info("대화 | 생성 | 실패: withUserId 누락. userId={}", userId);
       throw new BusinessException(ConversationErrorCode.WITH_USER_ID_REQUIRED);
     }
     if (userId.equals(withUserId)) {
-      log.warn("대화 생성 실패: 자기 자신과의 대화 요청. userId={}", userId);
+      log.info("대화 | 생성 | 실패: 자기 자신과의 대화 요청. userId={}", userId);
       throw new BusinessException(ConversationErrorCode.SAME_USER_NOT_ALLOWED);
     }
 
@@ -56,7 +56,7 @@ public class ConversationService {
         .ifPresent(
             existingConversationId -> {
               log.info(
-                  "대화 생성 중단: 기존 대화 존재. userId={}, withUserId={}, conversationId={}",
+                  "대화 | 생성 | 실패: 기존 대화 존재. userId={}, withUserId={}, conversationId={}",
                   userId,
                   withUserId,
                   existingConversationId);
@@ -64,7 +64,7 @@ public class ConversationService {
                   .addDetail("conversationId", existingConversationId.toString());
             });
 
-    log.info("대화 생성 시작: userId={}, withUserId={}", userId, withUserId);
+    log.debug("대화 | 생성 | 시작: userId={}, withUserId={}", userId, withUserId);
     User withUser =
         userRepository
             .findById(withUserId)
@@ -102,7 +102,7 @@ public class ConversationService {
     conversationParticipantRepository.save(withUserParticipant);
 
     log.info(
-        "대화 생성 완료: conversationId={}, userId={}, withUserId={}",
+        "대화 | 생성 | 완료: conversationId={}, userId={}, withUserId={}",
         conversation.getId(),
         userId,
         withUserId);
@@ -116,12 +116,13 @@ public class ConversationService {
 
   @Transactional(readOnly = true)
   public ConversationDto findById(UUID conversationId, UUID userId) {
+    log.debug("대화 | 단건 조회 | 시작: conversationId={}, userId={}", conversationId, userId);
     Conversation conversation =
         conversationRepository
             .findById(conversationId)
             .orElseThrow(
                 () -> {
-                  log.info("대화 조회 실패: 대화를 찾을 수 없음. conversationId={}", conversationId);
+                  log.info("대화 | 단건 조회 | 실패: 대화를 찾을 수 없음. conversationId={}", conversationId);
                   return new BusinessException(ConversationErrorCode.CONVERSATION_NOT_FOUND)
                       .addDetail("conversationId", conversationId.toString());
                 });
@@ -135,7 +136,9 @@ public class ConversationService {
             .orElseThrow(
                 () -> {
                   log.info(
-                      "대화 참여자를 찾을 수 없습니다: conversationId={}, userId={}", conversationId, userId);
+                      "대화 | 단건 조회 | 실패: 대화 참여자 없음. conversationId={}, userId={}",
+                      conversationId,
+                      userId);
                   return new BusinessException(
                           ConversationErrorCode.CONVERSATION_PARTICIPANT_NOT_FOUND)
                       .addDetail("conversationId", conversationId.toString())
@@ -150,7 +153,9 @@ public class ConversationService {
             .orElseThrow(
                 () -> {
                   log.info(
-                      "대화 상대를 찾을 수 없습니다: conversationId={}, userId={}", conversationId, userId);
+                      "대화 | 단건 조회 | 실패: 대화 상대 없음. conversationId={}, userId={}",
+                      conversationId,
+                      userId);
                   return new BusinessException(
                           ConversationErrorCode.CONVERSATION_PARTICIPANT_NOT_FOUND)
                       .addDetail("conversationId", conversationId.toString())
@@ -162,7 +167,7 @@ public class ConversationService {
             .findById(withUserId)
             .orElseThrow(
                 () -> {
-                  log.info("사용자를 찾을 수 없습니다: id={}", withUserId);
+                  log.info("대화 | 단건 조회 | 실패: 사용자 없음. id={}", withUserId);
                   return new BusinessException(UserErrorCode.USER_NOT_FOUND)
                       .addDetail("withUserId", withUserId.toString());
                 });
@@ -225,6 +230,7 @@ public class ConversationService {
 
   @Transactional(readOnly = true)
   public ConversationDto findByWithUserId(UUID userId, UUID withUserId) {
+    log.debug("대화 | 상대 기준 조회 | 시작: userId={}, withUserId={}", userId, withUserId);
     UUID conversationId =
         conversationParticipantRepository
             .findConversationIdByParticipants(userId, withUserId)
@@ -234,6 +240,11 @@ public class ConversationService {
                         .addDetail("withUserId", withUserId.toString())
                         .addDetail("userId", userId.toString()));
 
+    log.debug(
+        "대화 | 상대 기준 조회 | 매핑 완료: userId={}, withUserId={}, conversationId={}",
+        userId,
+        withUserId,
+        conversationId);
     return findById(conversationId, userId);
   }
 }
