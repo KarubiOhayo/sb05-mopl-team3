@@ -16,7 +16,7 @@ import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
 import io.mopl.api.content.event.ThumbnailUploadedEvent;
-import io.mopl.api.playlist.repository.PlaylistContentRepository;
+import io.mopl.api.playlist.domain.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
 import java.util.ArrayList;
