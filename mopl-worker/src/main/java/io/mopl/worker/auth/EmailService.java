@@ -1,4 +1,4 @@
-package io.mopl.api.auth.service;
+package io.mopl.worker.auth;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

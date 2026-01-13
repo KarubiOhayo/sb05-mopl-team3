@@ -4,7 +4,6 @@ import io.mopl.api.auth.dto.AuthTokens;
 import io.mopl.api.auth.dto.JwtDto;
 import io.mopl.api.auth.dto.ResetPasswordRequest;
 import io.mopl.api.auth.dto.SignInRequest;
-import io.mopl.api.auth.event.PasswordResetEvent;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
@@ -13,6 +12,8 @@ import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.core.event.auth.PasswordResetEvent;
+import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.redis.constants.RedisKeyPrefix;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -24,8 +25,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public class AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
   private final StringRedisTemplate stringRedisTemplate;
-  private final ApplicationEventPublisher eventPublisher;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   private static final int MAX_RESET_ATTEMPTS = 3;
   private static final long RESET_LIMIT_DURATION = 300; // 5분
@@ -171,8 +172,15 @@ public class AuthService {
         .set(tempPasswordKey, encodedPassword, TEMP_PASSWORD_EXPIRATION, TimeUnit.SECONDS);
 
     PasswordResetEvent event =
-        new PasswordResetEvent(user.getId(), user.getEmail(), temporaryPassword);
-    eventPublisher.publishEvent(event);
+        PasswordResetEvent.of(user.getId(), user.getEmail(), temporaryPassword);
+    kafkaTemplate
+        .send(KafkaTopics.AUTH_PASSWORD_RESET, user.getId().toString(), event)
+        .whenComplete(
+            (result, ex) -> {
+              if (ex != null) {
+                log.error("비밀번호 초기화 이벤트 발행 실패: eventId={}", event.eventId(), ex);
+              }
+            });
   }
 
   /** Rate Limiting 체크 */
