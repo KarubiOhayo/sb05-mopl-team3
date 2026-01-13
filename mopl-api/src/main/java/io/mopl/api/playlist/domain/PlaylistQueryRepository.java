@@ -1,4 +1,4 @@
-package io.mopl.api.playlist.repository;
+package io.mopl.api.playlist.domain;
 
 import io.mopl.api.playlist.dto.PlaylistPage;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;

@@ -1,7 +1,5 @@
-package io.mopl.api.playlist.repository;
+package io.mopl.api.playlist.domain;
 
-import io.mopl.api.playlist.domain.PlaylistContent;
-import io.mopl.api.playlist.domain.PlaylistContentId;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

@@ -16,36 +16,41 @@ public class PlaylistEventPublisher {
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
-  public void publishCreated(PlaylistCreatedEvent event) {
+  private <T> void publish(String topic, String key, T event, String eventId, String eventType) {
     kafkaTemplate
-        .send(KafkaTopics.PLAYLIST_CREATED, event.playlistId(), event)
+        .send(topic, key, event)
         .whenComplete(
             (result, ex) -> {
               if (ex != null) {
-                log.error("플레이리스트 생성 이벤트 발행 실패 eventId={}", event.eventId(), ex);
+                log.error("{} event publish failed eventId={}", eventType, eventId, ex);
               }
             });
+  }
+
+  public void publishCreated(PlaylistCreatedEvent event) {
+    publish(
+        KafkaTopics.PLAYLIST_CREATED,
+        event.playlistId(),
+        event,
+        event.eventId(),
+        "playlist created");
   }
 
   public void publishSubscribed(PlaylistSubscribedEvent event) {
-    kafkaTemplate
-        .send(KafkaTopics.PLAYLIST_SUBSCRIBED, event.playlistId(), event)
-        .whenComplete(
-            (result, ex) -> {
-              if (ex != null) {
-                log.error("플레이리스트 구독 이벤트 발행 실패 eventId={}", event.eventId(), ex);
-              }
-            });
+    publish(
+        KafkaTopics.PLAYLIST_SUBSCRIBED,
+        event.playlistId(),
+        event,
+        event.eventId(),
+        "playlist subscribed");
   }
 
   public void publishContentAdded(PlaylistContentAddedEvent event) {
-    kafkaTemplate
-        .send(KafkaTopics.PLAYLIST_CONTENT_ADDED, event.playlistId(), event)
-        .whenComplete(
-            (result, ex) -> {
-              if (ex != null) {
-                log.error("플레이리스트 콘텐츠 추가 이벤트 발행 실패 eventId={}", event.eventId(), ex);
-              }
-            });
+    publish(
+        KafkaTopics.PLAYLIST_CONTENT_ADDED,
+        event.playlistId(),
+        event,
+        event.eventId(),
+        "playlist content added");
   }
 }

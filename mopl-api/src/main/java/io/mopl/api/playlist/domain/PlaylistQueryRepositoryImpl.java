@@ -1,13 +1,10 @@
-package io.mopl.api.playlist.repository;
+package io.mopl.api.playlist.domain;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.mopl.api.playlist.domain.Playlist;
-import io.mopl.api.playlist.domain.QPlaylist;
-import io.mopl.api.playlist.domain.QPlaylistSubscription;
 import io.mopl.api.playlist.dto.PlaylistPage;
 import io.mopl.api.playlist.dto.PlaylistSearchRequest;
 import io.mopl.core.error.BusinessException;
