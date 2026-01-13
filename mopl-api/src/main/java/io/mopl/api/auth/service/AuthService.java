@@ -47,7 +47,7 @@ public class AuthService {
   private static final long TEMP_PASSWORD_EXPIRATION = 180; // 3분
 
   /** 로그인 */
-  @Transactional
+  @Transactional(readOnly = true)
   public AuthTokens signIn(SignInRequest request) {
     User user =
         userRepository
@@ -133,6 +133,7 @@ public class AuthService {
     if (tempPasswordHash != null) {
       isPasswordValid = passwordEncoder.matches(rawPassword, tempPasswordHash);
       if (isPasswordValid) {
+        stringRedisTemplate.delete(tempPasswordKey);
         return;
       }
     }
