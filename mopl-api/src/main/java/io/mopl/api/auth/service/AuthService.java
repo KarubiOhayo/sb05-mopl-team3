@@ -165,7 +165,6 @@ public class AuthService {
     String encodedPassword = passwordEncoder.encode(temporaryPassword);
 
     String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + user.getId();
-    assert encodedPassword != null;
     stringRedisTemplate
         .opsForValue()
         .set(tempPasswordKey, encodedPassword, TEMP_PASSWORD_EXPIRATION, TimeUnit.SECONDS);
