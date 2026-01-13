@@ -1,6 +1,5 @@
 package io.mopl.worker.auth;
 
-import io.mopl.api.auth.service.EmailService;
 import io.mopl.core.event.auth.PasswordResetEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import lombok.RequiredArgsConstructor;
