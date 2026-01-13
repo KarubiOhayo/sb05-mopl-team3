@@ -222,4 +222,18 @@ public class ConversationService {
         .hasUnread(hasUnread)
         .build();
   }
+
+  @Transactional(readOnly = true)
+  public ConversationDto findByWithUserId(UUID userId, UUID withUserId) {
+    UUID conversationId =
+        conversationParticipantRepository
+            .findConversationIdByParticipants(userId, withUserId)
+            .orElseThrow(
+                () ->
+                    new BusinessException(ConversationErrorCode.CONVERSATION_NOT_FOUND)
+                        .addDetail("withUserId", withUserId.toString())
+                        .addDetail("userId", userId.toString()));
+
+    return findById(conversationId, userId);
+  }
 }
