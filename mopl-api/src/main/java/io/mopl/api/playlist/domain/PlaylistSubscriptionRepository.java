@@ -1,7 +1,5 @@
-package io.mopl.api.playlist.repository;
+package io.mopl.api.playlist.domain;
 
-import io.mopl.api.playlist.domain.PlaylistSubscription;
-import io.mopl.api.playlist.domain.PlaylistSubscriptionId;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
