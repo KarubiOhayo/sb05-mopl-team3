@@ -80,7 +80,7 @@ public class ContentService {
     log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
 
     List<String> tagNames = contentCreateRequest.getTags();
-
+    List<ContentTag> contentTags = new ArrayList<>();
     if (tagNames != null && !tagNames.isEmpty()) {
       for (String tagName : tagNames) {
         Tag newTag =
@@ -89,9 +89,10 @@ public class ContentService {
         ContentTag contentTag =
             ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
 
-        contentTagRepository.save(contentTag);
+        contentTags.add(contentTag);
       }
-    }
+		contentTagRepository.saveAll(contentTags);
+	}
 
     log.info("컨텐츠 생성을 완료했습니다.");
     return new ContentDto(
@@ -196,14 +197,15 @@ public class ContentService {
         Map<String, Tag> tagByName =
             existingTags.stream().collect(Collectors.toMap(Tag::getName, t -> t, (a, b) -> a));
 
+        List<ContentTag> contentTags = new ArrayList<>();
         for (String tagName : toAdd) {
           Tag tag = tagByName.get(tagName);
           if (tag == null) {
             tag = tagRepository.save(new Tag(tagName));
           }
-          contentTagRepository.save(
-              ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
+          contentTags.add(ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
         }
+        contentTagRepository.saveAll(contentTags);
       }
     } else {
       requestedTags = contentTagRepository.findTagNamesByContentId(contentId);
