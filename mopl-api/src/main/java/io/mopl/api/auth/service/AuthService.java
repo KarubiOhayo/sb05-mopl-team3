@@ -12,9 +12,13 @@ import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
+import io.mopl.redis.constants.RedisKeyPrefix;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -38,12 +42,12 @@ public class AuthService {
   private final StringRedisTemplate stringRedisTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
-  private static final String RESET_LIMIT_KEY_PREFIX = "password-reset:limit:";
   private static final int MAX_RESET_ATTEMPTS = 3;
   private static final long RESET_LIMIT_DURATION = 300; // 5분
+  private static final long TEMP_PASSWORD_EXPIRATION = 180; // 3분
 
   /** 로그인 */
-  @Transactional
+  @Transactional(readOnly = true)
   public AuthTokens signIn(SignInRequest request) {
     User user =
         userRepository
@@ -54,7 +58,7 @@ public class AuthService {
       throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
     }
 
-    validatePassword(request.getPassword(), user);
+    validatePassword(user, request.getPassword());
 
     String accessToken =
         jwtTokenProvider.createAccessToken(
@@ -88,7 +92,7 @@ public class AuthService {
     String storeRefreshToken = refreshTokenService.getRefreshToken(userId);
 
     if (storeRefreshToken == null || !storeRefreshToken.equals(refreshTokenFromCookie)) {
-      log.warn("리프레시 토큰이 일치하지 않음: userId={}", userId);
+      log.warn("리프레시 토큰이 일치하지 않음");
       throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
     }
 
@@ -116,21 +120,25 @@ public class AuthService {
 
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(newAccessToken).build();
 
-    log.info("토큰 재발급 성공: userId={}", userId);
     return AuthTokens.builder().jwtDto(jwtDto).refreshToken(newRefreshToken).build();
   }
 
   /** 비밀번호 검증 */
-  private void validatePassword(String rawPassword, User user) {
-    boolean isPasswordValid = passwordEncoder.matches(rawPassword, user.getPasswordHash());
+  private void validatePassword(User user, String rawPassword) {
+    boolean isPasswordValid;
 
-    // 비밀번호 틀렸을 시 임시 비밀번호 체크
-    if (!isPasswordValid && user.getTempPasswordHash() != null) {
-      if (user.getTempPasswordExpiresAt() != null
-          && user.getTempPasswordExpiresAt().isAfter(Instant.now())) {
-        isPasswordValid = passwordEncoder.matches(rawPassword, user.getTempPasswordHash());
+    String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + user.getId();
+    String tempPasswordHash = stringRedisTemplate.opsForValue().get(tempPasswordKey);
+
+    if (tempPasswordHash != null) {
+      isPasswordValid = passwordEncoder.matches(rawPassword, tempPasswordHash);
+      if (isPasswordValid) {
+        stringRedisTemplate.delete(tempPasswordKey);
+        return;
       }
     }
+
+    isPasswordValid = passwordEncoder.matches(rawPassword, user.getPasswordHash());
 
     if (!isPasswordValid) {
       throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
@@ -155,8 +163,12 @@ public class AuthService {
     }
 
     String temporaryPassword = generateTemporaryPassword();
-    user.setTempPasswordHash(passwordEncoder.encode(temporaryPassword));
-    user.setTempPasswordExpiresAt(Instant.now().plus(3, ChronoUnit.MINUTES));
+    String encodedPassword = passwordEncoder.encode(temporaryPassword);
+
+    String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + user.getId();
+    stringRedisTemplate
+        .opsForValue()
+        .set(tempPasswordKey, encodedPassword, TEMP_PASSWORD_EXPIRATION, TimeUnit.SECONDS);
 
     PasswordResetEvent event =
         new PasswordResetEvent(user.getId(), user.getEmail(), temporaryPassword);
@@ -165,7 +177,8 @@ public class AuthService {
 
   /** Rate Limiting 체크 */
   private void checkRateLimit(String email) {
-    String key = RESET_LIMIT_KEY_PREFIX + email;
+    String hashedEmail = hashEmail(email);
+    String key = RedisKeyPrefix.PASSWORD_RESET_LIMIT + hashedEmail;
 
     Long attempts = stringRedisTemplate.opsForValue().increment(key);
 
@@ -175,6 +188,18 @@ public class AuthService {
 
     if (attempts > MAX_RESET_ATTEMPTS) {
       throw new BusinessException(AuthErrorCode.TOO_MANY_RESET_REQUESTS);
+    }
+  }
+
+  /** 이메일을 SHA-256으로 해싱 */
+  private String hashEmail(String email) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(email.toLowerCase().getBytes(StandardCharsets.UTF_8));
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+    } catch (NoSuchAlgorithmException e) {
+      log.error("SHA-256 알고리즘을 사용할 수 없습니다", e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 

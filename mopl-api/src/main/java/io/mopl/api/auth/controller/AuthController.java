@@ -35,7 +35,7 @@ public class AuthController {
   private final RefreshTokenService refreshTokenService;
   private final CookieSecurityProperties cookieSecurityProperties;
 
-  // 주의: 이 상수값은 application.yml의 REFRESH_TOKEN_NAME 기본값과 일치해야 함
+  // ★★★주의: 이 상수값은 application.yml의 REFRESH_TOKEN_NAME 기본값과 일치해야 함
   private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
   /** 로그인 Content-Type: application/x-www-form-urlencoded */
