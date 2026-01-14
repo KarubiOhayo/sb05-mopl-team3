@@ -26,4 +26,16 @@ public interface ConversationParticipantRepository
   @Query("select cp from ConversationParticipant cp where cp.id.conversationId = :conversationId")
   List<ConversationParticipant> findAllByConversationId(
       @Param("conversationId") UUID conversationId);
+
+  @Query(
+      "select cp from ConversationParticipant cp "
+          + "where cp.id.conversationId in :conversationIds and cp.id.userId = :userId")
+  List<ConversationParticipant> findAllByConversationIdInAndUserId(
+      @Param("conversationIds") List<UUID> conversationIds, @Param("userId") UUID userId);
+
+  @Query(
+      "select cp from ConversationParticipant cp "
+          + "where cp.id.conversationId in :conversationIds and cp.id.userId <> :userId")
+  List<ConversationParticipant> findAllByConversationIdInAndUserIdNot(
+      @Param("conversationIds") List<UUID> conversationIds, @Param("userId") UUID userId);
 }

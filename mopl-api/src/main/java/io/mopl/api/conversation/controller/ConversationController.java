@@ -1,7 +1,9 @@
 package io.mopl.api.conversation.controller;
 
+import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.conversation.dto.ConversationCreateRequest;
 import io.mopl.api.conversation.dto.ConversationDto;
+import io.mopl.api.conversation.dto.ConversationSearchRequest;
 import io.mopl.api.conversation.service.ConversationService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +32,6 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> create(
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @Valid @RequestBody ConversationCreateRequest request) {
-    log.debug("대화 | 생성 | 요청 수신: userId={}, withUserId={}", userId, request.withUserId());
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(conversationService.create(userId, request.withUserId()));
   }
@@ -38,7 +40,6 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> findById(
       @PathVariable UUID conversationId,
       @AuthenticationPrincipal(expression = "userId") UUID userId) {
-    log.debug("대화 | 단건 조회 | 요청 수신: conversationId={}, userId={}", conversationId, userId);
     return ResponseEntity.ok(conversationService.findById(conversationId, userId));
   }
 
@@ -46,7 +47,13 @@ public class ConversationController {
   public ResponseEntity<ConversationDto> findByWithUserId(
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @RequestParam("userId") UUID withUserId) {
-    log.debug("대화 | 상대 기준 조회 | 요청 수신: userId={}, withUserId={}", userId, withUserId);
     return ResponseEntity.ok(conversationService.findByWithUserId(userId, withUserId));
+  }
+
+  @GetMapping
+  public CursorResponse<ConversationDto> find(
+      @AuthenticationPrincipal(expression = "userId") UUID userId,
+      @ModelAttribute @Valid ConversationSearchRequest request) {
+    return conversationService.find(userId, request);
   }
 }

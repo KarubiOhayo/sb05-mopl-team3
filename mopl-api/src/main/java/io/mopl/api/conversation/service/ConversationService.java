@@ -1,5 +1,6 @@
 package io.mopl.api.conversation.service;
 
+import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.common.error.ConversationErrorCode;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.content.service.ContentThumbnailUploadService;
@@ -11,6 +12,8 @@ import io.mopl.api.conversation.domain.ConversationRepository;
 import io.mopl.api.conversation.domain.DirectMessage;
 import io.mopl.api.conversation.domain.DirectMessageRepository;
 import io.mopl.api.conversation.dto.ConversationDto;
+import io.mopl.api.conversation.dto.ConversationPage;
+import io.mopl.api.conversation.dto.ConversationSearchRequest;
 import io.mopl.api.conversation.dto.DirectMessageDto;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
@@ -18,8 +21,11 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.mapper.UserMapper;
 import io.mopl.core.error.BusinessException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -116,6 +122,10 @@ public class ConversationService {
 
   @Transactional(readOnly = true)
   public ConversationDto findById(UUID conversationId, UUID userId) {
+    if (userId == null) {
+      log.warn("대화 | 단건 조회 | 실패: 인증 사용자 ID 없음. conversationId={}", conversationId);
+      throw new BusinessException(UserErrorCode.UNAUTHORIZED);
+    }
     log.debug("대화 | 단건 조회 | 시작: conversationId={}, userId={}", conversationId, userId);
     Conversation conversation =
         conversationRepository
@@ -230,6 +240,10 @@ public class ConversationService {
 
   @Transactional(readOnly = true)
   public ConversationDto findByWithUserId(UUID userId, UUID withUserId) {
+    if (userId == null) {
+      log.warn("대화 | 상대 기준 조회 | 실패: 인증 사용자 ID 없음. withUserId={}", withUserId);
+      throw new BusinessException(UserErrorCode.UNAUTHORIZED);
+    }
     log.debug("대화 | 상대 기준 조회 | 시작: userId={}, withUserId={}", userId, withUserId);
     UUID conversationId =
         conversationParticipantRepository
@@ -246,5 +260,171 @@ public class ConversationService {
         withUserId,
         conversationId);
     return findById(conversationId, userId);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorResponse<ConversationDto> find(UUID userId, ConversationSearchRequest request) {
+    if (userId == null) {
+      log.warn("대화 | 목록 조회 | 실패: 인증 사용자 ID 없음");
+      throw new BusinessException(UserErrorCode.UNAUTHORIZED);
+    }
+    log.debug(
+        "대화 | 목록 조회 | 시작: userId={}, keywordLike={}, cursor={}, idAfter={}, limit={}, sortBy={}, sortDirection={}",
+        userId,
+        request.keywordLike(),
+        request.cursor(),
+        request.idAfter(),
+        request.limit(),
+        request.sortBy(),
+        request.sortDirection());
+    User currentUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(
+                () ->
+                    new BusinessException(UserErrorCode.USER_NOT_FOUND)
+                        .addDetail("userId", userId.toString()));
+
+    ConversationPage page = conversationRepository.findConversationPage(userId, request);
+    List<Conversation> conversations = page.conversations();
+    if (conversations.isEmpty()) {
+      long totalCount = conversationRepository.countConversations(userId, request.keywordLike());
+      return CursorResponse.<ConversationDto>builder()
+          .data(List.of())
+          .nextCursor(null)
+          .nextIdAfter(null)
+          .hasNext(false)
+          .totalCount(totalCount)
+          .sortBy(request.sortBy())
+          .sortDirection(request.sortDirection())
+          .build();
+    }
+
+    List<UUID> conversationIds = conversations.stream().map(Conversation::getId).toList();
+
+    List<ConversationParticipant> myParticipants =
+        conversationParticipantRepository.findAllByConversationIdInAndUserId(
+            conversationIds, userId);
+    Map<UUID, Instant> lastReadAtByConversation = new HashMap<>();
+    for (ConversationParticipant participant : myParticipants) {
+      if (participant.getId() == null) {
+        continue;
+      }
+      lastReadAtByConversation.put(
+          participant.getId().getConversationId(), participant.getLastReadAt());
+    }
+
+    List<ConversationParticipant> otherParticipants =
+        conversationParticipantRepository.findAllByConversationIdInAndUserIdNot(
+            conversationIds, userId);
+    Map<UUID, UUID> withUserIdByConversation =
+        otherParticipants.stream()
+            .collect(
+                Collectors.toMap(
+                    cp -> cp.getId().getConversationId(),
+                    cp -> cp.getId().getUserId(),
+                    (left, right) -> left));
+
+    List<UUID> withUserIds = withUserIdByConversation.values().stream().distinct().toList();
+    Map<UUID, User> withUsersById =
+        userRepository.findAllById(withUserIds).stream()
+            .collect(Collectors.toMap(User::getId, user -> user));
+
+    Map<UUID, UserSummary> withSummaryByConversation = new HashMap<>();
+    for (Map.Entry<UUID, UUID> entry : withUserIdByConversation.entrySet()) {
+      UUID conversationId = entry.getKey();
+      UUID withUserId = entry.getValue();
+      User withUser = withUsersById.get(withUserId);
+      if (withUser == null) {
+        continue;
+      }
+      String thumbnailUrl =
+          contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageUrl());
+      withSummaryByConversation.put(conversationId, userMapper.toSummary(withUser, thumbnailUrl));
+    }
+
+    String myThumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(currentUser.getProfileImageUrl());
+    UserSummary meSummary = userMapper.toSummary(currentUser, myThumbnailUrl);
+
+    List<String> conversationIdStrings = conversationIds.stream().map(UUID::toString).toList();
+    List<DirectMessage> latestMessages =
+        directMessageRepository.findLatestByConversationIds(conversationIdStrings);
+    Map<UUID, DirectMessage> latestMessageByConversation = new HashMap<>();
+    for (DirectMessage message : latestMessages) {
+      UUID conversationId = message.getConversationId();
+      DirectMessage existing = latestMessageByConversation.get(conversationId);
+      if (existing == null) {
+        latestMessageByConversation.put(conversationId, message);
+        continue;
+      }
+      int createdAtCompare = message.getCreatedAt().compareTo(existing.getCreatedAt());
+      if (createdAtCompare > 0) {
+        latestMessageByConversation.put(conversationId, message);
+      } else if (createdAtCompare == 0) {
+        UUID existingId = existing.getId();
+        UUID candidateId = message.getId();
+        if (candidateId != null && (existingId == null || candidateId.compareTo(existingId) > 0)) {
+          latestMessageByConversation.put(conversationId, message);
+        }
+      }
+    }
+
+    List<ConversationDto> data =
+        conversations.stream()
+            .map(
+                conversation -> {
+                  UUID conversationId = conversation.getId();
+                  UserSummary withSummary = withSummaryByConversation.get(conversationId);
+                  DirectMessage latestMessage = latestMessageByConversation.get(conversationId);
+
+                  DirectMessageDto lastestMessageDto = null;
+                  boolean hasUnread = false;
+                  if (latestMessage != null && withSummary != null) {
+                    UserSummary senderSummary;
+                    UserSummary receiverSummary;
+                    if (latestMessage.getSenderId().equals(userId)) {
+                      senderSummary = meSummary;
+                      receiverSummary = withSummary;
+                    } else {
+                      senderSummary = withSummary;
+                      receiverSummary = meSummary;
+                    }
+                    lastestMessageDto =
+                        DirectMessageDto.builder()
+                            .id(latestMessage.getId())
+                            .conversationId(latestMessage.getConversationId())
+                            .createdAt(latestMessage.getCreatedAt())
+                            .sender(senderSummary)
+                            .receiver(receiverSummary)
+                            .content(latestMessage.getContent())
+                            .build();
+
+                    Instant lastReadAt = lastReadAtByConversation.get(conversationId);
+                    Instant lastReadAtOrEpoch = lastReadAt == null ? Instant.EPOCH : lastReadAt;
+                    hasUnread = lastReadAtOrEpoch.isBefore(latestMessage.getCreatedAt());
+                  }
+
+                  return ConversationDto.builder()
+                      .id(conversationId)
+                      .with(withSummary)
+                      .lastestMessage(lastestMessageDto)
+                      .hasUnread(hasUnread)
+                      .build();
+                })
+            .toList();
+
+    long totalCount = conversationRepository.countConversations(userId, request.keywordLike());
+    log.debug(
+        "대화 | 목록 조회 | 완료: userId={}, count={}, hasNext={}", userId, data.size(), page.hasNext());
+    return CursorResponse.<ConversationDto>builder()
+        .data(data)
+        .nextCursor(page.nextCursor())
+        .nextIdAfter(page.nextIdAfter())
+        .hasNext(page.hasNext())
+        .totalCount(totalCount)
+        .sortBy(request.sortBy())
+        .sortDirection(request.sortDirection())
+        .build();
   }
 }

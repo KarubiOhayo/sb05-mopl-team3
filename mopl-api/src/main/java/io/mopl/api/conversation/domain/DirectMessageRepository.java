@@ -1,12 +1,33 @@
 package io.mopl.api.conversation.domain;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DirectMessageRepository extends JpaRepository<DirectMessage, UUID> {
 
   Optional<DirectMessage> findLatestByConversationId(UUID conversationId);
+
+  @Query(
+      value =
+          """
+          select dm.*
+          from direct_messages dm
+          join (
+            select conversation_id, max(created_at) as max_created_at
+            from direct_messages
+            where conversation_id in (:conversationIds)
+            group by conversation_id
+          ) latest on latest.conversation_id = dm.conversation_id
+                and latest.max_created_at = dm.created_at
+          where dm.conversation_id in (:conversationIds)
+          """,
+      nativeQuery = true)
+  List<DirectMessage> findLatestByConversationIds(
+      @Param("conversationIds") List<String> conversationIds);
 }
