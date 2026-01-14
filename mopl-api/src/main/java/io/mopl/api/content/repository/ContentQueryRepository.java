@@ -1,4 +1,4 @@
-package io.mopl.api.content.domain;
+package io.mopl.api.content.repository;
 
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;

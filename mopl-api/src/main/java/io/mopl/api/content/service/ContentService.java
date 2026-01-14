@@ -2,12 +2,12 @@ package io.mopl.api.content.service;
 
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.Content;
-import io.mopl.api.content.domain.ContentRepository;
+import io.mopl.api.content.repository.ContentRepository;
 import io.mopl.api.content.domain.ContentTag;
 import io.mopl.api.content.domain.ContentTagId;
-import io.mopl.api.content.domain.ContentTagRepository;
+import io.mopl.api.content.repository.ContentTagRepository;
 import io.mopl.api.content.domain.Tag;
-import io.mopl.api.content.domain.TagRepository;
+import io.mopl.api.content.repository.TagRepository;
 import io.mopl.api.content.dto.ContentCreateRequest;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentPage;

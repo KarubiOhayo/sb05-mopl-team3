@@ -1,4 +1,4 @@
-package io.mopl.api.content.domain;
+package io.mopl.api.content.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import io.mopl.api.content.domain.ContentTag;
+import io.mopl.api.content.domain.ContentTagId;
 
 @Repository
 public interface ContentTagRepository extends JpaRepository<ContentTag, ContentTagId> {
