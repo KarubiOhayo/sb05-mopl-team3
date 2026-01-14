@@ -14,4 +14,6 @@ public interface PlaylistSubscriptionRepository
    */
   List<PlaylistSubscription> findByIdUserIdAndIdPlaylistIdIn(
       UUID userId, Collection<UUID> playlistIds);
+
+  List<PlaylistSubscription> findByIdUserId(UUID userId);
 }

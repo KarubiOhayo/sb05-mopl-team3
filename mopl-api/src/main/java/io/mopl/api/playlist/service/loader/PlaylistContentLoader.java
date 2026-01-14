@@ -17,9 +17,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PlaylistContentLoader {
@@ -37,14 +39,16 @@ public class PlaylistContentLoader {
     List<String> keys =
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_CONTENTS + id).toList();
 
-    // multiGet으로 한번에 조회
-    List<Object> cached;
-    try {
-      cached = redisTemplateForObject.opsForValue().multiGet(keys);
-    } catch (Exception ignored) {
-      // 캐시 역직렬화 문제 발생 시 캐시를 지우고 DB 조회로 진행
-      redisTemplateForObject.delete(keys);
-      cached = null;
+    // 개별 조회로 역직렬화 문제 키만 제거
+    List<Object> cached = new ArrayList<>(keys.size());
+    for (String key : keys) {
+      try {
+        cached.add(redisTemplateForObject.opsForValue().get(key));
+      } catch (Exception e) {
+        log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
+        redisTemplateForObject.delete(key);
+        cached.add(null);
+      }
     }
 
     // 캐시 hit/miss 분류
@@ -217,8 +221,8 @@ public class PlaylistContentLoader {
                 RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
                 result.getOrDefault(playlistId, List.of()),
                 Duration.ofMinutes(30));
-      } catch (Exception ignored) {
-        // 캐시 실패는 무시하고 진행
+      } catch (Exception e) {
+        log.debug("Redis 캐시 저장 실패 playlistId={} error={}", playlistId, e.getMessage());
       }
     }
   }
