@@ -1,4 +1,4 @@
-package io.mopl.api.conversation.domain;
+package io.mopl.api.conversation.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
@@ -6,6 +6,10 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.common.dto.SortDirection;
+import io.mopl.api.conversation.domain.Conversation;
+import io.mopl.api.conversation.domain.QConversation;
+import io.mopl.api.conversation.domain.QConversationParticipant;
+import io.mopl.api.conversation.domain.QDirectMessage;
 import io.mopl.api.conversation.dto.ConversationPage;
 import io.mopl.api.conversation.dto.ConversationSearchRequest;
 import io.mopl.api.user.domain.QUser;

@@ -1,5 +1,6 @@
-package io.mopl.api.conversation.domain;
+package io.mopl.api.conversation.repository;
 
+import io.mopl.api.conversation.domain.DirectMessage;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

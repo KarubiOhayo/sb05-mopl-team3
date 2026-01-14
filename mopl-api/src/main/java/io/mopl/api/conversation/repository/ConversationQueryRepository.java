@@ -1,4 +1,4 @@
-package io.mopl.api.conversation.domain;
+package io.mopl.api.conversation.repository;
 
 import io.mopl.api.conversation.dto.ConversationPage;
 import io.mopl.api.conversation.dto.ConversationSearchRequest;
