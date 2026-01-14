@@ -15,5 +15,6 @@ public interface PlaylistSubscriptionRepository
   List<PlaylistSubscription> findByIdUserIdAndIdPlaylistIdIn(
       UUID userId, Collection<UUID> playlistIds);
 
+  /** 특정 사용자가 구독한 모든 플레이리스트를 조회한다. */
   List<PlaylistSubscription> findByIdUserId(UUID userId);
 }

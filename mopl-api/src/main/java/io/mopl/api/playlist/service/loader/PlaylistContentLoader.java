@@ -55,25 +55,21 @@ public class PlaylistContentLoader {
     Map<UUID, List<ContentSummary>> result = new HashMap<>();
     List<UUID> missIds = new ArrayList<>();
 
-    if (cached != null) {
-      for (int i = 0; i < playlistIdList.size(); i++) {
-        Object value = cached.get(i);
-        if (value instanceof List<?> list) {
-          if (list.isEmpty()) {
-            result.put(playlistIdList.get(i), List.of());
-          } else if (list.get(0) instanceof ContentSummary) {
-            @SuppressWarnings("unchecked")
-            List<ContentSummary> summaries = (List<ContentSummary>) list;
-            result.put(playlistIdList.get(i), summaries);
-          } else {
-            missIds.add(playlistIdList.get(i));
-          }
+    for (int i = 0; i < playlistIdList.size(); i++) {
+      Object value = cached.get(i);
+      if (value instanceof List<?> list) {
+        if (list.isEmpty()) {
+          result.put(playlistIdList.get(i), List.of());
+        } else if (list.get(0) instanceof ContentSummary) {
+          @SuppressWarnings("unchecked")
+          List<ContentSummary> summaries = (List<ContentSummary>) list;
+          result.put(playlistIdList.get(i), summaries);
         } else {
           missIds.add(playlistIdList.get(i));
         }
+      } else {
+        missIds.add(playlistIdList.get(i));
       }
-    } else {
-      missIds.addAll(playlistIdList);
     }
 
     // 전부 캐시 hit이면 바로 반환

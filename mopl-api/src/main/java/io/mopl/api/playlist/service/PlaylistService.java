@@ -104,7 +104,9 @@ public class PlaylistService {
         () -> {
           try {
             String key = RedisKeyPrefix.PLAYLIST_SUBS_BY_USER + userId;
-            redisTemplate.opsForSet().add(key, playlistId.toString());
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+              redisTemplate.opsForSet().add(key, playlistId.toString());
+            }
           } catch (Exception e) {
             log.warn(
                 "레디스 캐시 갱신 실패 key={} error={}",
