@@ -1,7 +1,7 @@
 package io.mopl.api.playlist.service;
 
 import io.mopl.api.common.error.ContentErrorCode;
-import io.mopl.api.content.repository.ContentRepository;
+import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.playlist.domain.Playlist;
 import io.mopl.api.playlist.domain.PlaylistContentId;
 import io.mopl.api.playlist.domain.PlaylistContentRepository;

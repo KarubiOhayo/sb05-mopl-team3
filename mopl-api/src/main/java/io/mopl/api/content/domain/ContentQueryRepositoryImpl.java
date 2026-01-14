@@ -1,4 +1,4 @@
-package io.mopl.api.content.repository;
+package io.mopl.api.content.domain;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
@@ -7,11 +7,6 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
-import io.mopl.api.content.domain.Content;
-import io.mopl.api.content.domain.ContentType;
-import io.mopl.api.content.domain.QContent;
-import io.mopl.api.content.domain.QContentTag;
-import io.mopl.api.content.domain.QTag;
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.core.error.BusinessException;
