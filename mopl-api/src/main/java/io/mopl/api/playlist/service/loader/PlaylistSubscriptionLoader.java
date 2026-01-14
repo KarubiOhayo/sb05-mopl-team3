@@ -57,9 +57,13 @@ public class PlaylistSubscriptionLoader {
 
     // 전체 구독 목록을 Redis에 저장
     if (!allSubscribedIds.isEmpty()) {
-      String[] values = allSubscribedIds.stream().map(UUID::toString).toArray(String[]::new);
-      redisTemplate.opsForSet().add(key, values);
-      redisTemplate.expire(key, Duration.ofHours(6));
+      try {
+        String[] values = allSubscribedIds.stream().map(UUID::toString).toArray(String[]::new);
+        redisTemplate.opsForSet().add(key, values);
+        redisTemplate.expire(key, Duration.ofHours(6));
+      } catch (Exception e) {
+        log.warn("Redis 캐시 저장 실패 key={} error={}", key, e.getMessage());
+      }
     }
 
     // 요청된 playlistIds 중 구독된 것만 반환
