@@ -19,12 +19,14 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,7 @@ public class PlaylistService {
   private final PlaylistContentRepository playlistContentRepository;
   private final PlaylistQueryService playlistQueryService;
   private final ApplicationEventPublisher eventPublisher;
+  private final RedisTemplate<String, String> redisTemplate;
 
   // Playlist 생성
   @Transactional
@@ -98,6 +101,13 @@ public class PlaylistService {
           playlistId,
           userId);
     }
+    // 구독 캐시 갱신
+    try {
+      String key = RedisKeyPrefix.PLAYLIST_SUBS_BY_USER + userId;
+      redisTemplate.opsForSet().add(key, playlistId.toString());
+    } catch (Exception ignored) {
+      // 캐시 실패는 무시
+    }
     // 구독시 이벤트 발행
     eventPublisher.publishEvent(
         new PlaylistSubscribedInternalEvent(
@@ -124,6 +134,13 @@ public class PlaylistService {
           playlistId,
           userId);
     }
+    // 구독 캐시 갱신
+    try {
+      String key = RedisKeyPrefix.PLAYLIST_SUBS_BY_USER + userId;
+      redisTemplate.opsForSet().remove(key, playlistId.toString());
+    } catch (Exception ignored) {
+      // 캐시 실패는 무시
+    }
   }
 
   // Playlist 컨텐츠 추가
@@ -148,6 +165,13 @@ public class PlaylistService {
     }
     eventPublisher.publishEvent(
         new PlaylistContentAddedInternalEvent(playlistId, playlist.getOwnerId(), contentId));
+    // 콘텐츠 캐시 삭제
+    try {
+      String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
+      redisTemplate.delete(key);
+    } catch (Exception ignored) {
+      // 캐시 실패는 무시
+    }
   }
 
   // Playlist 컨텐츠 삭제
@@ -166,6 +190,13 @@ public class PlaylistService {
 
     playlistContentRepository.deleteById(id);
     log.info("playlist_content_removed playlistId={} contentId={}", playlistId, contentId);
+    // 콘텐츠 캐시 삭제
+    try {
+      String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
+      redisTemplate.delete(key);
+    } catch (Exception ignored) {
+      // 캐시 실패는 무시
+    }
   }
 
   // Playlist 삭제
