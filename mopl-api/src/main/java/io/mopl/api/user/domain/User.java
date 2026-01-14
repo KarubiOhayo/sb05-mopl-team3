@@ -69,14 +69,6 @@ public class User {
   @Column(name = "profile_image_url", length = 2048)
   private String profileImageUrl;
 
-  //  @Setter
-  //  @Column(name = "temp_password_hash", length = 255)
-  //  private String tempPasswordHash;
-  //
-  //  @Setter
-  //  @Column(name = "temp_password_expires_at")
-  //  private Instant tempPasswordExpiresAt;
-
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -90,5 +82,25 @@ public class User {
     if (this.id == null) {
       this.id = UuidV7Generator.generate();
     }
+  }
+
+  /** OAuth2 소셜 로그인으로 신규 사용자 생성 메서드 */
+  public static User createOAuth2User(
+      String email,
+      String name,
+      String passwordHash,
+      AuthProvider authProvider,
+      String providerUserId,
+      String profileImageUrl) {
+    return User.builder()
+        .email(email)
+        .name(name)
+        .passwordHash(passwordHash)
+        .authProvider(authProvider)
+        .providerUserId(providerUserId)
+        .role(UserRole.USER)
+        .locked(false)
+        .profileImageUrl(profileImageUrl)
+        .build();
   }
 }
