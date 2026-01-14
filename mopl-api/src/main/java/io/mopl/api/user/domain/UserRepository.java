@@ -15,9 +15,4 @@ public interface UserRepository extends JpaRepository<User, UUID>, UserRepositor
   // 소셜 로그인용 (심화)
   Optional<User> findByAuthProviderAndProviderUserId(
       AuthProvider authProvider, String providerUserId);
-
-  //  @Query(
-  //      "UPDATE User u SET u.tempPasswordHash = null, u.tempPasswordExpiresAt = null "
-  //          + "WHERE u.tempPasswordHash IS NOT NULL AND u.tempPasswordExpiresAt <= :now")
-  //  int clearExpiredTempPasswords(@Param("now") Instant now);
 }
