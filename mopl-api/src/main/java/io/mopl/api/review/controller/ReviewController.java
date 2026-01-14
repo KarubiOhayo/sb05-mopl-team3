@@ -1,19 +1,22 @@
 package io.mopl.api.review.controller;
 
 import io.mopl.api.common.config.AuthUser;
+import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.review.dto.ReviewCreateRequest;
+import io.mopl.api.review.dto.ReviewCursorRequest;
 import io.mopl.api.review.dto.ReviewDto;
 import io.mopl.api.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +41,17 @@ public class ReviewController {
     return ResponseEntity.status(HttpStatus.CREATED).body(reviewDto);
   }
 
+  @Operation(summary = "리뷰 목록 조회(커서 페이지네이션)", description = "리뷰 목록을 페이지네이션하여 조회합니다.")
+  @GetMapping
+  public ResponseEntity<CursorResponse<ReviewDto>> getReviews(
+      @Parameter(description = "콘텐츠 ID", required = true) @RequestParam UUID contentId,
+      @ModelAttribute ReviewCursorRequest request) {
+    // Service 계층으로 로직 위임
+    CursorResponse<ReviewDto> response = reviewService.getReviews(contentId, request);
+
+    return ResponseEntity.ok(response);
+  }
+
   @Operation(summary = "리뷰 단건 조회", description = "특정 리뷰를 단건 조회합니다.")
   @GetMapping("/{reviewId}")
   public ResponseEntity<ReviewDto> getReview(
@@ -46,14 +60,5 @@ public class ReviewController {
 
     ReviewDto reviewDto = reviewService.findById(reviewId, userId);
     return ResponseEntity.ok(reviewDto);
-  }
-
-  @Operation(summary = "콘텐츠별 리뷰 목록 조회", description = "특정 콘텐츠에 달린 리뷰 목록을 조회합니다.")
-  @GetMapping
-  public ResponseEntity<List<ReviewDto>> getReviews(
-      @RequestParam UUID contentId, @AuthenticationPrincipal AuthUser authUser) {
-
-    List<ReviewDto> reviews = reviewService.findByContentId(contentId);
-    return ResponseEntity.ok(reviews);
   }
 }

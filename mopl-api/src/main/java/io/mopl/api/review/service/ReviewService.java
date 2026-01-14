@@ -1,10 +1,13 @@
 package io.mopl.api.review.service;
 
+import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCreateRequest;
+import io.mopl.api.review.dto.ReviewCursorRequest;
 import io.mopl.api.review.dto.ReviewDto;
 import io.mopl.api.review.error.ReviewErrorCode;
 import io.mopl.api.review.mapper.ReviewMapper;
+import io.mopl.api.review.repository.ReviewQueryRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
@@ -26,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewService {
 
   private final ReviewRepository reviewRepository;
+  private final ReviewQueryRepository reviewQueryRepository;
   private final ReviewMapper reviewMapper;
   private final UserService userService;
   private final UserRepository userRepository;
@@ -89,5 +93,43 @@ public class ReviewService {
               return reviewMapper.toDto(review, author);
             })
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public CursorResponse<ReviewDto> getReviews(UUID contentId, ReviewCursorRequest request) {
+    // 1. QueryRepository를 통해 페이징된 리뷰 엔티티 조회
+    CursorResponse<Review> entityResponse =
+        reviewQueryRepository.findReviewsPage(contentId, request);
+
+    // 2. 조회된 리뷰들에서 작성자 ID 추출
+    List<UUID> authorIds =
+        entityResponse.getData().stream().map(Review::getAuthorId).distinct().toList();
+
+    // 3. 작성자 정보 일괄 조회 (N+1 문제 방지)
+    Map<UUID, UserSummary> authorMap =
+        userRepository.findAllById(authorIds).stream()
+            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageUrl()))
+            .collect(Collectors.toMap(UserSummary::getUserId, Function.identity()));
+
+    // 4. 엔티티 -> DTO 변환 (작성자 정보 매핑 포함)
+    List<ReviewDto> dtos =
+        entityResponse.getData().stream()
+            .map(
+                review -> {
+                  UserSummary author = authorMap.get(review.getAuthorId());
+                  return reviewMapper.toDto(review, author);
+                })
+            .toList();
+
+    // 5. CursorResponse<ReviewDto> 생성 및 반환
+    return CursorResponse.<ReviewDto>builder()
+        .data(dtos)
+        .nextCursor(entityResponse.getNextCursor())
+        .nextIdAfter(entityResponse.getNextIdAfter())
+        .hasNext(entityResponse.isHasNext())
+        .totalCount(entityResponse.getTotalCount())
+        .sortBy(entityResponse.getSortBy())
+        .sortDirection(entityResponse.getSortDirection())
+        .build();
   }
 }

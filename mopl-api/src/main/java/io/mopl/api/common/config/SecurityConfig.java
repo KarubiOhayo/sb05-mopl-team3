@@ -43,7 +43,6 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-
     csrfTokenRepository.setCookieName(cookieSecurityProperties.getCsrf().getName());
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
@@ -53,16 +52,7 @@ public class SecurityConfig {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(csrfTokenRepository)
-                    .csrfTokenRequestHandler(requestHandler) // Plain token handler 설정
-                    .ignoringRequestMatchers(
-                        request -> {
-                          String method = request.getMethod();
-                          String path = request.getRequestURI();
-                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화만
-                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
-                              || (method.equals("POST") && path.equals("/api/users"))
-                              || (method.equals("POST") && path.equals("/api/auth/reset-password"));
-                        }))
+                    .csrfTokenRequestHandler(requestHandler))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
@@ -127,7 +117,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.DELETE, "/api/reviews/{reviewId}")
                     .authenticated()
                     // 전체: 목록 조회
-                    .requestMatchers(HttpMethod.GET, "/api/reviews")
+                    .requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/{reviewId}")
                     .permitAll()
 
                     /* ========== 플레이리스트 관리 ========== */
