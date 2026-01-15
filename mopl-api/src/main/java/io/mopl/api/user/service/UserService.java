@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -9,6 +10,7 @@ import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserLockUpdateRequest;
+import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.core.error.BusinessException;
@@ -34,6 +36,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
   private final RedisTemplate<String, String> redisTemplate;
+  private final RefreshTokenService refreshTokenService;
 
   /** 회원가입 */
   @Transactional
@@ -186,5 +189,34 @@ public class UserService {
       }
     }
     return false;
+  }
+
+  /** 사용자 권한 변경 */
+  @Transactional
+  public void updateUserRole(UUID userId, UserRoleUpdateRequest request, UUID currentUserId) {
+    if (userId.equals(currentUserId)) {
+      throw new BusinessException(UserErrorCode.CANNOT_UPDATE_OWN_ROLE);
+    }
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (user.getRole() == UserRole.ADMIN && request.getRole() != UserRole.ADMIN) {
+      long adminCount = userRepository.countByRole(UserRole.ADMIN);
+      if (adminCount == 1) {
+        throw new BusinessException(UserErrorCode.LAST_ADMIN_PROTECTION);
+      }
+    }
+
+    user.setRole(request.getRole());
+
+    try {
+      refreshTokenService.deleteRefreshToken(userId);
+    } catch (Exception e) {
+      log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패 - userId: {}", userId, e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
   }
 }
