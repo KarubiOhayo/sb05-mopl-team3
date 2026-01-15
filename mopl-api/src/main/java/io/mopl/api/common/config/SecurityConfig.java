@@ -68,7 +68,8 @@ public class SecurityConfig {
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
                               || (method.equals("POST") && path.equals("/api/users"))
                               || (method.equals("POST") && path.equals("/api/auth/reset-password"))
-                              || (method.equals("POST") && path.equals("/api/auth/refresh"))
+                              //                              || (method.equals("POST") &&
+                              // path.equals("/api/auth/refresh"))
                               || path.startsWith("/oauth2/")
                               || path.startsWith("/login/oauth2/");
                         }))
