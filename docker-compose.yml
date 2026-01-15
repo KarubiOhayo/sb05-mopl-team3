@@ -91,7 +91,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./mopl-monitor/prometheus/${PROM_CONFIG:-prometheus-local.yml}:/etc/prometheus/prometheus.yml:ro
+      - ./mopl-monitor/prometheus/${PROM_CONFIG:-prometheus-dev.yml}:/etc/prometheus/prometheus.yml:ro
 
   grafana:
     image: grafana/grafana:latest
@@ -111,8 +111,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
-      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_REDIS_HOST: redis
       MOPL_REDIS_PORT: 6379
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
@@ -121,6 +121,11 @@ services:
       - mysql
       - redis
       - kafka
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   socket:
     build:
@@ -131,8 +136,8 @@ services:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
-      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_REDIS_HOST: redis
       MOPL_REDIS_PORT: 6379
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
@@ -141,6 +146,11 @@ services:
       - mysql
       - redis
       - kafka
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   worker:
     build:
@@ -151,8 +161,8 @@ services:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
-      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID:-mopl-worker}
       GMAIL_EMAIL: ${GMAIL_EMAIL}
@@ -160,6 +170,11 @@ services:
     depends_on:
       - mysql
       - kafka
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   batch:
     build:
@@ -170,13 +185,18 @@ services:
       - "8083:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
-      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       MOPL_BATCH_JOB_ENABLED: ${MOPL_BATCH_JOB_ENABLED:-false}
     depends_on:
       - mysql
       - kafka
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   gateway:
     image: nginx:alpine

@@ -1,4 +1,4 @@
-﻿# MOPL 서비스 메트릭 수집 설정 (로컬)
+# MOPL 서비스 메트릭 수집 설정 (로컬)
 # docker-compose 내부 서비스 기준 타깃
 
 global:

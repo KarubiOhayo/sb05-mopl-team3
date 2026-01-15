@@ -8,7 +8,7 @@ spring:
     password: ${MOPL_DB_PASSWORD:app}
   jpa:
     hibernate:
-      ddl-auto: ${MOPL_DDL_AUTO:update}
+      ddl-auto: ${MOPL_DDL_AUTO:validate}
   kafka:
     bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:kafka:29092}
     consumer:
