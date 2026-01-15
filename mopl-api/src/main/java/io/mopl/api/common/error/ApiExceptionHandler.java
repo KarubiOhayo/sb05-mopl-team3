@@ -28,7 +28,13 @@ public class ApiExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
-    String resolvedMessage = resolveMessage(errorCode.getMessageKey());
+
+    Object[] args = null;
+    if (ex.getDetails() != null && ex.getDetails().containsKey("existingProvider")) {
+      args = new Object[] {ex.getDetails().get("existingProvider")};
+    }
+
+    String resolvedMessage = resolveMessage(errorCode.getMessageKey(), args);
     return buildResponse(
         errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
@@ -103,8 +109,12 @@ public class ApiExceptionHandler {
   }
 
   private String resolveMessage(String messageKey) {
+    return resolveMessage(messageKey, null);
+  }
+
+  private String resolveMessage(String messageKey, Object[] args) {
     try {
-      return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+      return messageSource.getMessage(messageKey, args, LocaleContextHolder.getLocale());
     } catch (Exception e) {
       return messageKey;
     }

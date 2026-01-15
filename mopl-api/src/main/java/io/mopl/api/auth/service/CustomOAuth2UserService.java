@@ -93,8 +93,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     Optional<User> existingUserByEmail = userRepository.findByEmail(email);
 
     if (existingUserByEmail.isPresent()) {
+      User existingUser = existingUserByEmail.get();
+      String existingProviderName = existingUser.getAuthProvider().getDisplayName();
+
       throw new BusinessException(AuthErrorCode.OAUTH2_EMAIL_ALREADY_REGISTERED)
-          .addDetail("attemptedProvider", authProvider.name());
+          .addDetail("existingProvider", existingProviderName);
     }
     return registerNewUser(authProvider, providerId, oAuth2UserInfo);
   }
