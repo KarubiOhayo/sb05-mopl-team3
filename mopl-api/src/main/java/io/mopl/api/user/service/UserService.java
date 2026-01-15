@@ -1,6 +1,5 @@
 package io.mopl.api.user.service;
 
-import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -35,7 +34,6 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
-  private final RefreshTokenService refreshTokenService;
   private final RedisTemplate<String, String> redisTemplate;
 
   /** 회원가입 */
@@ -106,8 +104,8 @@ public class UserService {
     String encodedPassword = passwordEncoder.encode(request.getPassword());
     user.setPasswordHash(encodedPassword);
 
-    user.setTempPasswordHash(null);
-    user.setTempPasswordExpiresAt(null);
+    String tempPasswordKey = RedisKeyPrefix.TEMP_PASSWORD + userId;
+    redisTemplate.delete(tempPasswordKey);
   }
 
   /** 프로필 변경 */

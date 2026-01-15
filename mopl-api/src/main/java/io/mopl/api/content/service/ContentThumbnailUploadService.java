@@ -1,6 +1,7 @@
 package io.mopl.api.content.service;
 
 import io.mopl.api.common.config.S3Properties;
+import io.mopl.api.content.domain.ContentType;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class ContentThumbnailUploadService {
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
   private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-  public String uploadThumbnail(MultipartFile file) {
+  public String uploadThumbnail(MultipartFile file, ContentType type) {
     log.info(
         "썸네일 업로드 시작 - name: {}, size: {}, empty: {}, type: {}",
         file.getOriginalFilename(),
@@ -47,7 +48,14 @@ public class ContentThumbnailUploadService {
     validateImage(file);
 
     String fileName = generateThumbnailFileName(Objects.requireNonNull(file.getOriginalFilename()));
-    String key = s3Properties.getContentThumbnailPath() + fileName;
+    String thumbnailPath = null;
+    switch (type) {
+      case MOVIE -> thumbnailPath = s3Properties.getThumbnailMoviePath();
+      case TV_SERIES -> thumbnailPath = s3Properties.getThumbnailTvSeriesPath();
+      case SPORT -> thumbnailPath = s3Properties.getThumbnailSportPath();
+      default -> throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
+    }
+    String key = thumbnailPath + fileName;
     log.debug("S3 key 생성 - key: {}", key);
 
     String contentType = file.getContentType();

@@ -25,23 +25,23 @@ spring:
         spring.json.trusted.packages: io.mopl.core.event.*
   messages:
     basename: messages,ValidationMessages
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${GMAIL_EMAIL}
-    password: ${GMAIL_APP_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-          ssl:
-            trust: smtp.gmail.com
+#  mail:
+#    host: smtp.gmail.com
+#    port: 587
+#    username: ${GMAIL_EMAIL}
+#    password: ${GMAIL_APP_PASSWORD}
+#    properties:
+#      mail:
+#        smtp:
+#          auth: true
+#          starttls:
+#            enable: true
+#            required: true
+#          connectiontimeout: 5000
+#          timeout: 5000
+#          writetimeout: 5000
+#          ssl:
+#            trust: smtp.gmail.com
 security:
   cookie:
     same-site: ${COOKIE_SAME_SITE:Lax}
@@ -75,9 +75,9 @@ mopl:
 
 aws:
   s3:
-    access-key: ${AWS_S3_ACCESS_KEY:}
-    secret-key: ${AWS_S3_SECRET_KEY:}
-    region: ${AWS_S3_REGION:ap-northeast-2}
-    bucket: ${AWS_S3_BUCKET:mopl-bucket}
+    access-key: ${AWS_S3_ACCESS_KEY}
+    secret-key: ${AWS_S3_SECRET_KEY}
+    region: ${MOPL_S3_REGION:ap-northeast-2}
+    bucket: ${MOPL_S3_BUCKET:mopl-bucket}
     profile-image-path: ${AWS_S3_PROFILE_PATH:profiles/}
     content-thumbnail-path: ${AWS_S3_CONTENT_THUMBNAIL_PATH:thumbnails/custom/}
