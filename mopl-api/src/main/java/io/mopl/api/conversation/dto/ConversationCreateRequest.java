@@ -1,16 +1,7 @@
 package io.mopl.api.conversation.dto;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ConversationCreateRequest {
-
-  private UUID withUserId;
-}
+public record ConversationCreateRequest(
+    @NotNull(message = "{validation.conversation.with-user-id.required}") UUID withUserId) {}

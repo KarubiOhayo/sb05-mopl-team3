@@ -6,6 +6,7 @@ import io.mopl.api.user.dto.CursorResponseUserDto;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserLockUpdateRequest;
+import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSearchRequest;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.api.user.service.UserQueryService;
@@ -55,6 +56,17 @@ public class UserController {
   public ResponseEntity<Void> lockUser(
       @PathVariable UUID userId, @Valid @RequestBody UserLockUpdateRequest request) {
     userService.lockUser(userId, request);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** 사용자 계정 권한 변경 */
+  @PatchMapping("/{userId}/role")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> updateUserRole(
+      @PathVariable UUID userId,
+      @Valid @RequestBody UserRoleUpdateRequest request,
+      @AuthenticationPrincipal AuthUser authUser) {
+    userService.updateUserRole(userId, request, authUser.getUserId());
     return ResponseEntity.noContent().build();
   }
 
