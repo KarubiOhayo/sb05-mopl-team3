@@ -14,6 +14,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,7 +28,13 @@ public class ApiExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
     ErrorCode errorCode = ex.getErrorCode();
-    String resolvedMessage = resolveMessage(errorCode.getMessageKey());
+
+    Object[] args = null;
+    if (ex.getDetails() != null && ex.getDetails().containsKey("existingProvider")) {
+      args = new Object[] {ex.getDetails().get("existingProvider")};
+    }
+
+    String resolvedMessage = resolveMessage(errorCode.getMessageKey(), args);
     return buildResponse(
         errorCode, errorCode.getClass().getSimpleName(), resolvedMessage, ex.getDetails());
   }
@@ -67,6 +74,17 @@ public class ApiExceptionHandler {
         details);
   }
 
+  /** MissingRequestCookieException 처리 REFRESH_TOKEN 쿠키가 없을 때 401 에러 반환 */
+  @ExceptionHandler(MissingRequestCookieException.class)
+  public ResponseEntity<ErrorResponse> handleMissingRequestCookie(
+      MissingRequestCookieException ex) {
+    log.debug("Missing cookie: {}", ex.getCookieName());
+
+    String resolvedMessage = resolveMessage(CommonErrorCode.UNAUTHORIZED.getMessageKey());
+    return buildResponse(
+        CommonErrorCode.UNAUTHORIZED, ex.getClass().getSimpleName(), resolvedMessage, null);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception ex) {
     log.error("Unhandled exception occurred: ", ex);
@@ -91,8 +109,12 @@ public class ApiExceptionHandler {
   }
 
   private String resolveMessage(String messageKey) {
+    return resolveMessage(messageKey, null);
+  }
+
+  private String resolveMessage(String messageKey, Object[] args) {
     try {
-      return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+      return messageSource.getMessage(messageKey, args, LocaleContextHolder.getLocale());
     } catch (Exception e) {
       return messageKey;
     }
