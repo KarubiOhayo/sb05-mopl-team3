@@ -94,7 +94,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     if (existingUserByEmail.isPresent()) {
       throw new BusinessException(AuthErrorCode.OAUTH2_EMAIL_ALREADY_REGISTERED)
-          .addDetail("email", email)
           .addDetail("attemptedProvider", authProvider.name());
     }
     return registerNewUser(authProvider, providerId, oAuth2UserInfo);
