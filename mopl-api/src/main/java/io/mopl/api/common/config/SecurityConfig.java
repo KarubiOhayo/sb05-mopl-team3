@@ -28,7 +28,6 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final CsrfCookieFilter csrfCookieFilter;
-  private final CookieSecurityProperties cookieSecurityProperties;
 
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
