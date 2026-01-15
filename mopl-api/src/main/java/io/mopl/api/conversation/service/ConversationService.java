@@ -405,6 +405,9 @@ public class ConversationService {
                     Instant lastReadAt = lastReadAtByConversation.get(conversationId);
                     Instant lastReadAtOrEpoch = lastReadAt == null ? Instant.EPOCH : lastReadAt;
                     hasUnread = lastReadAtOrEpoch.isBefore(latestMessage.getCreatedAt());
+                    if (latestMessage.getSenderId().equals(userId)) {
+                      hasUnread = false;
+                    }
                   }
 
                   return ConversationDto.builder()
