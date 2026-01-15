@@ -128,12 +128,12 @@ services:
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-     mysql:
-       condition: service_healthy
-     redis:
-       condition: service_healthy
-     kafka:
-       condition: service_started
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1" ]
       interval: 10s
@@ -184,8 +184,10 @@ services:
       GMAIL_EMAIL: ${GMAIL_EMAIL}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
     depends_on:
-      - mysql
-      - kafka
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health || exit 1" ]
       interval: 10s
@@ -206,8 +208,10 @@ services:
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       MOPL_BATCH_JOB_ENABLED: ${MOPL_BATCH_JOB_ENABLED:-false}
     depends_on:
-      - mysql
-      - kafka
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health || exit 1" ]
       interval: 10s
