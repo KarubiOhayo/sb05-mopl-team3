@@ -8,6 +8,7 @@ import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.content.domain.ContentTag;
 import io.mopl.api.content.domain.ContentTagId;
 import io.mopl.api.content.domain.ContentTagRepository;
+import io.mopl.api.content.domain.EventType;
 import io.mopl.api.content.domain.Tag;
 import io.mopl.api.content.domain.TagRepository;
 import io.mopl.api.content.dto.ContentCreateRequest;
@@ -16,6 +17,7 @@ import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
+import io.mopl.api.content.event.ContentIndexEvent;
 import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
 import io.mopl.api.content.event.ThumbnailUploadedEvent;
 import io.mopl.api.content.mapper.ContentMapper;
@@ -81,8 +83,7 @@ public class ContentService {
             .description(description)
             .thumbnailUrl(thumbnailUrl)
             .build();
-    contentRepository.save(content);
-
+    Content saved = contentRepository.save(content);
     log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
 
     List<String> tagNames = contentCreateRequest.getTags();
@@ -101,6 +102,11 @@ public class ContentService {
     }
 
     log.info("컨텐츠 생성을 완료했습니다.");
+
+    eventPublisher.publishEvent(
+        new ContentIndexEvent(saved.getId(), EventType.UPSERT)
+    );
+
     return new ContentDto(
         content.getId(),
         content.getType(),
@@ -143,6 +149,7 @@ public class ContentService {
     contentThumbnailUploadService.deleteThumbnail(content.getThumbnailUrl());
     contentRepository.deleteById(contentId);
     log.info("컨텐츠 삭제 완료: contentId: {}", contentId);
+    eventPublisher.publishEvent(new ContentIndexEvent(contentId, EventType.DELETE));
   }
 
   @PreAuthorize("hasRole('ADMIN')")
@@ -213,6 +220,11 @@ public class ContentService {
     }
 
     log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
+
+    eventPublisher.publishEvent(
+        new ContentIndexEvent(content.getId(), EventType.UPSERT)
+    );
+
     String thumbnailUrl =
         contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
     return new ContentDto(

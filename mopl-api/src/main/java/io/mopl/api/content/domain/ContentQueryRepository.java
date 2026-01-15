@@ -5,10 +5,14 @@ import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentSearchRow;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface ContentQueryRepository {
 
   List<ContentSearchRow> findAllForIndexing();
+
+  Optional<ContentSearchRow> findOneForIndexing(UUID contentId);
 
   ContentPage findContentPage(ContentSearchRequest request);
 

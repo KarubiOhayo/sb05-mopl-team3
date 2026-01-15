@@ -2,9 +2,7 @@ package io.mopl.api.content.domain;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
-import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -21,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -70,6 +69,47 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     }
 
     return new ArrayList<>(byId.values());
+  }
+
+  @Override
+  public Optional<ContentSearchRow> findOneForIndexing(UUID contentId) {
+    List<Tuple> rows = queryFactory.select(
+            c.id, c.type, c.title, c.description,
+            c.thumbnailUrl, t.name, c.averageRating,
+            c.reviewCount, c.watcherCount, c.createdAt
+        )
+        .from(c)
+        .leftJoin(ct).on(ct.id.contentId.eq(c.id))
+        .leftJoin(t).on(ct.id.tagId.eq(t.id))
+        .where(c.id.eq(contentId))
+        .fetch();
+
+    if (rows.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Tuple first = rows.get(0);
+    ContentSearchRow base = ContentSearchRow.builder()
+        .id(first.get(c.id))
+        .type(first.get(c.type))
+        .title(first.get(c.title))
+        .description(first.get(c.description))
+        .thumbnailUrl((first.get(c.thumbnailUrl)))
+        .tags(new ArrayList<>())
+        .averageRating(first.get(c.averageRating))
+        .reviewCount(first.get(c.reviewCount))
+        .watcherCount((first.get(c.watcherCount)))
+        .createdAt(first.get(c.createdAt))
+        .build();
+
+    for (Tuple row : rows) {
+      String tagName = row.get(t.name);
+      if (tagName != null) {
+        base.getTags().add(tagName);
+      }
+    }
+
+    return Optional.of(base);
   }
 
   @Override
