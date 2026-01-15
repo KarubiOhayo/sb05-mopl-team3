@@ -27,8 +27,10 @@ public class DirectMessageController {
 
   @GetMapping
   public ResponseEntity<CursorResponse<DirectMessageDto>> list(
-      @PathVariable UUID conversationId, @ModelAttribute DirectMessageSearchRequest request) {
-    return ResponseEntity.ok(directMessageService.find(conversationId, request));
+      @AuthenticationPrincipal(expression = "userId") UUID userId,
+      @PathVariable UUID conversationId,
+      @ModelAttribute DirectMessageSearchRequest request) {
+    return ResponseEntity.ok(directMessageService.find(userId, conversationId, request));
   }
 
   @PostMapping("/{directMessageId}/read")

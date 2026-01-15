@@ -4,6 +4,7 @@ import io.mopl.api.conversation.domain.DirectMessage;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,8 +38,7 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
           + "WHERE dm.conversationId = :conversationId "
           + "ORDER BY dm.createdAt DESC, dm.id DESC")
   List<DirectMessage> findByConversationIdOrderByCreatedAtDescIdDesc(
-      @Param("conversationId") UUID conversationId,
-      org.springframework.data.domain.Pageable pageable);
+      @Param("conversationId") UUID conversationId, Pageable pageable);
 
   @Query(
       "SELECT dm FROM DirectMessage dm "
@@ -48,7 +48,7 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
   List<DirectMessage> findByConversationIdAndCursor(
       @Param("conversationId") UUID conversationId,
       @Param("createdAt") java.time.Instant createdAt,
-      org.springframework.data.domain.Pageable pageable);
+      Pageable pageable);
 
   @Query(
       "SELECT dm FROM DirectMessage dm "
@@ -62,5 +62,5 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
       @Param("conversationId") UUID conversationId,
       @Param("createdAt") java.time.Instant createdAt,
       @Param("id") UUID id,
-      org.springframework.data.domain.Pageable pageable);
+      Pageable pageable);
 }

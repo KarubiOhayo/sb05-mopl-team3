@@ -3,6 +3,7 @@ package io.mopl.api.conversation.service;
 import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.common.error.ConversationErrorCode;
 import io.mopl.api.common.error.UserErrorCode;
+import io.mopl.api.content.service.ContentThumbnailUploadService;
 import io.mopl.api.conversation.domain.ConversationParticipant;
 import io.mopl.api.conversation.domain.ConversationParticipantId;
 import io.mopl.api.conversation.domain.DirectMessage;
@@ -15,6 +16,7 @@ import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -36,20 +38,30 @@ public class DirectMessageService {
   private final DirectMessageRepository directMessageRepository;
   private final UserRepository userRepository;
   private final ConversationRepository conversationRepository;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
 
   @Transactional(readOnly = true)
   public CursorResponse<DirectMessageDto> find(
-      UUID conversationId, DirectMessageSearchRequest request) {
+      UUID userId, UUID conversationId, DirectMessageSearchRequest request) {
     if (conversationId == null) {
       log.warn("DM | 목록 조회 | 실패: conversationId 누락");
       throw new BusinessException(ConversationErrorCode.CONVERSATION_NOT_FOUND);
     }
 
-    // Check if conversation exists
     if (!conversationRepository.existsById(conversationId)) {
       log.warn("DM | 목록 조회 | 실패: 대화를 찾을 수 없음. conversationId={}", conversationId);
       throw new BusinessException(ConversationErrorCode.CONVERSATION_NOT_FOUND)
           .addDetail("conversationId", conversationId.toString());
+    }
+
+    ConversationParticipantId conversationParticipantId =
+        new ConversationParticipantId(conversationId, userId);
+    if (!conversationParticipantRepository.existsById(conversationParticipantId)) {
+      log.warn(
+          "DM | 목록 조회 | 실패: 사용자 본인의 대화가 아님. conversationParticipantId={}",
+          conversationParticipantId);
+      throw new BusinessException(CommonErrorCode.FORBIDDEN)
+          .addDetail("conversationParticipantId", conversationParticipantId.toString());
     }
 
     log.debug(
@@ -119,7 +131,9 @@ public class DirectMessageService {
                         UserSummary.builder()
                             .userId(user.getId())
                             .name(user.getName())
-                            .profileImageUrl(user.getProfileImageUrl())
+                            .profileImageUrl(
+                                contentThumbnailUploadService.generatePresignedUrl(
+                                    user.getProfileImageUrl()))
                             .build()));
 
     List<DirectMessageDto> dtos =
@@ -177,12 +191,10 @@ public class DirectMessageService {
 
     if (message == null) {
       log.warn("DM | 읽음 처리 | 실패: 메시지 없음. directMessageId={}", directMessageId);
-      // 메시지가 없으면 그냥 조용히 리턴하거나 에러를 던질 수 있음. 여기선 로직상 리턴이었음.
       return;
     }
 
     if (message.getSenderId().equals(userId)) {
-      // 내 메시지는 읽음 처리 대상 아님
       return;
     }
 
