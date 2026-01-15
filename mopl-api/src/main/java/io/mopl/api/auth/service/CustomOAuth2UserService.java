@@ -38,7 +38,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       OAuth2User oAuth2User = super.loadUser(userRequest);
 
       String registrationId = userRequest.getClientRegistration().getRegistrationId();
-      AuthProvider authProvider = AuthProvider.valueOf(registrationId.toUpperCase());
 
       OAuth2UserInfo oAuth2UserInfo = getOAuth2UserInfo(userRequest, oAuth2User);
 
@@ -46,11 +45,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
       forceLogout(user);
 
+      AuthProvider authProvider = AuthProvider.valueOf(registrationId.toUpperCase());
       return new CustomOAuth2User(user, oAuth2User.getAttributes(), authProvider);
 
     } catch (OAuth2AuthenticationException e) {
-      throw new BusinessException(AuthErrorCode.OAUTH2_EMAIL_NOT_PROVIDED);
+      throw e;
     } catch (Exception e) {
+      log.error("OAuth2 유저 로드에 실패", e);
       throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
@@ -92,7 +93,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     Optional<User> existingUserByEmail = userRepository.findByEmail(email);
 
     if (existingUserByEmail.isPresent()) {
-      throw new BusinessException(AuthErrorCode.OAUTH2_EMAIL_ALREADY_REGISTERED);
+      throw new BusinessException(AuthErrorCode.OAUTH2_EMAIL_ALREADY_REGISTERED)
+          .addDetail("email", email)
+          .addDetail("attemptedProvider", authProvider.name());
     }
     return registerNewUser(authProvider, providerId, oAuth2UserInfo);
   }

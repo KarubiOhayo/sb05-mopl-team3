@@ -32,7 +32,23 @@ public class GoogleOAuth2UserInfo implements OAuth2UserInfo {
 
   @Override
   public String getEmail() {
-    return (String) attributes.get("email");
+    String email = (String) attributes.get("email");
+    if (email == null || email.isBlank()) {
+      return generateVirtualEmail();
+    }
+    return email;
+  }
+
+  /** 가상 이메일 생성, 형식: {이름}_{회원 ID}@google.com */
+  private String generateVirtualEmail() {
+    String providedId = getProviderId();
+    if (providedId == null) {
+      providedId = java.util.UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    String name = getName();
+    String sanitizedName = (name != null) ? name.replaceAll("[^a-zA-Z0-9가-힣]", "") : "user";
+    return sanitizedName + "_" + providedId + "@google.com";
   }
 
   @Override

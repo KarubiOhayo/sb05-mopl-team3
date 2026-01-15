@@ -85,14 +85,6 @@ public class AuthController {
     return refreshToken(refreshToken, response);
   }
 
-  /** 토큰 재발급 - GET */
-  @GetMapping("/refresh")
-  public ResponseEntity<JwtDto> refreshGet(
-      @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
-      HttpServletResponse response) {
-    return refreshToken(refreshToken, response);
-  }
-
   /** 공통 토큰 재발급 로직 */
   private ResponseEntity<JwtDto> refreshToken(String refreshToken, HttpServletResponse response) {
     if (refreshToken == null) {
