@@ -1,0 +1,41 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+    import:
+      - optional:file:./.env[.properties]
+      - optional:file:./mopl-api/.env[.properties]
+  datasource:
+    url: jdbc:mysql://mysql:3306/mopl?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${MOPL_DB_USERNAME:app}
+    password: ${MOPL_DB_PASSWORD:app}
+  jpa:
+    hibernate:
+      ddl-auto: ${MOPL_DDL_AUTO:update}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  data:
+    redis:
+      host: ${MOPL_REDIS_HOST:redis}
+      port: ${MOPL_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:kafka:29092}
+
+security:
+  cookie:
+    secure: ${SECURITY_COOKIE_SECURE:false}
+
+server:
+  port: ${MOPL_PORT:8080}
+
+logging:
+  level:
+    org.hibernate.SQL: ${MOPL_SQL_LOG_LEVEL:debug}
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: off
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+  access-token-validity-in-seconds: ${JWT_VALIDITY:86400}
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800}
