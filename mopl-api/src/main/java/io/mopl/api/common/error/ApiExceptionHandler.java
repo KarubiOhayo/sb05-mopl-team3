@@ -14,6 +14,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -65,6 +66,17 @@ public class ApiExceptionHandler {
         CommonErrorCode.INVALID_REQUEST.name(),
         resolvedMessage,
         details);
+  }
+
+  /** MissingRequestCookieException 처리 REFRESH_TOKEN 쿠키가 없을 때 401 에러 반환 */
+  @ExceptionHandler(MissingRequestCookieException.class)
+  public ResponseEntity<ErrorResponse> handleMissingRequestCookie(
+      MissingRequestCookieException ex) {
+    log.debug("Missing cookie: {}", ex.getCookieName());
+
+    String resolvedMessage = resolveMessage(CommonErrorCode.UNAUTHORIZED.getMessageKey());
+    return buildResponse(
+        CommonErrorCode.UNAUTHORIZED, ex.getClass().getSimpleName(), resolvedMessage, null);
   }
 
   @ExceptionHandler(Exception.class)

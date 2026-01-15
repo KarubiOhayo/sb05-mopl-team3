@@ -24,9 +24,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final RefreshTokenService refreshTokenService;
   private final CookieSecurityProperties cookieSecurityProperties;
 
-  @Value("${oauth2.redirect-uri:http://localhost:8085")
+  @Value("${oauth2.redirect-uri:http://localhost:8085}")
   private String redirectUri;
 
+  @Override
   public void onAuthenticationSuccess(
       HttpServletRequest request, HttpServletResponse response, Authentication authentication)
       throws IOException {

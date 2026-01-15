@@ -1,6 +1,9 @@
 package io.mopl.api.common.config;
 
 import io.mopl.api.auth.jwt.JwtAuthenticationFilter;
+import io.mopl.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
+import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import io.mopl.api.auth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +25,10 @@ public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final CsrfCookieFilter csrfCookieFilter;
   private final CookieSecurityProperties cookieSecurityProperties;
+
+  private final CustomOAuth2UserService customOAuth2UserService;
+  private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -58,10 +65,11 @@ public class SecurityConfig {
                         request -> {
                           String method = request.getMethod();
                           String path = request.getRequestURI();
-                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화만
+                          // CSRF 검증 제외: 회원가입, 로그인, 비밀번호 초기화, OAuth2 콜백
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
                               || (method.equals("POST") && path.equals("/api/users"))
-                              || (method.equals("POST") && path.equals("/api/auth/reset-password"));
+                              || (method.equals("POST") && path.equals("/api/auth/reset-password"))
+                              || path.startsWith("/login/oauth2/");
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -80,6 +88,8 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/vite.svg")
                     .permitAll()
+
+                    /* ========== Swagger ========== */
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
 
@@ -99,6 +109,10 @@ public class SecurityConfig {
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
                     .requestMatchers("/api/auth/**")
+                    .permitAll()
+
+                    /* ========== OAuth2 인증 ==========*/
+                    .requestMatchers("/oauth2/**", "/login/oauth2/**")
                     .permitAll()
 
                     /* ========== 사용자 관리 ========== */
@@ -201,6 +215,13 @@ public class SecurityConfig {
                     // 나머지는 인증 필요
                     .anyRequest()
                     .authenticated())
+        /* OAuth 로그인 설정 */
+        .oauth2Login(
+            oauth2 ->
+                oauth2
+                    .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(csrfCookieFilter, CsrfFilter.class);
 
