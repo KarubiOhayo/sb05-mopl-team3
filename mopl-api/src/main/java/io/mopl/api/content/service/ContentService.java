@@ -2,6 +2,8 @@ package io.mopl.api.content.service;
 
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.Content;
+import io.mopl.api.content.domain.ContentDocument;
+import io.mopl.api.content.domain.ContentElasticRepository;
 import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.content.domain.ContentTag;
 import io.mopl.api.content.domain.ContentTagId;
@@ -16,6 +18,7 @@ import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
 import io.mopl.api.content.event.ThumbnailUploadedEvent;
+import io.mopl.api.content.mapper.ContentMapper;
 import io.mopl.api.playlist.domain.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
@@ -41,12 +44,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContentService {
 
   private final ContentRepository contentRepository;
+  private final ContentElasticRepository contentElasticRepository;
   private final ContentTagRepository contentTagRepository;
   private final ReviewRepository reviewRepository;
   private final PlaylistContentRepository playlistContentRepository;
   private final TagRepository tagRepository;
   private final ContentThumbnailUploadService contentThumbnailUploadService;
   private final ApplicationEventPublisher eventPublisher;
+  private final ContentMapper contentMapper;
 
   @Transactional
   @PreAuthorize("hasRole('ADMIN')")
@@ -110,28 +115,18 @@ public class ContentService {
 
   @Transactional(readOnly = true)
   public ContentDto findById(UUID contentId) {
-    log.info("컨텐츠 단건 조회를 시작합니다. contentId: {}", contentId);
+    log.info("ES 컨텐츠 단건 조회를 시작합니다. contentId: {}", contentId);
 
-    Content content =
-        contentRepository
-            .findById(contentId)
+    ContentDocument doc =
+        contentElasticRepository
+            .findByContentId(contentId)
             .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
-
-    List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
     String thumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
-    return new ContentDto(
-        content.getId(),
-        content.getType(),
-        content.getTitle(),
-        content.getDescription(),
-        thumbnailUrl,
-        tagNames,
-        content.getAverageRating(),
-        content.getReviewCount(),
-        content.getWatcherCount());
+        contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailUrl());
+    doc.setThumbnailUrl(thumbnailUrl);
+    return contentMapper.toContentDto(doc);
   }
 
   @Transactional
