@@ -21,7 +21,7 @@ public class NotificationRecipientQuery {
   public List<UUID> findFollowerIds(UUID followeeId) {
     List<String> rows =
         jdbcTemplate.queryForList(
-            "SELECT follower_id FROM follows WHERE followee_id = ?",
+            "SELECT follower_id FROM follows WHERE followee_id = ? LIMIT 10000",
             String.class,
             followeeId.toString());
     return toUuids(rows, "follower_id");
@@ -49,12 +49,17 @@ public class NotificationRecipientQuery {
 
   private List<UUID> toUuids(List<String> rows, String columnName) {
     List<UUID> results = new ArrayList<>(rows.size());
+    int invalidCount = 0;
     for (String value : rows) {
       try {
         results.add(UUID.fromString(value));
       } catch (IllegalArgumentException e) {
         log.warn("UUID 형식이 올바르지 않습니다: {}={}", columnName, value);
+        invalidCount++;
       }
+    }
+    if (invalidCount > 0) {
+      log.error("총 {}개의 잘못된 UUID가 필터링되었습니다 (column={})", invalidCount, columnName);
     }
     return results;
   }
