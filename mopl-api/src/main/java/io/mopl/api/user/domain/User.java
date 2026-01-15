@@ -56,6 +56,7 @@ public class User {
   @Column(name = "provider_user_id", length = 255)
   private String providerUserId;
 
+  @Setter
   @Column(nullable = false, length = 20)
   @Enumerated(EnumType.STRING)
   private UserRole role;
