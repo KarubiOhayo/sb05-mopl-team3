@@ -68,6 +68,8 @@ public class SecurityConfig {
                           return (method.equals("POST") && path.equals("/api/auth/sign-in"))
                               || (method.equals("POST") && path.equals("/api/users"))
                               || (method.equals("POST") && path.equals("/api/auth/reset-password"))
+                              || (method.equals("POST") && path.equals("/api/auth/refresh"))
+                              || path.startsWith("/oauth2/")
                               || path.startsWith("/login/oauth2/");
                         }))
         .sessionManagement(
@@ -107,8 +109,6 @@ public class SecurityConfig {
 
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
-                    .requestMatchers(HttpMethod.GET, "/api/auth/refresh")
-                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/sign-in", "/api/auth/refresh")
                     .permitAll()
                     .requestMatchers("/api/auth/**")
