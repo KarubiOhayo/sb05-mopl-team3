@@ -82,6 +82,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .permitAll()
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
                     .requestMatchers(

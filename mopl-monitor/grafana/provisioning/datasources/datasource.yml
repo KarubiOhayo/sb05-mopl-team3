@@ -1,0 +1,9 @@
+# Grafana가 사용할 데이터 소스(프로메테우스) 등록
+apiVersion: 1
+
+datasource's:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true

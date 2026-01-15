@@ -19,7 +19,7 @@ services:
       # (선택) 최초 생성 시 스키마 자동 실행
       - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot" ]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -27,13 +27,13 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: mopl_redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -84,6 +84,100 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       # 컨테이너 내부 접속 주소는 kafka:29092
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mopl_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./mopl-monitor/prometheus/${PROM_CONFIG:-prometheus-local.yml}:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mopl_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mopl-monitor/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+
+  api:
+    build:
+      context: .
+      dockerfile: mopl-api/Dockerfile
+    container_name: mopl_api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_REDIS_HOST: redis
+      MOPL_REDIS_PORT: 6379
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+
+  socket:
+    build:
+      context: .
+      dockerfile: mopl-socket/Dockerfile
+    container_name: mopl_socket
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_REDIS_HOST: redis
+      MOPL_REDIS_PORT: 6379
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+
+  worker:
+    build:
+      context: .
+      dockerfile: mopl-worker/Dockerfile
+    container_name: mopl_worker
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID:-mopl-worker}
+      GMAIL_EMAIL: ${GMAIL_EMAIL}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+    depends_on:
+      - mysql
+      - kafka
+
+  batch:
+    build:
+      context: .
+      dockerfile: mopl-batch/Dockerfile
+    container_name: mopl_batch
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD}
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      MOPL_BATCH_JOB_ENABLED: ${MOPL_BATCH_JOB_ENABLED:-false}
+    depends_on:
+      - mysql
+      - kafka
+
   gateway:
     image: nginx:alpine
     container_name: mopl_gateway
@@ -97,10 +191,16 @@ services:
       - mysql
       - redis
       - kafka
+      - api
+      - socket
 volumes:
   mysql_data:
   redis_data:
   kafka_data:
+  grafana_data:
 
 # docker compose down -v
 # docker compose up -d --build
+
+# app 제외 빌드 (app을 포함 하려면 root .env에서 DB부분 localhost를 mysql로 변경)
+# docker compose up -d mysql redis kafka kafka-ui prometheus grafana gateway
