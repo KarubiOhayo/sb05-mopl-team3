@@ -215,7 +215,8 @@ public class UserService {
     try {
       refreshTokenService.deleteRefreshToken(userId);
     } catch (Exception e) {
-      log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패");
+      log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패 - userId: {}", userId, e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 }
