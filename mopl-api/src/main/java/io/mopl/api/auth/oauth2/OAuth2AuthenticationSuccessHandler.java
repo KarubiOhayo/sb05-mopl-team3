@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -23,6 +25,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
   private final CookieSecurityProperties cookieSecurityProperties;
+  private final CsrfTokenRepository csrfTokenRepository;
 
   @Value("${oauth2.redirect-uri:http://localhost:8085}")
   private String redirectUri;
@@ -38,20 +41,17 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
     User user = oAuth2User.getUser();
 
-    String accessToken =
-        jwtTokenProvider.createAccessToken(
-            user.getId(),
-            user.getEmail(),
-            user.getRole().name(),
-            user.getName(),
-            user.getProfileImageUrl());
-
     String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+
     refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
     setRefreshTokenCookie(response, refreshToken);
 
-    String targetUrl = buildRedirectUrl(accessToken);
+    CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
+    csrfTokenRepository.saveToken(csrfToken, request, response);
+
+    String targetUrl =
+        UriComponentsBuilder.fromUriString(redirectUri).fragment("/contents").build().toUriString();
 
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
   }
@@ -61,7 +61,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
+    cookie.setPath("/");
     cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
     cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
