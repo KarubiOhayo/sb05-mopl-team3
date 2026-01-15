@@ -93,7 +93,7 @@ services:
     volumes:
       - ./mopl-monitor/prometheus/${PROM_CONFIG:-prometheus-dev.yml}:/etc/prometheus/prometheus.yml:ro
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy" ]
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || curl -fsS http://localhost:9090/-/healthy || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -107,7 +107,7 @@ services:
       - ./mopl-monitor/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health" ]
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || curl -fsS http://localhost:3000/api/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -128,11 +128,14 @@ services:
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      - mysql
-      - redis
-      - kafka
+     mysql:
+       condition: service_healthy
+     redis:
+       condition: service_healthy
+     kafka:
+       condition: service_started
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -153,11 +156,14 @@ services:
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      - mysql
-      - redis
-      - kafka
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8081/actuator/health" ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -174,14 +180,14 @@ services:
       MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
       MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
-      MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID:}
+      MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID}
       GMAIL_EMAIL: ${GMAIL_EMAIL}
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
     depends_on:
       - mysql
       - kafka
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -203,7 +209,7 @@ services:
       - mysql
       - kafka
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30

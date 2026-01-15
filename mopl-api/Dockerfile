@@ -6,6 +6,8 @@ WORKDIR /app
 # ./gradlew :mopl-api:bootJar 실행 후 생성된 JAR 파일 복사
 COPY mopl-api/build/libs/*.jar app.jar
 
+RUN apk add --no-cache curl
+
 ENV TZ=Asia/Seoul
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
