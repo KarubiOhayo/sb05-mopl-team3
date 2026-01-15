@@ -30,6 +30,10 @@ public class DirectMessageController {
       @AuthenticationPrincipal(expression = "userId") UUID userId,
       @PathVariable UUID conversationId,
       @ModelAttribute DirectMessageSearchRequest request) {
+    if (userId == null) {
+      log.warn("DM | 목록 조회 | 실패: 인증 사용자 ID 없음");
+      throw new BusinessException(UserErrorCode.UNAUTHORIZED);
+    }
     return ResponseEntity.ok(directMessageService.find(userId, conversationId, request));
   }
 
