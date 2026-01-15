@@ -126,7 +126,7 @@ services:
       MOPL_REDIS_HOST: redis
       MOPL_REDIS_PORT: 6379
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - mysql
       - redis
@@ -151,7 +151,7 @@ services:
       MOPL_REDIS_HOST: redis
       MOPL_REDIS_PORT: 6379
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - mysql
       - redis
@@ -175,7 +175,7 @@ services:
       MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
       MOPL_KAFKA_BOOTSTRAP: kafka:29092
       MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID:}
-      GMAIL_EMAIL: ${GMAIL_EMAIL:-modu.s.playlist@gmail.com}
+      GMAIL_EMAIL: ${GMAIL_EMAIL}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:}
     depends_on:
       - mysql
