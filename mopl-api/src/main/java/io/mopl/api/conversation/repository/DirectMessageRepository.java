@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DirectMessageRepository extends JpaRepository<DirectMessage, UUID> {
 
-  Optional<DirectMessage> findLatestByConversationId(UUID conversationId);
+  Optional<DirectMessage> findFirstByConversationIdOrderByCreatedAtDesc(UUID conversationId);
 
   @Query(
       value =
@@ -31,4 +31,36 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
       nativeQuery = true)
   List<DirectMessage> findLatestByConversationIds(
       @Param("conversationIds") List<String> conversationIds);
+
+  @Query(
+      "SELECT dm FROM DirectMessage dm "
+          + "WHERE dm.conversationId = :conversationId "
+          + "ORDER BY dm.createdAt DESC, dm.id DESC")
+  List<DirectMessage> findByConversationIdOrderByCreatedAtDescIdDesc(
+      @Param("conversationId") UUID conversationId,
+      org.springframework.data.domain.Pageable pageable);
+
+  @Query(
+      "SELECT dm FROM DirectMessage dm "
+          + "WHERE dm.conversationId = :conversationId "
+          + "AND dm.createdAt < :createdAt "
+          + "ORDER BY dm.createdAt DESC, dm.id DESC")
+  List<DirectMessage> findByConversationIdAndCursor(
+      @Param("conversationId") UUID conversationId,
+      @Param("createdAt") java.time.Instant createdAt,
+      org.springframework.data.domain.Pageable pageable);
+
+  @Query(
+      "SELECT dm FROM DirectMessage dm "
+          + "WHERE dm.conversationId = :conversationId "
+          + "AND ("
+          + "  dm.createdAt < :createdAt OR "
+          + "  (dm.createdAt = :createdAt AND dm.id < :id)"
+          + ") "
+          + "ORDER BY dm.createdAt DESC, dm.id DESC")
+  List<DirectMessage> findByConversationIdAndCursorWithId(
+      @Param("conversationId") UUID conversationId,
+      @Param("createdAt") java.time.Instant createdAt,
+      @Param("id") UUID id,
+      org.springframework.data.domain.Pageable pageable);
 }

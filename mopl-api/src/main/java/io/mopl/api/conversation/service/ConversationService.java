@@ -188,7 +188,9 @@ public class ConversationService {
     UserSummary with = userMapper.toSummary(withUser, thumbnailUrl);
 
     DirectMessage lastestMessage =
-        directMessageRepository.findLatestByConversationId(conversationId).orElse(null);
+        directMessageRepository
+            .findFirstByConversationIdOrderByCreatedAtDesc(conversationId)
+            .orElse(null);
 
     Instant lastReadAt = me.getLastReadAt();
 
@@ -412,6 +414,7 @@ public class ConversationService {
                       .hasUnread(hasUnread)
                       .build();
                 })
+            .filter(dto -> dto.with() != null)
             .toList();
 
     long totalCount = conversationRepository.countConversations(userId, request.keywordLike());

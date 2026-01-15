@@ -80,6 +80,7 @@ public class ConversationQueryRepositoryImpl implements ConversationQueryReposit
     List<Conversation> fetched =
         queryFactory
             .select(c)
+            .distinct()
             .from(c)
             .join(cp)
             .on(cp.id.conversationId.eq(c.id))
