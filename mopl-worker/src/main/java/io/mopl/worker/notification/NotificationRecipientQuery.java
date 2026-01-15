@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ public class NotificationRecipientQuery {
   private final JdbcTemplate jdbcTemplate;
 
   // 팔로우/구독 알림 수신자 목록을 DB에서 조회한다.
+  // TODO: 대량 수신자 대비 배치/페이지네이션 처리 검토
   public List<UUID> findFollowerIds(UUID followeeId) {
     List<String> rows =
         jdbcTemplate.queryForList(
@@ -39,8 +41,8 @@ public class NotificationRecipientQuery {
     try {
       return jdbcTemplate.queryForObject(
           "SELECT title FROM contents WHERE id = ?", String.class, contentId.toString());
-    } catch (Exception e) {
-      log.warn("콘텐츠 제목 조회 실패: contentId={}", contentId, e);
+    } catch (EmptyResultDataAccessException e) {
+      log.warn("콘텐츠를 찾을 수 없음: contentId={}", contentId);
       return null;
     }
   }

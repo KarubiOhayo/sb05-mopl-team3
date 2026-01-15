@@ -64,11 +64,11 @@ public class PlaylistNotificationListener {
     }
   }
 
+  // 플레이리스트 콘텐츠 추가 이벤트를 소비해 구독자에게 알림을 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CONTENT_ADDED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistContentAddedEvent")
-  // 플레이리스트 콘텐츠 추가 이벤트를 소비해 구독자에게 알림을 저장한다.
   public void handleContentAdded(PlaylistContentAddedEvent event, Acknowledgment acknowledgment) {
     try {
       UUID playlistIdUuid = parseUuid(event.playlistId(), "playlistId", event.eventId());
@@ -79,21 +79,23 @@ public class PlaylistNotificationListener {
 
       List<UUID> receiverIds = recipientQuery.findSubscriberIds(playlistIdUuid);
       for (UUID receiverId : receiverIds) {
-        // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
-        UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
-        Notification notification =
-            Notification.builder()
-                .eventId(eventIdUuid)
-                .receiverId(receiverId)
-                .title(title)
-                .content("")
-                .level(NotificationLevel.INFO)
-                .build();
-        Notification saved = notificationRepository.save(notification);
-        notificationEventPublisher.publish(saved);
+        try {
+          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
+          Notification notification =
+              Notification.builder()
+                  .eventId(eventIdUuid)
+                  .receiverId(receiverId)
+                  .title(title)
+                  .content("")
+                  .level(NotificationLevel.INFO)
+                  .build();
+          Notification saved = notificationRepository.save(notification);
+          notificationEventPublisher.publish(saved);
+        } catch (DataIntegrityViolationException ex) {
+          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+        }
       }
-    } catch (DataIntegrityViolationException e) {
-      handleDataIntegrityViolation(e, event.eventId());
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로깅한다.
     } finally {
@@ -101,11 +103,11 @@ public class PlaylistNotificationListener {
     }
   }
 
+  // 플레이리스트 생성 이벤트를 소비해 팔로워에게 알림을 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CREATED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistCreatedEvent")
-  // 플레이리스트 생성 이벤트를 소비해 팔로워에게 알림을 저장한다.
   public void handleCreated(PlaylistCreatedEvent event, Acknowledgment acknowledgment) {
     try {
       UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
@@ -118,21 +120,23 @@ public class PlaylistNotificationListener {
 
       List<UUID> receiverIds = recipientQuery.findFollowerIds(ownerIdUuid);
       for (UUID receiverId : receiverIds) {
-        // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
-        UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
-        Notification notification =
-            Notification.builder()
-                .eventId(eventIdUuid)
-                .receiverId(receiverId)
-                .title(title)
-                .content("")
-                .level(NotificationLevel.INFO)
-                .build();
-        Notification saved = notificationRepository.save(notification);
-        notificationEventPublisher.publish(saved);
+        try {
+          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
+          Notification notification =
+              Notification.builder()
+                  .eventId(eventIdUuid)
+                  .receiverId(receiverId)
+                  .title(title)
+                  .content("")
+                  .level(NotificationLevel.INFO)
+                  .build();
+          Notification saved = notificationRepository.save(notification);
+          notificationEventPublisher.publish(saved);
+        } catch (DataIntegrityViolationException ex) {
+          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+        }
       }
-    } catch (DataIntegrityViolationException e) {
-      handleDataIntegrityViolation(e, event.eventId());
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로깅한다.
     } finally {
