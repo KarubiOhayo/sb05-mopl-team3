@@ -73,8 +73,7 @@ public class AuthService {
     String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-    UserDto userDto = convertToUserDto(user, profileImageUrl);
-
+    UserDto userDto = UserDto.from(user, profileImageUrl);
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
 
     return AuthTokens.builder().jwtDto(jwtDto).refreshToken(refreshToken).build();
@@ -117,8 +116,7 @@ public class AuthService {
     String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken);
 
-    UserDto userDto = convertToUserDto(user, profileImageUrl);
-
+    UserDto userDto = UserDto.from(user, profileImageUrl);
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(newAccessToken).build();
 
     return AuthTokens.builder().jwtDto(jwtDto).refreshToken(newRefreshToken).build();
@@ -223,18 +221,5 @@ public class AuthService {
     }
 
     return password.toString();
-  }
-
-  // ===== private 헬퍼 메서드 =====
-  private UserDto convertToUserDto(User user, String profileImageUrl) {
-    return UserDto.builder()
-        .id(user.getId())
-        .email(user.getEmail())
-        .name(user.getName())
-        .profileImageUrl(profileImageUrl)
-        .role(user.getRole())
-        .locked(user.isLocked())
-        .createdAt(user.getCreatedAt())
-        .build();
   }
 }

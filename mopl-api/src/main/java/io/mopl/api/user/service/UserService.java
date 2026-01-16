@@ -60,8 +60,10 @@ public class UserService {
               .build();
 
       User savedUser = userRepository.save(user);
+      String profileImageUrl =
+          profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
 
-      return UserDto.from(savedUser);
+      return UserDto.from(savedUser, profileImageUrl);
 
     } catch (DataIntegrityViolationException e) {
       throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
@@ -76,7 +78,10 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return convertToDto(user);
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserDto.from(user, profileImageUrl);
   }
 
   /** 사용자 요약 조회 (확인) */
@@ -87,7 +92,10 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return convertToSummary(user);
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserSummary.from(user, profileImageUrl);
   }
 
   /** 비밀번호 변경 */
@@ -136,7 +144,11 @@ public class UserService {
     }
 
     User savedUser = userRepository.save(user);
-    return convertToDto(savedUser);
+
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
+
+    return UserDto.from(savedUser, profileImageUrl);
   }
 
   /** 계정 잠금 상태 변경 */
@@ -197,34 +209,6 @@ public class UserService {
   }
 
   // ========== Private 헬퍼 메서드 ==========
-
-  /** User 엔티티를 UserDto로 변환 */
-  private UserDto convertToDto(User user) {
-    String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
-
-    return UserDto.builder()
-        .id(user.getId())
-        .email(user.getEmail())
-        .name(user.getName())
-        .profileImageUrl(profileImageUrl)
-        .role(user.getRole())
-        .locked(user.isLocked())
-        .createdAt(user.getCreatedAt())
-        .build();
-  }
-
-  /** User 엔티티를 UserSummary로 변환 */
-  private UserSummary convertToSummary(User user) {
-    String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
-
-    return UserSummary.builder()
-        .userId(user.getId())
-        .name(user.getName())
-        .profileImageUrl(profileImageUrl)
-        .build();
-  }
 
   /** Redis 키 설정 재시도 */
   private boolean setRedisKeyWithRetry(
