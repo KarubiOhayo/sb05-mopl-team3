@@ -14,8 +14,6 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
         spring.json.trusted.packages: io.mopl.core.event.*
-    listener:
-      ack-mode: manual
 
 app:
   cors:

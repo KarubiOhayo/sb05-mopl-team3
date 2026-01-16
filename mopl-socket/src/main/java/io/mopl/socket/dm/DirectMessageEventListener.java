@@ -9,7 +9,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,7 @@ public class DirectMessageEventListener {
       properties =
           "spring.json.value.default.type=io.mopl.core.event.conversation.DirectMessageCreatedEvent")
   @Transactional(readOnly = true)
-  public void handleCreatedEvent(DirectMessageCreatedEvent event, Acknowledgment ack) {
+  public void handleCreatedEvent(DirectMessageCreatedEvent event) {
     try {
       log.info("DM 생성 이벤트 수신: dmId={}", event.id());
 
@@ -57,8 +56,6 @@ public class DirectMessageEventListener {
 
       sseService.send(event.receiverId(), "direct-messages", dto);
       sseService.send(event.senderId(), "direct-messages", dto);
-
-      ack.acknowledge();
 
     } catch (Exception e) {
       log.error("DM 생성 이벤트 처리 중 오류 발생 (재시도/DLQ 예정)", e);

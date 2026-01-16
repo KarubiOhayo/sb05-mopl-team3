@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +33,7 @@ public class DirectMessageListener {
       properties =
           "spring.json.value.default.type=io.mopl.core.event.conversation.DirectMessageSendEvent")
   @Transactional
-  public void handleSendRequest(DirectMessageSendEvent event, Acknowledgment ack) {
+  public void handleSendRequest(DirectMessageSendEvent event) {
     log.info(
         "DM 전송 요청 수신: eventId={}, conversationId={}, senderId={}",
         event.eventId(),
@@ -83,8 +82,6 @@ public class DirectMessageListener {
 
       log.info("DM 저장 완료 (PENDING): dmId={}", savedDm.getId());
 
-      // 처리가 성공했을 때만 ACK
-      ack.acknowledge();
     } catch (IllegalArgumentException e) {
       log.error("DM 전송 요청 데이터가 유효하지 않음 (DLQ로 이동): {}", e.getMessage());
       throw e; // GlobalErrorHandler가 DLQ로 보냄
