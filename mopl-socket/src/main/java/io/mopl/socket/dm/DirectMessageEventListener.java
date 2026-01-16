@@ -58,10 +58,11 @@ public class DirectMessageEventListener {
       sseService.send(event.receiverId(), "direct-messages", dto);
       sseService.send(event.senderId(), "direct-messages", dto);
 
-    } catch (Exception e) {
-      log.error("DM 생성 이벤트 처리 중 오류 발생", e);
-    } finally {
       ack.acknowledge();
+
+    } catch (Exception e) {
+      log.error("DM 생성 이벤트 처리 중 오류 발생 (재시도/DLQ 예정)", e);
+      throw e;
     }
   }
 }
