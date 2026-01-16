@@ -34,4 +34,16 @@ public class UserDto {
         .locked(user.isLocked())
         .build();
   }
+
+  public static UserDto from(User user, String presignedProfileImageUrl) {
+    return UserDto.builder()
+        .id(user.getId())
+        .createdAt(user.getCreatedAt())
+        .email(user.getEmail())
+        .name(user.getName())
+        .profileImageUrl(presignedProfileImageUrl)
+        .role(user.getRole())
+        .locked(user.isLocked())
+        .build();
+  }
 }
