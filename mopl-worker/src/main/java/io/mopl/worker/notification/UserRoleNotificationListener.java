@@ -1,5 +1,6 @@
 package io.mopl.worker.notification;
 
+import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.user.UserRoleChangedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
@@ -38,6 +39,7 @@ public class UserRoleNotificationListener {
           messageSource.getMessage(
               "notification.user.role-changed.title",
               new Object[] {event.newRole()},
+              "권한이 " + event.newRole() + "(으)로 변경되었습니다.",
               Locale.KOREAN);
 
       Notification notification =
@@ -68,9 +70,9 @@ public class UserRoleNotificationListener {
     Throwable cause = e.getMostSpecificCause();
     String message = cause != null ? cause.getMessage() : e.getMessage();
 
-    if (message != null && message.contains("uq_notifications_event_id")) {
+    if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
       log.debug("이미 처리된 이벤트입니다. 중복 저장을 건너뜁니다. (eventId={})", eventId);
-    } else if (message != null && message.contains("fk_notifications_receiver")) {
+    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
       log.error("수신자 참조 무결성 오류가 발생했습니다. (eventId={})", eventId, e);
     } else {
       log.error("알림 저장 중 오류가 발생했습니다. (eventId={})", eventId, e);
