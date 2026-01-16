@@ -6,6 +6,7 @@ import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/sse")
 @RequiredArgsConstructor
@@ -35,7 +37,8 @@ public class SseController {
     try {
       emitter.send(SseEmitter.event().name("connect").data("connected"));
     } catch (Exception e) {
-      // ignore
+      log.warn("SSE 연결 이벤트 전송 실패: {}", e.getMessage());
+      return emitter;
     }
 
     sseService.add(user.userId().toString(), emitter);
