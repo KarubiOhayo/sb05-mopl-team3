@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
@@ -20,15 +19,9 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
 import io.mopl.api.content.domain.ContentDocument;
-import io.mopl.api.content.domain.ContentElasticRepository;
-import io.mopl.api.content.domain.ContentRepository;
-import io.mopl.api.content.domain.ContentTagRepository;
-import io.mopl.api.content.domain.TagRepository;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
-import io.mopl.api.playlist.domain.PlaylistContentRepository;
-import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -39,14 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ContentSearchService {
 
-	private final ContentRepository contentRepository;
-	private final ContentElasticRepository contentElasticRepository;
-	private final ContentTagRepository contentTagRepository;
-	private final ReviewRepository reviewRepository;
-	private final PlaylistContentRepository playlistContentRepository;
-	private final TagRepository tagRepository;
 	private final ContentThumbnailUploadService contentThumbnailUploadService;
-	private final ApplicationEventPublisher eventPublisher;
 	private final ElasticsearchOperations elasticsearchOperations;
 
 	@Transactional(readOnly = true)
