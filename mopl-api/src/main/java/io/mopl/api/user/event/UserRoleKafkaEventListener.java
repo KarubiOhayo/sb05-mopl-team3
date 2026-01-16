@@ -4,10 +4,12 @@ import io.mopl.core.event.user.UserRoleChangedEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserRoleKafkaEventListener {
@@ -24,6 +26,10 @@ public class UserRoleKafkaEventListener {
             event.userName(),
             event.newRole());
 
-    publisher.publish(kafkaEvent);
+    try {
+      publisher.publish(kafkaEvent);
+    } catch (Exception e) {
+      log.error("권한 변경 이벤트 Kafka 발행 실패 - userId: {}", event.userId(), e);
+    }
   }
 }
