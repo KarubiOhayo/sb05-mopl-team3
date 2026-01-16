@@ -26,7 +26,7 @@ public class KafkaConfig {
             kafkaTemplate,
             (r, e) -> {
               log.error("Kafka 메시지 처리 최종 실패. DLQ로 이동: topic={}, key={}", r.topic(), r.key(), e);
-              return new TopicPartition(r.topic() + ".DLQ", r.partition());
+              return new TopicPartition(r.topic() + ".DLQ", -1);
             });
 
     FixedBackOff backOff = new FixedBackOff(1000L, 3);

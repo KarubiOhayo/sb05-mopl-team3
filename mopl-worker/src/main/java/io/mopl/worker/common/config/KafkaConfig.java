@@ -27,7 +27,7 @@ public class KafkaConfig {
             kafkaTemplate,
             (r, e) -> {
               log.error("Kafka 메시지 처리 최종 실패. DLQ로 이동: topic={}, key={}", r.topic(), r.key(), e);
-              return new TopicPartition(r.topic() + ".DLQ", r.partition());
+              return new TopicPartition(r.topic() + ".DLQ", -1);
             });
 
     // 2. 재시도 정책: 1초 간격, 최대 3회 시도
