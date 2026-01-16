@@ -29,7 +29,7 @@ public class NotificationService {
       throw new BusinessException(UserErrorCode.UNAUTHORIZED);
     }
 
-    // QueryDSL 리포지토리에서 미읽음 알림을 커서 페이징으로 조회한다.
+    // QueryDSL 리포지토리에서 미읽음 알림을 커서 페이징으로 조회
     var page = notificationQueryRepository.findUnreadPage(userId, request);
     List<Notification> notifications = page.getNotifications();
 
@@ -47,7 +47,7 @@ public class NotificationService {
                         .build())
             .toList();
 
-    // 전체 미읽음 개수를 별도로 계산해 응답에 포함한다.
+    // 전체 미읽음 개수를 별도로 계산해 응답에 포함
     long totalCount = notificationQueryRepository.countUnread(userId);
 
     return CursorResponse.<NotificationDto>builder()
@@ -67,7 +67,7 @@ public class NotificationService {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
 
-    // 수신자 본인의 알림만 삭제할 수 있다.
+    // 수신자 본인의 알림만 삭제
     Notification notification =
         notificationRepository
             .findById(notificationId)
