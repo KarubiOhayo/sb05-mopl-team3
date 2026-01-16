@@ -1,5 +1,6 @@
 package io.mopl.api.user.service;
 
+import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
@@ -9,8 +10,10 @@ import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
 import io.mopl.api.user.dto.UserLockUpdateRequest;
+import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
+import io.mopl.api.user.event.UserRoleChangedInternalEvent;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
@@ -18,6 +21,7 @@ import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +38,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final ProfileImageUploadService profileImageUploadService;
   private final RedisTemplate<String, String> redisTemplate;
+  private final RefreshTokenService refreshTokenService;
+  private final ApplicationEventPublisher eventPublisher;
 
   /** 회원가입 */
   @Transactional
@@ -54,8 +60,10 @@ public class UserService {
               .build();
 
       User savedUser = userRepository.save(user);
+      String profileImageUrl =
+          profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
 
-      return UserDto.from(savedUser);
+      return UserDto.from(savedUser, profileImageUrl);
 
     } catch (DataIntegrityViolationException e) {
       throw new BusinessException(UserErrorCode.DUPLICATED_EMAIL);
@@ -70,10 +78,13 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return UserDto.from(user);
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserDto.from(user, profileImageUrl);
   }
 
-  /** 사용자 확인 */
+  /** 사용자 요약 조회 (확인) */
   @Transactional(readOnly = true)
   public UserSummary getUserSummary(UUID userId) {
     User user =
@@ -81,11 +92,10 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return UserSummary.builder()
-        .userId(user.getId())
-        .name(user.getName())
-        .profileImageUrl(user.getProfileImageUrl())
-        .build();
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserSummary.from(user, profileImageUrl);
   }
 
   /** 비밀번호 변경 */
@@ -120,22 +130,25 @@ public class UserService {
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      String oldImageUrl = user.getProfileImageUrl();
+      String oldImageKey = user.getProfileImageUrl();
 
-      String newImageUrl = profileImageUploadService.uploadProfileImage(profileImage, userId);
-      user.setProfileImageUrl(newImageUrl);
-      if (oldImageUrl != null) {
+      String newImageKey = profileImageUploadService.uploadProfileImage(profileImage, userId);
+      user.setProfileImageUrl(newImageKey);
+      if (oldImageKey != null) {
         try {
-          profileImageUploadService.deleteImageByUrl(oldImageUrl);
+          profileImageUploadService.deleteImage(oldImageKey);
         } catch (Exception e) {
-          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageUrl, e);
+          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageKey, e);
         }
       }
     }
 
     User savedUser = userRepository.save(user);
 
-    return UserDto.from(savedUser);
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
+
+    return UserDto.from(savedUser, profileImageUrl);
   }
 
   /** 계정 잠금 상태 변경 */
@@ -163,6 +176,41 @@ public class UserService {
     }
   }
 
+  /** 사용자 권한 변경 */
+  @Transactional
+  public void updateUserRole(UUID userId, UserRoleUpdateRequest request, UUID currentUserId) {
+    if (userId.equals(currentUserId)) {
+      throw new BusinessException(UserErrorCode.CANNOT_UPDATE_OWN_ROLE);
+    }
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
+    if (user.getRole() == UserRole.ADMIN && request.getRole() != UserRole.ADMIN) {
+      long adminCount = userRepository.countByRole(UserRole.ADMIN);
+      if (adminCount == 1) {
+        throw new BusinessException(UserErrorCode.LAST_ADMIN_PROTECTION);
+      }
+    }
+
+    user.setRole(request.getRole());
+
+    try {
+      refreshTokenService.deleteRefreshToken(userId);
+    } catch (Exception e) {
+      log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패 - userId: {}", userId, e);
+      throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    eventPublisher.publishEvent(
+        new UserRoleChangedInternalEvent(userId, user.getName(), user.getRole().name()));
+  }
+
+  // ========== Private 헬퍼 메서드 ==========
+
+  /** Redis 키 설정 재시도 */
   private boolean setRedisKeyWithRetry(
       String redisKey, String newRedisKey, Duration ttl, int maxAttempts) {
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {

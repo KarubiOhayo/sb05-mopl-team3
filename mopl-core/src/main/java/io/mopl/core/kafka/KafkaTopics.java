@@ -13,11 +13,21 @@ public final class KafkaTopics {
 
   // ===== user =====
   public static final String USER_FOLLOWED = "user.followed";
+  public static final String USER_ROLE_CHANGED = "user.role.changed";
+
+  // ===== dm =====
+  public static final String DIRECT_MESSAGE_RECEIVED = "dm.received";
 
   // ===== playlist =====
   public static final String PLAYLIST_CREATED = "playlist.created";
   public static final String PLAYLIST_SUBSCRIBED = "playlist.subscribed";
   public static final String PLAYLIST_CONTENT_ADDED = "playlist.content.added";
+
+  // ===== notification =====
+  public static final String NOTIFICATION_CREATED = "notification.created";
+
+  // ===== watching =====
+  public static final String WATCHING_SESSION_STARTED = "watching.session.started";
 
   private KafkaTopics() {}
 }
