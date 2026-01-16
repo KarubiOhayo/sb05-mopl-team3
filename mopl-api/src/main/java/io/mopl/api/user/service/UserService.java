@@ -76,10 +76,10 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return UserDto.from(user);
+    return convertToDto(user);
   }
 
-  /** 사용자 확인 */
+  /** 사용자 요약 조회 (확인) */
   @Transactional(readOnly = true)
   public UserSummary getUserSummary(UUID userId) {
     User user =
@@ -87,11 +87,7 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    return UserSummary.builder()
-        .userId(user.getId())
-        .name(user.getName())
-        .profileImageUrl(user.getProfileImageUrl())
-        .build();
+    return convertToSummary(user);
   }
 
   /** 비밀번호 변경 */
@@ -126,22 +122,21 @@ public class UserService {
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      String oldImageUrl = user.getProfileImageUrl();
+      String oldImageKey = user.getProfileImageUrl();
 
-      String newImageUrl = profileImageUploadService.uploadProfileImage(profileImage, userId);
-      user.setProfileImageUrl(newImageUrl);
-      if (oldImageUrl != null) {
+      String newImageKey = profileImageUploadService.uploadProfileImage(profileImage, userId);
+      user.setProfileImageUrl(newImageKey);
+      if (oldImageKey != null) {
         try {
-          profileImageUploadService.deleteImageByUrl(oldImageUrl);
+          profileImageUploadService.deleteImage(oldImageKey);
         } catch (Exception e) {
-          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageUrl, e);
+          log.warn("기존 프로필 이미지 삭제 실패: {}", oldImageKey, e);
         }
       }
     }
 
     User savedUser = userRepository.save(user);
-
-    return UserDto.from(savedUser);
+    return convertToDto(savedUser);
   }
 
   /** 계정 잠금 상태 변경 */
@@ -167,31 +162,6 @@ public class UserService {
         log.error("@@@ WARNING: 계정 잠금해제 시 Redis Key 갱신 실패 - DB는 정상 처리, 최대 24시간 후 복구");
       }
     }
-  }
-
-  private boolean setRedisKeyWithRetry(
-      String redisKey, String newRedisKey, Duration ttl, int maxAttempts) {
-    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        redisTemplate.opsForValue().set(redisKey, newRedisKey, ttl);
-        return true;
-      } catch (Exception e) {
-        if (attempt == maxAttempts) {
-          log.error("Redis Key 설정 최종 실패: Key = {}", redisKey);
-          return false;
-        }
-        log.warn("Redis Key 설정 실패, 재시도 중 {}/{}", attempt, maxAttempts);
-
-        try {
-          Thread.sleep(100 * attempt);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          log.error("Redis Key 재설정 중단됨");
-          return false;
-        }
-      }
-    }
-    return false;
   }
 
   /** 사용자 권한 변경 */
@@ -224,5 +194,61 @@ public class UserService {
 
     eventPublisher.publishEvent(
         new UserRoleChangedInternalEvent(userId, user.getName(), user.getRole().name()));
+  }
+
+  // ========== Private 헬퍼 메서드 ==========
+
+  /** User 엔티티를 UserDto로 변환 */
+  private UserDto convertToDto(User user) {
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserDto.builder()
+        .id(user.getId())
+        .email(user.getEmail())
+        .name(user.getName())
+        .profileImageUrl(profileImageUrl)
+        .role(user.getRole())
+        .locked(user.isLocked())
+        .createdAt(user.getCreatedAt())
+        .build();
+  }
+
+  /** User 엔티티를 UserSummary로 변환 */
+  private UserSummary convertToSummary(User user) {
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
+    return UserSummary.builder()
+        .userId(user.getId())
+        .name(user.getName())
+        .profileImageUrl(profileImageUrl)
+        .build();
+  }
+
+  /** Redis 키 설정 재시도 */
+  private boolean setRedisKeyWithRetry(
+      String redisKey, String newRedisKey, Duration ttl, int maxAttempts) {
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        redisTemplate.opsForValue().set(redisKey, newRedisKey, ttl);
+        return true;
+      } catch (Exception e) {
+        if (attempt == maxAttempts) {
+          log.error("Redis Key 설정 최종 실패: Key = {}", redisKey);
+          return false;
+        }
+        log.warn("Redis Key 설정 실패, 재시도 중 {}/{}", attempt, maxAttempts);
+
+        try {
+          Thread.sleep(100 * attempt);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          log.error("Redis Key 재설정 중단됨");
+          return false;
+        }
+      }
+    }
+    return false;
   }
 }
