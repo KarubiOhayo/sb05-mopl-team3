@@ -10,6 +10,7 @@ import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.api.user.service.ProfileImageUploadService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.auth.PasswordResetEvent;
@@ -42,6 +43,7 @@ public class AuthService {
   private final RefreshTokenService refreshTokenService;
   private final StringRedisTemplate stringRedisTemplate;
   private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final ProfileImageUploadService profileImageUploadService;
 
   private static final int MAX_RESET_ATTEMPTS = 3;
   private static final long RESET_LIMIT_DURATION = 300; // 5분
@@ -61,18 +63,17 @@ public class AuthService {
 
     validatePassword(user, request.getPassword());
 
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
     String accessToken =
         jwtTokenProvider.createAccessToken(
-            user.getId(),
-            user.getEmail(),
-            user.getRole().name(),
-            user.getName(),
-            user.getProfileImageUrl());
+            user.getId(), user.getEmail(), user.getRole().name(), user.getName(), profileImageUrl);
 
     String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-    UserDto userDto = UserDto.from(user);
+    UserDto userDto = convertToUserDto(user, profileImageUrl);
 
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(accessToken).build();
 
@@ -106,18 +107,17 @@ public class AuthService {
       throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
     }
 
+    String profileImageUrl =
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+
     String newAccessToken =
         jwtTokenProvider.createAccessToken(
-            user.getId(),
-            user.getEmail(),
-            user.getRole().name(),
-            user.getName(),
-            user.getProfileImageUrl());
+            user.getId(), user.getEmail(), user.getRole().name(), user.getName(), profileImageUrl);
 
     String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken);
 
-    UserDto userDto = UserDto.from(user);
+    UserDto userDto = convertToUserDto(user, profileImageUrl);
 
     JwtDto jwtDto = JwtDto.builder().userDto(userDto).accessToken(newAccessToken).build();
 
@@ -223,5 +223,18 @@ public class AuthService {
     }
 
     return password.toString();
+  }
+
+  // ===== private 헬퍼 메서드 =====
+  private UserDto convertToUserDto(User user, String profileImageUrl) {
+    return UserDto.builder()
+        .id(user.getId())
+        .email(user.getEmail())
+        .name(user.getName())
+        .profileImageUrl(profileImageUrl)
+        .role(user.getRole())
+        .locked(user.isLocked())
+        .createdAt(user.getCreatedAt())
+        .build();
   }
 }
