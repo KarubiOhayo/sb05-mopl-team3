@@ -2,6 +2,8 @@ package io.mopl.worker.conversation.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -44,11 +46,23 @@ public class DirectMessage {
   @JdbcTypeCode(SqlTypes.LONGVARCHAR)
   private String content;
 
+  @Column(nullable = false, length = 20)
+  @Enumerated(EnumType.STRING)
+  private SendingStatus status;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column(name = "read_at")
   private Instant readAt;
+
+  public void markAsSent() {
+    this.status = SendingStatus.SENT;
+  }
+
+  public void markAsFailed() {
+    this.status = SendingStatus.FAILED;
+  }
 
   @PrePersist
   public void generateId() {
@@ -57,6 +71,9 @@ public class DirectMessage {
     }
     if (this.createdAt == null) {
       this.createdAt = Instant.now();
+    }
+    if (this.status == null) {
+      this.status = SendingStatus.PENDING;
     }
   }
 }

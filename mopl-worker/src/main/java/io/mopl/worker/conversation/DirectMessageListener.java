@@ -1,7 +1,6 @@
 package io.mopl.worker.conversation;
 
 import io.mopl.core.error.BusinessException;
-import io.mopl.core.event.conversation.DirectMessageCreatedEvent;
 import io.mopl.core.event.conversation.DirectMessageSendEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.common.WorkerErrorCode;
@@ -10,14 +9,12 @@ import io.mopl.worker.conversation.domain.ConversationParticipantId;
 import io.mopl.worker.conversation.domain.ConversationParticipantRepository;
 import io.mopl.worker.conversation.domain.DirectMessage;
 import io.mopl.worker.conversation.domain.DirectMessageRepository;
-import io.mopl.worker.s3.S3PresignedUrlService;
-import io.mopl.worker.user.domain.User;
-import io.mopl.worker.user.domain.UserRepository;
+import io.mopl.worker.conversation.event.DirectMessageSavedEvent;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +26,7 @@ public class DirectMessageListener {
 
   private final DirectMessageRepository directMessageRepository;
   private final ConversationParticipantRepository conversationParticipantRepository;
-  private final UserRepository userRepository;
-  private final S3PresignedUrlService s3PresignedUrlService;
-  private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   @KafkaListener(
       topics = KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST,
@@ -75,36 +70,18 @@ public class DirectMessageListener {
               .build();
 
       DirectMessage savedDm = directMessageRepository.save(dm);
-      User sender =
-          userRepository
-              .findById(senderId)
-              .orElseThrow(() -> new BusinessException(WorkerErrorCode.USER_NOT_FOUND));
-      User receiver =
-          userRepository
-              .findById(receiverId)
-              .orElseThrow(() -> new BusinessException(WorkerErrorCode.USER_NOT_FOUND));
-      String senderProfileUrl =
-          s3PresignedUrlService.generatePresignedUrl(sender.getProfileImageUrl());
-      String receiverProfileUrl =
-          s3PresignedUrlService.generatePresignedUrl(receiver.getProfileImageUrl());
 
-      DirectMessageCreatedEvent createdEvent =
-          new DirectMessageCreatedEvent(
-              savedDm.getId().toString(),
-              savedDm.getConversationId().toString(),
-              savedDm.getSenderId().toString(),
-              sender.getName(),
-              senderProfileUrl,
-              savedDm.getReceiverId().toString(),
-              receiver.getName(),
-              receiverProfileUrl,
+      // 3. 내부 이벤트 발행 (트랜잭션 커밋 후 Kafka 전송 처리)
+      applicationEventPublisher.publishEvent(
+          new DirectMessageSavedEvent(
+              savedDm.getId(),
+              savedDm.getConversationId(),
+              savedDm.getSenderId(),
+              savedDm.getReceiverId(),
               savedDm.getContent(),
-              savedDm.getCreatedAt());
+              savedDm.getCreatedAt()));
 
-      kafkaTemplate.send(
-          KafkaTopics.DIRECT_MESSAGE_CREATED, savedDm.getConversationId().toString(), createdEvent);
-
-      log.info("DM 생성 및 이벤트 발행 완료: dmId={}", savedDm.getId());
+      log.info("DM 저장 완료 (PENDING): dmId={}", savedDm.getId());
 
       // 처리가 성공했을 때만 ACK
       ack.acknowledge();
