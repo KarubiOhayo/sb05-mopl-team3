@@ -21,7 +21,7 @@ CREATE TABLE contents (
   external_id VARCHAR(255) NULL,
   title VARCHAR(255) NOT NULL,
   description VARCHAR(4000) NOT NULL,
-  thumbnail_image_key VARCHAR(2048) NOT NULL,
+  thumbnail_image_key VARCHAR(2048) NULL,
   average_rating DOUBLE(3,2) NOT NULL DEFAULT 0.00,
   review_count INT NOT NULL DEFAULT 0,
   watcher_count BIGINT NOT NULL DEFAULT 0,
