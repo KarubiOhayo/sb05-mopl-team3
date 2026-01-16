@@ -76,7 +76,7 @@ public class ProfileImageUploadService {
     }
 
     if (key.startsWith("https://") || key.startsWith("http://")) {
-      return null;
+      return key;
     }
 
     try {
