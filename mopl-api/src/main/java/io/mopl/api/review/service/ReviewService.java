@@ -83,7 +83,7 @@ public class ReviewService {
 
     Map<UUID, UserSummary> authorMap =
         users.stream()
-            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageUrl()))
+            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageKey()))
             .collect(Collectors.toMap(UserSummary::getUserId, Function.identity()));
 
     return reviews.stream()
@@ -108,7 +108,7 @@ public class ReviewService {
     // 3. 작성자 정보 일괄 조회 (N+1 문제 방지)
     Map<UUID, UserSummary> authorMap =
         userRepository.findAllById(authorIds).stream()
-            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageUrl()))
+            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageKey()))
             .collect(Collectors.toMap(UserSummary::getUserId, Function.identity()));
 
     // 4. 엔티티 -> DTO 변환 (작성자 정보 매핑 포함)

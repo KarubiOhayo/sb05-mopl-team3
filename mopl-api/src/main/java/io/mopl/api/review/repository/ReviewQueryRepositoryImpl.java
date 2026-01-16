@@ -68,7 +68,7 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
     // 5. 응답 객체 빌드
     // String보다 미리 정의된 ENUM 쓰는 게 더 안전
     SortDirection directionEnum =
-        "ASCENDING".equalsIgnoreCase(sortDirection)
+        "ASCENDING".equalsIgnoreCase(sortDirection) // 하드코딩한 이유 + enum
             ? SortDirection.ASCENDING
             : SortDirection.DESCENDING;
 
