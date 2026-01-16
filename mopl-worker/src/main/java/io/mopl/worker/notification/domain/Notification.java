@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -42,8 +41,7 @@ public class Notification {
   @Column(nullable = false)
   private String title;
 
-  @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, length = 1000)
   private String content;
 
   @Enumerated(EnumType.STRING)

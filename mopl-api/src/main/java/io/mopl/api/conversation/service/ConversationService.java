@@ -80,7 +80,7 @@ public class ConversationService {
                         .addDetail("withUserId", withUserId.toString()));
 
     String thumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageUrl());
+        contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageKey());
 
     UserSummary with = userMapper.toSummary(withUser, thumbnailUrl);
 
@@ -183,7 +183,7 @@ public class ConversationService {
                 });
 
     String thumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageUrl());
+        contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageKey());
 
     UserSummary with = userMapper.toSummary(withUser, thumbnailUrl);
 
@@ -214,9 +214,9 @@ public class ConversationService {
       }
 
       String senderProfileImageUrl =
-          contentThumbnailUploadService.generatePresignedUrl(sender.getProfileImageUrl());
+          contentThumbnailUploadService.generatePresignedUrl(sender.getProfileImageKey());
       String receiverProfileImageUrl =
-          contentThumbnailUploadService.generatePresignedUrl(receiver.getProfileImageUrl());
+          contentThumbnailUploadService.generatePresignedUrl(receiver.getProfileImageKey());
       UserSummary senderSummary = userMapper.toSummary(sender, senderProfileImageUrl);
       UserSummary receiverSummary = userMapper.toSummary(receiver, receiverProfileImageUrl);
       lastestMessageDto =
@@ -341,12 +341,12 @@ public class ConversationService {
         continue;
       }
       String thumbnailUrl =
-          contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageUrl());
+          contentThumbnailUploadService.generatePresignedUrl(withUser.getProfileImageKey());
       withSummaryByConversation.put(conversationId, userMapper.toSummary(withUser, thumbnailUrl));
     }
 
     String myThumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(currentUser.getProfileImageUrl());
+        contentThumbnailUploadService.generatePresignedUrl(currentUser.getProfileImageKey());
     UserSummary meSummary = userMapper.toSummary(currentUser, myThumbnailUrl);
 
     List<String> conversationIdStrings = conversationIds.stream().map(UUID::toString).toList();

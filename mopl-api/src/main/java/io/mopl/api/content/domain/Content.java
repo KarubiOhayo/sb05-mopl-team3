@@ -7,7 +7,6 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -47,12 +46,11 @@ public class Content {
   @Column(nullable = false)
   private String title;
 
-  @Lob
-  @Column(columnDefinition = "TEXT", nullable = false)
+  @Column(nullable = false, length = 4000)
   private String description;
 
-  @Column(name = "thumbnail_url", nullable = false, length = 2048)
-  private String thumbnailUrl;
+  @Column(name = "thumbnail_image_key", nullable = false, length = 2048)
+  private String thumbnailImageKey;
 
   @Column(name = "average_rating", nullable = false)
   @Builder.Default
@@ -81,15 +79,15 @@ public class Content {
     }
   }
 
-  public void update(String title, String description, String thumbnailUrl) {
+  public void update(String title, String description, String thumbnailImageKey) {
     if (title != null && !title.isBlank()) {
       this.title = title;
     }
     if (description != null && !description.isBlank()) {
       this.description = description;
     }
-    if (thumbnailUrl != null && !thumbnailUrl.isBlank()) {
-      this.thumbnailUrl = thumbnailUrl;
+    if (thumbnailImageKey != null && !thumbnailImageKey.isBlank()) {
+      this.thumbnailImageKey = thumbnailImageKey;
     }
   }
 }

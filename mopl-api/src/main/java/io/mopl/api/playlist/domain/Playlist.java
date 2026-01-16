@@ -5,7 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -42,8 +41,7 @@ public class Playlist {
   @Column(nullable = false)
   private String title;
 
-  @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, length = 2000)
   private String description;
 
   @Column(name = "subscriber_count", nullable = false)

@@ -67,8 +67,8 @@ public class User {
   private boolean locked = false;
 
   @Setter
-  @Column(name = "profile_image_url", length = 2048)
-  private String profileImageUrl;
+  @Column(name = "profile_image_key", length = 2048)
+  private String profileImageKey;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -92,7 +92,7 @@ public class User {
       String passwordHash,
       AuthProvider authProvider,
       String providerUserId,
-      String profileImageUrl) {
+      String profileImageKey) {
     return User.builder()
         .email(email)
         .name(name)
@@ -101,7 +101,7 @@ public class User {
         .providerUserId(providerUserId)
         .role(UserRole.USER)
         .locked(false)
-        .profileImageUrl(profileImageUrl)
+        .profileImageKey(profileImageKey)
         .build();
   }
 }

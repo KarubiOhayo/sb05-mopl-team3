@@ -27,6 +27,6 @@ public class User {
   @Column(length = 100)
   private String name;
 
-  @Column(name = "profile_image_url", length = 2048)
-  private String profileImageUrl;
+  @Column(name = "profile_image_key", length = 2048)
+  private String profileImageKey;
 }

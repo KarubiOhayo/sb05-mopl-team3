@@ -49,9 +49,9 @@ public class DirectMessagePostProcessor {
             .orElseThrow(() -> new BusinessException(WorkerErrorCode.USER_NOT_FOUND));
 
     String senderProfileUrl =
-        s3PresignedUrlService.generatePresignedUrl(sender.getProfileImageUrl());
+        s3PresignedUrlService.generatePresignedUrl(sender.getProfileImageKey());
     String receiverProfileUrl =
-        s3PresignedUrlService.generatePresignedUrl(receiver.getProfileImageUrl());
+        s3PresignedUrlService.generatePresignedUrl(receiver.getProfileImageKey());
 
     DirectMessageCreatedEvent createdEvent =
         new DirectMessageCreatedEvent(

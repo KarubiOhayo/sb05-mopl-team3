@@ -42,8 +42,7 @@ public class DirectMessage {
   @JdbcTypeCode(SqlTypes.CHAR)
   private UUID receiverId;
 
-  @Column(nullable = false, columnDefinition = "TEXT")
-  @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+  @Column(nullable = false, length = 4000)
   private String content;
 
   @Column(nullable = false, length = 20)

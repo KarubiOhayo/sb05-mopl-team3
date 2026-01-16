@@ -2,7 +2,7 @@ USE `mopl`;
 SET NAMES 'utf8mb4'; -- 한글/특수문자 깨짐 방지
 
 -- users dummy data
-INSERT INTO users (id, email, name, password_hash, auth_provider, provider_user_id, role, locked, profile_image_url, created_at, updated_at)
+INSERT INTO users (id, email, name, password_hash, auth_provider, provider_user_id, role, locked, profile_image_key, created_at, updated_at)
 VALUES
 -- 1. 관리자 계정
 ('a1111111-1111-1111-1111-111111111111', 'admin@mopl.com', '관리자', 'hash_admin_secret', 'LOCAL', NULL, 'ADMIN', 0, 'https://example.com/profiles/admin.png', DEFAULT, DEFAULT),
@@ -41,7 +41,7 @@ VALUES
 
 
 -- content dummy data
-INSERT INTO contents (id, type, external_id, title, description, thumbnail_url, average_rating, review_count, watcher_count, created_at, updated_at) VALUES
+INSERT INTO contents (id, type, external_id, title, description, thumbnail_image_key, average_rating, review_count, watcher_count, created_at, updated_at) VALUES
 ('a1e21d98-bc59-4682-a78d-cd556457f482', 'TV_SERIES', '1396', '브레이킹 배드',
 '2008년 1월 AMC에서 방영을 시작한 범죄 스릴러. Breaking Bad는 막가기를 뜻하는 미국 남부 지방의 속어이다. 한때 노벨화학상까지 바라 볼 정도로 뛰어난 과학자였던 고등학교 화학 교사 월터 화이트는 자신의 50세 생일 날에 폐암 3기 진단을 받는다. 어느 날 동서와 함께 마약 단속 현장을 참관한 그는 현장에서 달아나는 옛 제자 제시를 발견한다. 뇌성마비에 걸린 고등학생 아들과 임신한 아내를 위해 제시에게 동업을 제의한 월터는 자신의 화학지식을 이용해 전례없는 고순도 고품질의 메스암페타민을 제조한다.',
 'https://sprint-sb-project.s3.ap-northeast-2.amazonaws.com/mopl/images/89a1c53b-88e0-469d-9a8b-4d3d2f947fcc?response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251222T063243Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAQ67VTHC26F6IWSAU%2F20251222%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=2dc4e83542491e52eb075477ceed14d20725dda8e8aaefecca66413b83d57d27',
