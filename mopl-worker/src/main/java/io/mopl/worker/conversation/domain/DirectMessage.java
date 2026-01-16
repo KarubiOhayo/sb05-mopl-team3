@@ -1,5 +1,6 @@
 package io.mopl.worker.conversation.domain;
 
+import io.mopl.worker.common.UuidV7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @Table(name = "direct_messages")
@@ -49,6 +51,7 @@ public class DirectMessage {
   @Enumerated(EnumType.STRING)
   private SendingStatus status;
 
+  @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -66,13 +69,7 @@ public class DirectMessage {
   @PrePersist
   public void generateId() {
     if (this.id == null) {
-      this.id = UUID.randomUUID();
-    }
-    if (this.createdAt == null) {
-      this.createdAt = Instant.now();
-    }
-    if (this.status == null) {
-      this.status = SendingStatus.PENDING;
+      this.id = UuidV7Generator.generate();
     }
   }
 }

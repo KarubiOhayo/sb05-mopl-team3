@@ -23,4 +23,7 @@ dependencies {
     // 재시도 메커니즘
     implementation 'org.springframework.retry:spring-retry:2.0.5'
     implementation 'org.springframework:spring-aspects'
+
+    // UUIDv7
+    implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
 }
