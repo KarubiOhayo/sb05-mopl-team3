@@ -43,7 +43,7 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
             .description(item.getDescription() != null ? item.getDescription() : "")
             .externalId(String.valueOf(item.getId()))
             .type(ContentType.SPORT)
-            .thumbnailUrl("")
+            .thumbnailImageKey("")
             .build();
 
     String sourceThumbnailUrl =

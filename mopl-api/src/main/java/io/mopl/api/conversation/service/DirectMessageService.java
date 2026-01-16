@@ -133,7 +133,7 @@ public class DirectMessageService {
                             .name(user.getName())
                             .profileImageUrl(
                                 contentThumbnailUploadService.generatePresignedUrl(
-                                    user.getProfileImageUrl()))
+                                    user.getProfileImageKey()))
                             .build()));
 
     List<DirectMessageDto> dtos =

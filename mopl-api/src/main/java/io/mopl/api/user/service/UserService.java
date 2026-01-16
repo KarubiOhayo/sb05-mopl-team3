@@ -61,7 +61,7 @@ public class UserService {
 
       User savedUser = userRepository.save(user);
       String profileImageUrl =
-          profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
+          profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageKey());
 
       return UserDto.from(savedUser, profileImageUrl);
 
@@ -79,7 +79,7 @@ public class UserService {
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
     String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageKey());
 
     return UserDto.from(user, profileImageUrl);
   }
@@ -93,7 +93,7 @@ public class UserService {
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
     String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageKey());
 
     return UserSummary.from(user, profileImageUrl);
   }
@@ -130,10 +130,10 @@ public class UserService {
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      String oldImageKey = user.getProfileImageUrl();
+      String oldImageKey = user.getProfileImageKey();
 
       String newImageKey = profileImageUploadService.uploadProfileImage(profileImage, userId);
-      user.setProfileImageUrl(newImageKey);
+      user.setProfileImageKey(newImageKey);
       if (oldImageKey != null) {
         try {
           profileImageUploadService.deleteImage(oldImageKey);
@@ -146,7 +146,7 @@ public class UserService {
     User savedUser = userRepository.save(user);
 
     String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageUrl());
+        profileImageUploadService.generatePresignedUrl(savedUser.getProfileImageKey());
 
     return UserDto.from(savedUser, profileImageUrl);
   }

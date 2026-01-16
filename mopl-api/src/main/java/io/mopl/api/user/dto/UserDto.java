@@ -29,7 +29,7 @@ public class UserDto {
         .createdAt(user.getCreatedAt())
         .email(user.getEmail())
         .name(user.getName())
-        .profileImageUrl(user.getProfileImageUrl())
+        .profileImageUrl(user.getProfileImageKey())
         .role(user.getRole())
         .locked(user.isLocked())
         .build();

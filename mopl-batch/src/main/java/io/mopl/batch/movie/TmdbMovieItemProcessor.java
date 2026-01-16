@@ -46,7 +46,7 @@ public class TmdbMovieItemProcessor implements ItemProcessor<TmdbMovieResponse, 
             .externalId(String.valueOf(item.getId()))
             .title(item.getTitle())
             .description(item.getOverview() != null ? item.getOverview() : "")
-            .thumbnailUrl("")
+            .thumbnailImageKey("")
             .type(ContentType.MOVIE)
             .build();
 
