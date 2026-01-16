@@ -61,7 +61,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/");
+    cookie.setPath("/api/auth");
     cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
     cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
