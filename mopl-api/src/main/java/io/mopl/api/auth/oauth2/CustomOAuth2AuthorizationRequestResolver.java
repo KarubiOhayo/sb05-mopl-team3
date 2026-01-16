@@ -41,12 +41,20 @@ public class CustomOAuth2AuthorizationRequestResolver
     }
 
     String mode = request.getParameter("mode");
-    if (mode == null) {
+
+    System.out.println("=== CustomOAuth2AuthorizationRequestResolver ===");
+    System.out.println("mode 파라미터: " + mode);
+    System.out.println("원본 state: " + authorizationRequest.getState());
+
+    if (mode != null) {
       String originalState = authorizationRequest.getState();
       String customState = originalState + ":mode=" + mode;
 
+      System.out.println("커스텀 state: " + customState);
+
       return OAuth2AuthorizationRequest.from(authorizationRequest).state(customState).build();
     }
+
     return authorizationRequest;
   }
 }
