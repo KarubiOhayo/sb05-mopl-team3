@@ -65,9 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return bearerToken.substring(7);
     }
     // SSE의 경우 쿼리 파라미터로 토큰을 전달하는 경우도 고려 (선택 사항)
-    String queryToken = request.getParameter("token");
-    if (StringUtils.hasText(queryToken)) {
-      return queryToken;
+    String requestUri = request.getRequestURI();
+    if (requestUri.startsWith("/api/sse")) {
+      String queryToken = request.getParameter("token");
+      if (StringUtils.hasText(queryToken)) {
+        return queryToken;
+      }
     }
     return null;
   }
