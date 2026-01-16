@@ -42,7 +42,7 @@ public class ContentController {
 
   @GetMapping("/{contentId}")
   public ResponseEntity<ContentDto> findById(@PathVariable("contentId") UUID contentId) {
-    return ResponseEntity.ok(contentService.findById(contentId));
+    return ResponseEntity.ok(contentSearchService.findById(contentId));
   }
 
   @GetMapping

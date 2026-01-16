@@ -22,6 +22,7 @@ import io.mopl.api.content.domain.ContentDocument;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
+import io.mopl.api.content.mapper.ContentMapper;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,31 @@ public class ContentSearchService {
 
 	private final ContentThumbnailUploadService contentThumbnailUploadService;
 	private final ElasticsearchOperations elasticsearchOperations;
+	private final ContentMapper mapper;
+
+	@Transactional(readOnly = true)
+	public ContentDto findById(UUID contentId) {
+		log.info("ES 컨텐츠 단건 조회 시작 contentId={}", contentId);
+
+		Query termQuery = Query.of(q -> q.term(t -> t.field("contentId.keyword").value(contentId.toString())));
+
+		NativeQuery query = NativeQuery.builder().withQuery(termQuery).build();
+
+		SearchHits<ContentDocument> hits = elasticsearchOperations.search(query, ContentDocument.class);
+
+		ContentDocument doc = hits.getSearchHits()
+			.stream()
+			.map(SearchHit::getContent)
+			.findFirst()
+			.orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
+
+		log.info("ES 컨텐츠 단건 조회 완료 contentId={}", contentId);
+
+		String thumbnailUrl = contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailUrl());
+		doc.setThumbnailUrl(thumbnailUrl);
+
+		return mapper.toContentDto(doc);
+	}
 
 	@Transactional(readOnly = true)
 	public CursorResponseContentDto findAll(ContentSearchRequest contentSearchRequest) {
