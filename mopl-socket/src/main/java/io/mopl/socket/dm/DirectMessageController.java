@@ -41,7 +41,7 @@ public class DirectMessageController {
             user.userId().toString(),
             request.content());
 
-    kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, event);
+    kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, conversationId, event);
 
     log.info("DM 전송 요청 발행 완료: conversationId={}, senderId={}", conversationId, user.userId());
   }
