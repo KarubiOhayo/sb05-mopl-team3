@@ -1,5 +1,6 @@
 package io.mopl.worker.notification;
 
+import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.playlist.PlaylistContentAddedEvent;
 import io.mopl.core.event.playlist.PlaylistCreatedEvent;
 import io.mopl.core.event.playlist.PlaylistSubscribedEvent;
@@ -43,6 +44,7 @@ public class PlaylistNotificationListener {
           messageSource.getMessage(
               "notification.playlist.subscribed.title",
               new Object[] {event.subscriberName()},
+              "새 구독자: " + event.subscriberName(),
               Locale.KOREAN);
 
       Notification notification =
@@ -75,7 +77,10 @@ public class PlaylistNotificationListener {
 
       String title =
           messageSource.getMessage(
-              "notification.playlist.content-added.title", null, Locale.KOREAN);
+              "notification.playlist.content-added.title",
+              null,
+              "플레이리스트에 새 콘텐츠가 추가되었습니다.",
+              Locale.KOREAN);
 
       List<UUID> receiverIds = recipientQuery.findSubscriberIds(playlistIdUuid);
       for (UUID receiverId : receiverIds) {
@@ -116,6 +121,7 @@ public class PlaylistNotificationListener {
           messageSource.getMessage(
               "notification.playlist.created.title",
               new Object[] {event.ownerName()},
+              "새 플레이리스트가 생성되었습니다. 작성자: " + event.ownerName(),
               Locale.KOREAN);
 
       List<UUID> receiverIds = recipientQuery.findFollowerIds(ownerIdUuid);
@@ -148,9 +154,9 @@ public class PlaylistNotificationListener {
     Throwable cause = e.getMostSpecificCause();
     String message = cause != null ? cause.getMessage() : e.getMessage();
 
-    if (message != null && message.contains("uq_notifications_event_id")) {
+    if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
       log.debug("중복 이벤트 무시 (eventId={})", eventId);
-    } else if (message != null && message.contains("fk_notifications_receiver")) {
+    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
       log.error("수신자 참조 오류 (eventId={})", eventId, e);
     } else {
       log.error("알림 저장 중 오류 (eventId={})", eventId, e);
