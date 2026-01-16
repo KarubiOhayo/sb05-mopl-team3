@@ -1,3 +1,6 @@
 package io.mopl.socket.dm.dto;
 
-public record DirectMessageSendRequest(String content) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record DirectMessageSendRequest(
+    @NotBlank(message = "{validation.content.blank}") String content) {}

@@ -6,6 +6,7 @@ import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.socket.common.error.SocketErrorCode;
 import io.mopl.socket.dm.dto.DirectMessageSendRequest;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class DirectMessageController {
   @MessageMapping("/conversations/{conversationId}/direct-messages")
   public void sendDirectMessage(
       @DestinationVariable String conversationId,
-      @Payload DirectMessageSendRequest request,
+      @Payload @Valid DirectMessageSendRequest request,
       Principal principal) {
 
     SocketUserPrincipal user = resolvePrincipal(principal);
