@@ -4,10 +4,12 @@ import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCreateRequest;
 import io.mopl.api.review.dto.ReviewDto;
 import io.mopl.api.user.dto.UserSummary;
+import jakarta.annotation.Nullable;
 import java.util.UUID;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+@Nullable
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
 

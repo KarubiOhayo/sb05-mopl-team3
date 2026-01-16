@@ -1,6 +1,7 @@
 package io.mopl.api.review.dto;
 
 import io.mopl.api.user.dto.UserSummary;
+import jakarta.annotation.Nullable;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Nullable
 public class ReviewDto {
 
   private UUID id;
