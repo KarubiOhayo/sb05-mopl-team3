@@ -17,7 +17,9 @@ public enum WorkerErrorCode implements ErrorCode {
   /** DM 수신자를 찾을 수 없는 경우. */
   DM_RECEIVER_NOT_FOUND(404, "error.worker.dm-receiver-not-found"),
   /** 사용자를 찾을 수 없는 경우. */
-  USER_NOT_FOUND(404, "error.worker.user-not-found");
+  USER_NOT_FOUND(404, "error.worker.user-not-found"),
+  /** 대화 참여자가 아닌 경우. */
+  NOT_A_CONVERSATION_PARTICIPANT(403, "error.worker.not-a-conversation-participant");
 
   private final int status;
   private final String messageKey;

@@ -6,6 +6,7 @@ import io.mopl.core.event.conversation.DirectMessageSendEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.common.WorkerErrorCode;
 import io.mopl.worker.conversation.domain.ConversationParticipant;
+import io.mopl.worker.conversation.domain.ConversationParticipantId;
 import io.mopl.worker.conversation.domain.ConversationParticipantRepository;
 import io.mopl.worker.conversation.domain.DirectMessage;
 import io.mopl.worker.conversation.domain.DirectMessageRepository;
@@ -39,12 +40,25 @@ public class DirectMessageListener {
           "spring.json.value.default.type=io.mopl.core.event.conversation.DirectMessageSendEvent")
   @Transactional
   public void handleSendRequest(DirectMessageSendEvent event, Acknowledgment ack) {
-    log.info("DM 전송 요청 수신: eventId={}, conversationId={}", event.eventId(), event.conversationId());
+    log.info(
+        "DM 전송 요청 수신: eventId={}, conversationId={}, senderId={}",
+        event.eventId(),
+        event.conversationId(),
+        event.senderId());
 
     try {
       UUID conversationId = UUID.fromString(event.conversationId());
       UUID senderId = UUID.fromString(event.senderId());
 
+      // 1. 송신자가 해당 대화의 참여자인지 검증
+      if (!conversationParticipantRepository.existsById(
+          new ConversationParticipantId(conversationId, senderId))) {
+        log.error(
+            "DM 전송 권한 없음: 사용자가 대화 참여자가 아님. userId={}, conversationId={}", senderId, conversationId);
+        throw new BusinessException(WorkerErrorCode.NOT_A_CONVERSATION_PARTICIPANT);
+      }
+
+      // 2. 수신자 조회
       ConversationParticipant receiverParticipant =
           conversationParticipantRepository
               .findReceiver(conversationId, senderId)
