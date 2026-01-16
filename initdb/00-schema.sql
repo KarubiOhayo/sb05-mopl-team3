@@ -15,6 +15,22 @@ CREATE TABLE users (
   UNIQUE KEY uq_users_provider (auth_provider, provider_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE user_linked_providers (
+  id CHAR(36) NOT NULL,
+  user_id CHAR(36) NOT NULL,
+  provider VARCHAR(20) NOT NULL,
+  provider_user_id VARCHAR(255) NOT NULL,
+  linked_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_user_provider (user_id, provider),
+  UNIQUE KEY uk_provider_user_id (provider, provider_user_id),
+  KEY idx_user_id (user_id),
+  KEY idx_provider (provider),
+  CONSTRAINT fk_user_linked_providers_user
+  FOREIGN KEY (user_id) REFERENCES users(id)
+  ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사용자 연동 소셜 계정';
+
 CREATE TABLE contents (
   id CHAR(36) NOT NULL,
   type VARCHAR(20) NOT NULL,
