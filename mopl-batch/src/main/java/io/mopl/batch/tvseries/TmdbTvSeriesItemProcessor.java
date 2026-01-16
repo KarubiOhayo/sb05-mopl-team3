@@ -46,7 +46,7 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
             .externalId(String.valueOf(item.getId()))
             .title(item.getName())
             .description(item.getOverview() != null ? item.getOverview() : "")
-            .thumbnailUrl("")
+            .thumbnailImageKey("")
             .type(ContentType.TV_SERIES)
             .build();
 

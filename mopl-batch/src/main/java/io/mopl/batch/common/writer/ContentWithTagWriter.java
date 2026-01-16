@@ -60,7 +60,7 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
               : ThumbnailSourceType.UNKNOWN;
       String s3Key =
           buildThumbnailS3Key(content.getType().name(), content.getId().toString(), sourceUrl);
-      content.setThumbnailUrl(s3Key);
+      content.setThumbnailImageKey(s3Key);
 
       // 1. 저장 (Processor에서 중복은 이미 걸러짐)
       Content savedContent = contentRepository.save(content);

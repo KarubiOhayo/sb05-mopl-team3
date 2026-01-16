@@ -5,7 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -46,8 +45,8 @@ public class DirectMessage {
   @JdbcTypeCode(SqlTypes.CHAR)
   private UUID receiverId;
 
-  @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
+  @JdbcTypeCode(SqlTypes.LONGVARCHAR)
   private String content;
 
   @CreatedDate

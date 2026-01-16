@@ -68,12 +68,13 @@ public class ContentService {
     String title = contentCreateRequest.getTitle();
     String description = contentCreateRequest.getDescription();
 
-    String thumbnailUrl = null;
+    String thumbnailImageKey = null;
     if (thumbnail != null && !thumbnail.isEmpty()) {
-      thumbnailUrl =
+      thumbnailImageKey =
           contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
-      log.info("썸네일 업로드 완료 - urlLen: {}", thumbnailUrl != null ? thumbnailUrl.length() : 0);
-      eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailUrl));
+      log.info(
+          "썸네일 업로드 완료 - urlLen: {}", thumbnailImageKey != null ? thumbnailImageKey.length() : 0);
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailImageKey));
     }
 
     Content content =
@@ -81,7 +82,7 @@ public class ContentService {
             .type(contentCreateRequest.getType())
             .title(title)
             .description(description)
-            .thumbnailUrl(thumbnailUrl)
+            .thumbnailImageKey(thumbnailImageKey)
             .build();
     Content saved = contentRepository.save(content);
     log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
@@ -112,7 +113,7 @@ public class ContentService {
         content.getType(),
         content.getTitle(),
         content.getDescription(),
-        content.getThumbnailUrl(),
+        content.getThumbnailImageKey(),
         tagNames,
         0.0,
         0,
@@ -121,18 +122,28 @@ public class ContentService {
 
   @Transactional(readOnly = true)
   public ContentDto findById(UUID contentId) {
-    log.info("ES 컨텐츠 단건 조회를 시작합니다. contentId: {}", contentId);
+    log.info("컨텐츠 단건 조회를 시작합니다. contentId: {}", contentId);
 
-    ContentDocument doc =
-        contentElasticRepository
-            .findByContentId(contentId)
+    Content content =
+        contentRepository
+            .findById(contentId)
             .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
+
+    List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
     String thumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailUrl());
-    doc.setThumbnailUrl(thumbnailUrl);
-    return contentMapper.toContentDto(doc);
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailImageKey());
+    return new ContentDto(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        thumbnailUrl,
+        tagNames,
+        content.getAverageRating(),
+        content.getReviewCount(),
+        content.getWatcherCount());
   }
 
   @Transactional
@@ -146,7 +157,7 @@ public class ContentService {
     reviewRepository.deleteByContentId(contentId);
     playlistContentRepository.deleteByIdContentId(contentId);
     contentTagRepository.deleteByIdContentId(contentId);
-    contentThumbnailUploadService.deleteThumbnail(content.getThumbnailUrl());
+    contentThumbnailUploadService.deleteThumbnail(content.getThumbnailImageKey());
     contentRepository.deleteById(contentId);
     log.info("컨텐츠 삭제 완료: contentId: {}", contentId);
     eventPublisher.publishEvent(new ContentIndexEvent(contentId, EventType.DELETE));
@@ -166,15 +177,15 @@ public class ContentService {
     String title = contentUpdateRequest.getTitle();
     String description = contentUpdateRequest.getDescription();
 
-    String deletedUrl = content.getThumbnailUrl();
-    String updatedUrl = deletedUrl;
+    String deletedKey = content.getThumbnailImageKey();
+    String updatedKey = deletedKey;
 
     boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
     if (hasNewThumbnail) {
-      updatedUrl = contentThumbnailUploadService.uploadThumbnail(thumbnail, content.getType());
-      eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedUrl));
+      updatedKey = contentThumbnailUploadService.uploadThumbnail(thumbnail, content.getType());
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedKey));
     }
-    content.update(title, description, updatedUrl);
+    content.update(title, description, updatedKey);
 
     List<String> requestedTags = contentUpdateRequest.getTags();
     if (requestedTags != null) {
@@ -215,8 +226,8 @@ public class ContentService {
       requestedTags = contentTagRepository.findTagNamesByContentId(contentId);
     }
 
-    if (hasNewThumbnail && deletedUrl != null) {
-      eventPublisher.publishEvent(new ThumbnailDeleteAfterCommitEvent(deletedUrl));
+    if (hasNewThumbnail && deletedKey != null) {
+      eventPublisher.publishEvent(new ThumbnailDeleteAfterCommitEvent(deletedKey));
     }
 
     log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
@@ -226,7 +237,7 @@ public class ContentService {
     );
 
     String thumbnailUrl =
-        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailUrl());
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailImageKey());
     return new ContentDto(
         content.getId(),
         content.getType(),
@@ -272,7 +283,8 @@ public class ContentService {
                         c.getType(),
                         c.getTitle(),
                         c.getDescription(),
-                        contentThumbnailUploadService.generatePresignedUrl(c.getThumbnailUrl()),
+                        contentThumbnailUploadService.generatePresignedUrl(
+                            c.getThumbnailImageKey()),
                         tagsByContentId.getOrDefault(c.getId(), List.of()),
                         c.getAverageRating(),
                         c.getReviewCount(),
