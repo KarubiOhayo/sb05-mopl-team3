@@ -70,21 +70,34 @@ public class AuthController {
     Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), null);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
+    cookie.setPath("/");
     cookie.setMaxAge(0);
     cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 
     response.addCookie(cookie);
   }
 
-  /** 토큰 재발급 */
+  /** 토큰 재발급 - POST */
   @PostMapping("/refresh")
-  public ResponseEntity<JwtDto> refresh(
-      @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
+  public ResponseEntity<JwtDto> refreshPost(
+      @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
       HttpServletResponse response) {
-    AuthTokens authTokens = authService.reissueToken(refreshToken);
-    setRefreshTokenCookie(response, authTokens.getRefreshToken());
-    return ResponseEntity.ok(authTokens.getJwtDto());
+    return refreshToken(refreshToken, response);
+  }
+
+  /** 공통 토큰 재발급 로직 */
+  private ResponseEntity<JwtDto> refreshToken(String refreshToken, HttpServletResponse response) {
+    if (refreshToken == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    try {
+      AuthTokens authTokens = authService.reissueToken(refreshToken);
+      setRefreshTokenCookie(response, authTokens.getRefreshToken());
+      return ResponseEntity.ok(authTokens.getJwtDto());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
   }
 
   /** 리프레시 토큰 쿠키 설정 */
@@ -92,7 +105,7 @@ public class AuthController {
     Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
     cookie.setHttpOnly(true);
     cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
+    cookie.setPath("/");
     cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
     cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
 

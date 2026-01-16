@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: mopl-api
@@ -25,23 +28,36 @@ spring:
         spring.json.trusted.packages: io.mopl.core.event.*
   messages:
     basename: messages,ValidationMessages
-#  mail:
-#    host: smtp.gmail.com
-#    port: 587
-#    username: ${GMAIL_EMAIL}
-#    password: ${GMAIL_APP_PASSWORD}
-#    properties:
-#      mail:
-#        smtp:
-#          auth: true
-#          starttls:
-#            enable: true
-#            required: true
-#          connectiontimeout: 5000
-#          timeout: 5000
-#          writetimeout: 5000
-#          ssl:
-#            trust: smtp.gmail.com
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "${OAUTH2_BASE_URL:http://localhost:8080}/login/oauth2/code/google"
+
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            scope:
+              - profile_nickname
+              - profile_image
+            client-name: Kakao
+            authorization-grant-type: authorization_code
+            redirect-uri: "${OAUTH2_BASE_URL:http://localhost:8080}/login/oauth2/code/kakao"
+            client-authentication-method: client_secret_post
+
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
 security:
   cookie:
     same-site: ${COOKIE_SAME_SITE:Lax}
@@ -52,6 +68,9 @@ security:
       name: ${REFRESH_TOKEN_NAME:REFRESH_TOKEN}
       http-only: ${REFRESH_TOKEN_HTTP_ONLY:true}
       max-age: ${REFRESH_TOKEN_MAX_AGE:604800}
+
+oauth2:
+  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8085}
 
 management:
   endpoints:
