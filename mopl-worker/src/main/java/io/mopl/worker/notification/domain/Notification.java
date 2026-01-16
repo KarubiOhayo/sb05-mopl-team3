@@ -1,5 +1,6 @@
 package io.mopl.worker.notification.domain;
 
+import io.mopl.worker.common.UuidV7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -57,7 +58,7 @@ public class Notification {
   @PrePersist
   public void prePersist() {
     if (this.id == null) {
-      this.id = UUID.randomUUID();
+      this.id = UuidV7Generator.generate();
     }
     if (this.createdAt == null) {
       this.createdAt = Instant.now();
