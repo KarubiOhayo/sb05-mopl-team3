@@ -1,5 +1,6 @@
 package io.mopl.worker.notification;
 
+import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.follow.UserFollowedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
@@ -36,7 +37,10 @@ public class FollowNotificationListener {
 
       String title =
           messageSource.getMessage(
-              "notification.follow.title", new Object[] {event.followerName()}, Locale.KOREAN);
+              "notification.follow.title",
+              new Object[] {event.followerName()},
+              "새 팔로워: " + event.followerName(),
+              Locale.KOREAN);
 
       Notification notification =
           Notification.builder()
@@ -52,10 +56,10 @@ public class FollowNotificationListener {
       Throwable cause = e.getMostSpecificCause();
       String message = cause != null ? cause.getMessage() : e.getMessage();
 
-      if (message != null && message.contains("uq_notifications_event_id")) {
+      if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
         // 이미 처리된 이벤트는 무시한다.
         log.debug("중복 이벤트 무시 (eventId={})", event.eventId());
-      } else if (message != null && message.contains("fk_notifications_receiver")) {
+      } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
         log.error("수신자 참조 오류 (eventId={})", event.eventId(), e);
       } else {
         log.error("알림 저장 중 오류 (eventId={})", event.eventId(), e);

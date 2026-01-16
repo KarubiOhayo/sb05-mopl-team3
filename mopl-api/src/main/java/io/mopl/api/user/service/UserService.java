@@ -13,6 +13,7 @@ import io.mopl.api.user.dto.UserLockUpdateRequest;
 import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.dto.UserUpdateRequest;
+import io.mopl.api.user.event.UserRoleChangedInternalEvent;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
@@ -20,6 +21,7 @@ import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +39,7 @@ public class UserService {
   private final ProfileImageUploadService profileImageUploadService;
   private final RedisTemplate<String, String> redisTemplate;
   private final RefreshTokenService refreshTokenService;
+  private final ApplicationEventPublisher eventPublisher;
 
   /** 회원가입 */
   @Transactional
@@ -218,5 +221,8 @@ public class UserService {
       log.error("계정 권한 변경 뒤 Refresh Token 삭제 실패 - userId: {}", userId, e);
       throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
+
+    eventPublisher.publishEvent(
+        new UserRoleChangedInternalEvent(userId, user.getName(), user.getRole().name()));
   }
 }
