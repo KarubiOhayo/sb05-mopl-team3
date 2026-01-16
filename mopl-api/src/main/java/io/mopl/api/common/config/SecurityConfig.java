@@ -1,6 +1,10 @@
 package io.mopl.api.common.config;
 
 import io.mopl.api.auth.jwt.JwtAuthenticationFilter;
+import io.mopl.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
+import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import io.mopl.api.auth.service.CustomOAuth2UserService;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +15,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -20,8 +26,10 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-  private final CsrfCookieFilter csrfCookieFilter;
-  private final CookieSecurityProperties cookieSecurityProperties;
+
+  private final CustomOAuth2UserService customOAuth2UserService;
+  private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -40,19 +48,26 @@ public class SecurityConfig {
   //  }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-    csrfTokenRepository.setCookieName(cookieSecurityProperties.getCsrf().getName());
-    csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+  public SecurityFilterChain filterChain(
+      HttpSecurity http, CookieCsrfTokenRepository csrfTokenRepository) throws Exception {
 
     CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
     requestHandler.setCsrfRequestAttributeName("_csrf");
 
-    http.csrf(
+    http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .csrf(
             csrf ->
                 csrf.csrfTokenRepository(csrfTokenRepository)
-                    .csrfTokenRequestHandler(requestHandler))
+                    .csrfTokenRequestHandler(requestHandler)
+                    .ignoringRequestMatchers(
+                        request -> {
+                          String method = request.getMethod();
+                          String path = request.getRequestURI();
+                          return (method.equals("POST") && path.equals("/api/auth/sign-in"))
+                              || (method.equals("POST") && path.equals("/api/users"))
+                              || (method.equals("POST") && path.equals("/api/auth/reset-password"))
+                              || path.startsWith("/login/oauth2/");
+                        }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
@@ -70,6 +85,8 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/vite.svg")
                     .permitAll()
+
+                    /* ========== Swagger ========== */
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
 
@@ -88,7 +105,15 @@ public class SecurityConfig {
 
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
+                    .requestMatchers(HttpMethod.GET, "/api/auth/refresh")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/sign-in", "/api/auth/refresh")
+                    .permitAll()
                     .requestMatchers("/api/auth/**")
+                    .permitAll()
+
+                    /* ========== OAuth2 인증 ==========*/
+                    .requestMatchers("/oauth2/**", "/login/oauth2/**")
                     .permitAll()
 
                     /* ========== 사용자 관리 ========== */
@@ -117,7 +142,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.DELETE, "/api/reviews/{reviewId}")
                     .authenticated()
                     // 전체: 목록 조회
-                    .requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/{reviewId}")
+                    .requestMatchers(HttpMethod.GET, "/api/reviews")
                     .permitAll()
 
                     /* ========== 플레이리스트 관리 ========== */
@@ -191,9 +216,48 @@ public class SecurityConfig {
                     // 나머지는 인증 필요
                     .anyRequest()
                     .authenticated())
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterAfter(csrfCookieFilter, CsrfFilter.class);
+        /* OAuth 로그인 설정 */
+        .oauth2Login(
+            oauth2 ->
+                oauth2
+                    .authorizationEndpoint(
+                        authorization -> authorization.baseUri("/oauth2/authorization"))
+                    .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
+                    .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    // 허용할 Origin (프론트엔드 URL)
+    configuration.setAllowedOrigins(
+        Arrays.asList("http://localhost:8085", "http://192.168.219.105:8085"));
+
+    // 허용할 HTTP 메서드
+    configuration.setAllowedMethods(
+        Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+    // 허용할 헤더
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+
+    // 인증 정보(쿠키) 포함 허용
+    configuration.setAllowCredentials(true);
+
+    // Preflight 요청 캐시 시간 (1시간)
+    configuration.setMaxAge(3600L);
+
+    // 응답 헤더 노출 (프론트엔드에서 읽을 수 있는 헤더)
+    configuration.setExposedHeaders(Arrays.asList("Authorization", "Set-Cookie", "X-XSRF-TOKEN"));
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+
+    return source;
   }
 }

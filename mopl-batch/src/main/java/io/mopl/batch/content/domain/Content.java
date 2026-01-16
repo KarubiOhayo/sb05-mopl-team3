@@ -8,7 +8,6 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -57,13 +56,12 @@ public class Content {
   @Column(nullable = false)
   private String title;
 
-  @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, length = 4000)
   private String description;
 
-  @Column(name = "thumbnail_url", nullable = false, length = 2048)
+  @Column(name = "thumbnail_image_key", nullable = false, length = 2048)
   @Setter
-  private String thumbnailUrl;
+  private String thumbnailImageKey;
 
   @Column(name = "average_rating", nullable = false)
   @Builder.Default

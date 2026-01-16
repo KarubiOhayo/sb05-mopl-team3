@@ -39,10 +39,4 @@ public class RefreshTokenService {
     redisTemplate.delete(key);
     log.debug("리프레시 토큰 삭제: userId={}, key={}", userId, key);
   }
-
-  /** 리프레시 토큰 유무 확인 */
-  public boolean hasRefreshToken(UUID userId) {
-    String key = RedisKeyPrefix.REFRESH_TOKEN + userId.toString();
-    return Boolean.TRUE.equals(redisTemplate.hasKey(key));
-  }
 }

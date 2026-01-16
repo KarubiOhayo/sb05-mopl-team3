@@ -29,6 +29,10 @@ security:
 
 server:
   port: ${MOPL_PORT:8080}
+  forward-headers-strategy: framework
+
+oauth2:
+  base-url: ${OAUTH2_BASE_URL:http://localhost:8085}
 
 logging:
   level:
