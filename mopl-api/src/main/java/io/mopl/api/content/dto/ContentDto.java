@@ -18,7 +18,7 @@ public class ContentDto {
   private ContentType type;
   private String title;
   private String description;
-  private String thumbnailUrl;
+  private String thumbnailImageKey;
   private List<String> tags;
   private double averageRating;
   private int reviewCount;

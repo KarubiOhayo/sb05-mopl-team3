@@ -26,7 +26,7 @@ public class ContentDocument {
 	private ContentType type;
 	private String title;
 	private String description;
-	private String thumbnailUrl;
+	private String thumbnailImageKey;
 	private List<String> tags;
 
 	private double averageRating;

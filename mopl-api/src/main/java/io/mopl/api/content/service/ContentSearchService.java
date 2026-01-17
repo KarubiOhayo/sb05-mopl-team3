@@ -56,8 +56,8 @@ public class ContentSearchService {
 
 		log.info("ES 컨텐츠 단건 조회 완료 contentId={}", contentId);
 
-		String thumbnailUrl = contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailUrl());
-		doc.setThumbnailUrl(thumbnailUrl);
+		String thumbnailImageKey = contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailImageKey());
+		doc.setThumbnailImageKey(thumbnailImageKey);
 
 		return mapper.toContentDto(doc);
 	}
@@ -113,7 +113,7 @@ public class ContentSearchService {
 							doc.getType(),
 							doc.getTitle(),
 							doc.getDescription(),
-							contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailUrl()),
+							contentThumbnailUploadService.generatePresignedUrl(doc.getThumbnailImageKey()),
 							doc.getTags() != null ? doc.getTags() : List.of(),
 							doc.getAverageRating(),
 							doc.getReviewCount(),
