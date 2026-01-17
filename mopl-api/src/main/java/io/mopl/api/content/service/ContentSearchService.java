@@ -19,6 +19,7 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
 import io.mopl.api.content.domain.ContentDocument;
+import io.mopl.api.content.domain.ContentType;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
@@ -149,10 +150,18 @@ public class ContentSearchService {
 				q.bool(
 					b -> {
 						if (request.getTypeEqual() != null && !request.getTypeEqual().isBlank()) {
+							ContentType type;
+							try {
+								type = ContentType.fromValue(request.getTypeEqual());
+							} catch (IllegalArgumentException e) {
+								throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+									.addDetail("reason", "유효하지 않은 typeEqual 값입니다.")
+									.addDetail("typeEqual", request.getTypeEqual());
+							}
 							b.filter(
 								f ->
 									f.term(
-										t -> t.field("type.keyword").value(request.getTypeEqual())));
+										t -> t.field("type.keyword").value(type.name())));
 						}
 
 						// keywordLike가 공백이면 조건 제외
