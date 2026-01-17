@@ -36,7 +36,7 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   public List<ContentSearchRow> findAllForIndexing() {
     List<Tuple> rows = queryFactory.select(
         c.id, c.type, c.title, c.description,
-        c.thumbnailUrl, t.name, c.averageRating,
+        c.thumbnailImageKey, t.name, c.averageRating,
         c.reviewCount, c.watcherCount, c.createdAt
         )
         .from(c)
@@ -54,7 +54,7 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
               .type(row.get(c.type))
               .title(row.get(c.title))
               .description(row.get(c.description))
-              .thumbnailUrl((row.get(c.thumbnailUrl)))
+              .thumbnailUrl((row.get(c.thumbnailImageKey)))
               .tags(new ArrayList<>())
               .averageRating(row.get(c.averageRating))
               .reviewCount(row.get(c.reviewCount))
@@ -75,7 +75,7 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   public Optional<ContentSearchRow> findOneForIndexing(UUID contentId) {
     List<Tuple> rows = queryFactory.select(
             c.id, c.type, c.title, c.description,
-            c.thumbnailUrl, t.name, c.averageRating,
+            c.thumbnailImageKey, t.name, c.averageRating,
             c.reviewCount, c.watcherCount, c.createdAt
         )
         .from(c)
@@ -94,7 +94,7 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
         .type(first.get(c.type))
         .title(first.get(c.title))
         .description(first.get(c.description))
-        .thumbnailUrl((first.get(c.thumbnailUrl)))
+        .thumbnailUrl((first.get(c.thumbnailImageKey)))
         .tags(new ArrayList<>())
         .averageRating(first.get(c.averageRating))
         .reviewCount(first.get(c.reviewCount))
