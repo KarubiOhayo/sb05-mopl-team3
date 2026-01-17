@@ -2,8 +2,6 @@ package io.mopl.api.content.service;
 
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.Content;
-import io.mopl.api.content.domain.ContentDocument;
-import io.mopl.api.content.domain.ContentElasticRepository;
 import io.mopl.api.content.domain.ContentRepository;
 import io.mopl.api.content.domain.ContentTag;
 import io.mopl.api.content.domain.ContentTagId;
@@ -20,7 +18,6 @@ import io.mopl.api.content.dto.CursorResponseContentDto;
 import io.mopl.api.content.event.ContentIndexEvent;
 import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
 import io.mopl.api.content.event.ThumbnailUploadedEvent;
-import io.mopl.api.content.mapper.ContentMapper;
 import io.mopl.api.playlist.domain.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
@@ -46,14 +43,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContentService {
 
   private final ContentRepository contentRepository;
-  private final ContentElasticRepository contentElasticRepository;
   private final ContentTagRepository contentTagRepository;
   private final ReviewRepository reviewRepository;
   private final PlaylistContentRepository playlistContentRepository;
   private final TagRepository tagRepository;
   private final ContentThumbnailUploadService contentThumbnailUploadService;
   private final ApplicationEventPublisher eventPublisher;
-  private final ContentMapper contentMapper;
 
   @Transactional
   @PreAuthorize("hasRole('ADMIN')")
@@ -104,9 +99,7 @@ public class ContentService {
 
     log.info("컨텐츠 생성을 완료했습니다.");
 
-    eventPublisher.publishEvent(
-        new ContentIndexEvent(saved.getId(), EventType.UPSERT)
-    );
+    eventPublisher.publishEvent(new ContentIndexEvent(saved.getId(), EventType.UPSERT));
 
     return new ContentDto(
         content.getId(),
@@ -232,9 +225,7 @@ public class ContentService {
 
     log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
 
-    eventPublisher.publishEvent(
-        new ContentIndexEvent(content.getId(), EventType.UPSERT)
-    );
+    eventPublisher.publishEvent(new ContentIndexEvent(content.getId(), EventType.UPSERT));
 
     String thumbnailUrl =
         contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailImageKey());
