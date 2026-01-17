@@ -7,7 +7,6 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentSearchRow;
@@ -34,33 +33,50 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
 
   @Override
   public List<ContentSearchRow> findAllForIndexing() {
-    List<Tuple> rows = queryFactory.select(
-        c.id, c.type, c.title, c.description,
-        c.thumbnailImageKey, t.name, c.averageRating,
-        c.reviewCount, c.watcherCount, c.createdAt
-        )
-        .from(c)
-        .leftJoin(ct).on(ct.id.contentId.eq(c.id))
-        .leftJoin(t).on(ct.id.tagId.eq(t.id))
-        .fetch();
+    List<Tuple> rows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                t.name,
+                c.averageRating,
+                c.reviewCount,
+                c.watcherCount,
+                c.createdAt)
+            .from(c)
+            .leftJoin(ct)
+            .on(ct.id.contentId.eq(c.id))
+            .leftJoin(t)
+            .on(ct.id.tagId.eq(t.id))
+            .fetch();
 
     Map<UUID, ContentSearchRow> byId = new LinkedHashMap<>();
     for (Tuple row : rows) {
       UUID id = row.get(c.id);
 
-      ContentSearchRow base = byId.computeIfAbsent(
-          id, key -> ContentSearchRow.builder()
-              .id(id)
-              .type(row.get(c.type))
-              .title(row.get(c.title))
-              .description(row.get(c.description))
-              .thumbnailImageKey((row.get(c.thumbnailImageKey)))
-              .tags(new ArrayList<>())
-              .averageRating(row.get(c.averageRating))
-              .reviewCount(row.get(c.reviewCount))
-              .watcherCount((row.get(c.watcherCount)))
-              .createdAt(row.get(c.createdAt))
-              .build());
+      Double avg = row.get(c.averageRating.coalesce(0.0));
+      Integer rc = row.get(c.reviewCount.coalesce(0));
+      Long wc = row.get(c.watcherCount.coalesce(0L));
+
+      ContentSearchRow base =
+          byId.computeIfAbsent(
+              id,
+              key ->
+                  ContentSearchRow.builder()
+                      .id(id)
+                      .type(row.get(c.type))
+                      .title(row.get(c.title))
+                      .description(row.get(c.description))
+                      .thumbnailImageKey((row.get(c.thumbnailImageKey)))
+                      .tags(new ArrayList<>())
+                      .averageRating((avg != null ? avg : 0.0))
+                      .reviewCount(rc != null ? rc : 0)
+                      .watcherCount(wc != null ? wc : 0L)
+                      .createdAt(row.get(c.createdAt))
+                      .build());
 
       String tagName = row.get(t.name);
       if (tagName != null) {
@@ -73,34 +89,49 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
 
   @Override
   public Optional<ContentSearchRow> findOneForIndexing(UUID contentId) {
-    List<Tuple> rows = queryFactory.select(
-            c.id, c.type, c.title, c.description,
-            c.thumbnailImageKey, t.name, c.averageRating,
-            c.reviewCount, c.watcherCount, c.createdAt
-        )
-        .from(c)
-        .leftJoin(ct).on(ct.id.contentId.eq(c.id))
-        .leftJoin(t).on(ct.id.tagId.eq(t.id))
-        .where(c.id.eq(contentId))
-        .fetch();
+    List<Tuple> rows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                t.name,
+                c.averageRating.coalesce(0.0),
+                c.reviewCount.coalesce(0),
+                c.watcherCount.coalesce(0L),
+                c.createdAt)
+            .from(c)
+            .leftJoin(ct)
+            .on(ct.id.contentId.eq(c.id))
+            .leftJoin(t)
+            .on(ct.id.tagId.eq(t.id))
+            .where(c.id.eq(contentId))
+            .fetch();
 
     if (rows.isEmpty()) {
       return Optional.empty();
     }
 
     Tuple first = rows.get(0);
-    ContentSearchRow base = ContentSearchRow.builder()
-        .id(first.get(c.id))
-        .type(first.get(c.type))
-        .title(first.get(c.title))
-        .description(first.get(c.description))
-        .thumbnailImageKey((first.get(c.thumbnailImageKey)))
-        .tags(new ArrayList<>())
-        .averageRating(first.get(c.averageRating))
-        .reviewCount(first.get(c.reviewCount))
-        .watcherCount((first.get(c.watcherCount)))
-        .createdAt(first.get(c.createdAt))
-        .build();
+    Double avg = first.get(c.averageRating.coalesce(0.0));
+    Integer rc = first.get(c.reviewCount.coalesce(0));
+    Long wc = first.get(c.watcherCount.coalesce(0L));
+
+    ContentSearchRow base =
+        ContentSearchRow.builder()
+            .id(first.get(c.id))
+            .type(first.get(c.type))
+            .title(first.get(c.title))
+            .description(first.get(c.description))
+            .thumbnailImageKey((first.get(c.thumbnailImageKey)))
+            .tags(new ArrayList<>())
+            .averageRating(avg != null ? avg : 0.0)
+            .reviewCount(rc != null ? rc : 0)
+            .watcherCount(wc != null ? wc : 0L)
+            .createdAt(first.get(c.createdAt))
+            .build();
 
     for (Tuple row : rows) {
       String tagName = row.get(t.name);
