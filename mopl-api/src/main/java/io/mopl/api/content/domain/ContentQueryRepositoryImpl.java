@@ -57,9 +57,9 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     for (Tuple row : rows) {
       UUID id = row.get(c.id);
 
-      Double avg = row.get(c.averageRating.coalesce(0.0));
-      Integer rc = row.get(c.reviewCount.coalesce(0));
-      Long wc = row.get(c.watcherCount.coalesce(0L));
+      Double avg = row.get(c.averageRating);
+      Integer rc = row.get(c.reviewCount);
+      Long wc = row.get(c.watcherCount);
 
       ContentSearchRow base =
           byId.computeIfAbsent(
@@ -98,9 +98,9 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
                 c.description,
                 c.thumbnailImageKey,
                 t.name,
-                c.averageRating.coalesce(0.0),
-                c.reviewCount.coalesce(0),
-                c.watcherCount.coalesce(0L),
+                c.averageRating,
+                c.reviewCount,
+                c.watcherCount,
                 c.createdAt)
             .from(c)
             .leftJoin(ct)
@@ -115,9 +115,9 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
     }
 
     Tuple first = rows.get(0);
-    Double avg = first.get(c.averageRating.coalesce(0.0));
-    Integer rc = first.get(c.reviewCount.coalesce(0));
-    Long wc = first.get(c.watcherCount.coalesce(0L));
+    Double avg = first.get(c.averageRating);
+    Integer rc = first.get(c.reviewCount);
+    Long wc = first.get(c.watcherCount);
 
     ContentSearchRow base =
         ContentSearchRow.builder()
