@@ -193,7 +193,8 @@ public class ContentSearchService {
                   // tagsIn이 비어있으면 태그 필터 제외
                   List<String> tags = request.getTagsIn();
                   if (tags != null && !tags.isEmpty()) {
-                    for (String tag : tags.stream().filter(t -> !t.isBlank()).distinct().toList()) {
+                    for (String tag :
+                        tags.stream().filter(t -> t != null && !t.isBlank()).distinct().toList()) {
                       b.filter(f -> f.term(t -> t.field("tags").value(tag)));
                     }
                   }
