@@ -20,6 +20,7 @@ CREATE TABLE user_linked_providers (
   user_id CHAR(36) NOT NULL,
   provider VARCHAR(20) NOT NULL,
   provider_user_id VARCHAR(255) NOT NULL,
+  provider_email VARCHAR(255) NULL,
   linked_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uk_user_provider (user_id, provider),

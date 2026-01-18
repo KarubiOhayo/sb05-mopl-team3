@@ -8,7 +8,6 @@ import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.service.UserLinkedProviderService;
 import io.mopl.core.error.BusinessException;
-import io.mopl.core.error.CommonErrorCode;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -79,7 +78,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       if (currentUserId == null) {
         log.warn("연동 모드이지만 userId가 null → UNAUTHORIZED");
-        redirectToError(response, CommonErrorCode.UNAUTHORIZED.name());
+        redirectToFrontendWithError(response, "UNAUTHORIZED");
         return;
       }
 
@@ -89,11 +88,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       User socialUser = oAuth2User.getUser();
       String providerUserId = socialUser.getProviderUserId();
+      String providerEmail = socialUser.getEmail();
 
-      linkedProviderService.linkProvider(currentUserId, provider, providerUserId);
+      linkedProviderService.linkProvider(currentUserId, provider, providerUserId, providerEmail);
 
-      // ✅ 올바른 URL 구성: queryParam을 먼저, fragment는 마지막에
-      // http://localhost:8085/#/settings/account?linked=GOOGLE
+      // ✅ 프론트엔드 설정 페이지로 성공 파라미터와 함께 리다이렉트
       String targetUrl =
           String.format("%s/#/settings/account?linked=%s", redirectUri, provider.name());
 
@@ -103,10 +102,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     } catch (BusinessException e) {
       log.warn("소셜 계정 연동 실패: {}", e.getMessage());
       String errorCode = ((Enum<?>) e.getErrorCode()).name();
-      redirectToError(response, errorCode);
+      redirectToFrontendWithError(response, errorCode);
     } catch (Exception e) {
       log.error("소셜 계정 연동 중 예외 발생", e);
-      redirectToError(response, CommonErrorCode.INTERNAL_SERVER_ERROR.name());
+      redirectToFrontendWithError(response, "INTERNAL_SERVER_ERROR");
     }
   }
 
@@ -123,7 +122,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
     csrfTokenRepository.saveToken(csrfToken, request, response);
 
-    // ✅ 로그인 모드도 동일한 형태로 수정
     String targetUrl = redirectUri + "/#/contents";
 
     log.info("로그인 성공 - 리다이렉트: {}", targetUrl);
@@ -161,11 +159,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     return null;
   }
 
-  /** 에러 페이지로 리다이렉트 */
-  private void redirectToError(HttpServletResponse response, String error) throws IOException {
+  /** 프론트엔드로 에러와 함께 리다이렉트 */
+  private void redirectToFrontendWithError(HttpServletResponse response, String error)
+      throws IOException {
     String targetUrl = String.format("%s/#/settings/account?error=%s", redirectUri, error);
 
-    log.warn("에러 페이지로 리다이렉트: {}", targetUrl);
+    log.warn("연동 실패 - 설정 페이지로 리다이렉트: {}", targetUrl);
     response.sendRedirect(targetUrl);
   }
 }

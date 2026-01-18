@@ -8,6 +8,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -21,6 +22,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
+@Table(name = "user_linked_providers")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -44,6 +46,9 @@ public class UserLinkedProvider {
   @Column(name = "provider_user_id", nullable = false)
   private String providerUserId;
 
+  @Column(name = "provider_email", length = 255)
+  private String providerEmail;
+
   @CreatedDate
   @Column(name = "linked_at", nullable = false, updatable = false)
   private Instant linkedAt;
@@ -56,11 +61,12 @@ public class UserLinkedProvider {
   }
 
   public static UserLinkedProvider create(
-      UUID userId, AuthProvider provider, String providerUserId) {
+      UUID userId, AuthProvider provider, String providerUserId, String providerEmail) {
     return UserLinkedProvider.builder()
         .userId(userId)
         .provider(provider)
         .providerUserId(providerUserId)
+        .providerEmail(providerEmail)
         .build();
   }
 
