@@ -158,7 +158,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     return null;
   }
 
-  /** 팝업 창을 닫고 부모 창에 메시지 전송하는 HTML 응답 */
   private void sendPopupCloseHtml(
       HttpServletResponse response, String type, String data, String accessToken)
       throws IOException {
@@ -175,21 +174,43 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         </head>
         <body>
             <script>
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                        type: 'OAUTH_LINK_%s',
-                        data: '%s',
-                        accessToken: %s
-                    }, window.location.origin);
+                console.log('팝업 HTML 실행됨:', '%s', '%s');
+
+                try {
+                    if (window.opener && !window.opener.closed) {
+                        console.log('부모 창 존재 확인');
+
+                        window.opener.postMessage({
+                            type: 'OAUTH_LINK_%s',
+                            data: '%s',
+                            accessToken: %s
+                        }, '%s');
+
+                        console.log('postMessage 전송 완료');
+                        // ✅ reload() 호출 제거! 프론트엔드가 처리하도록
+                    } else {
+                        console.error('부모 창을 찾을 수 없음');
+                    }
+                } catch (error) {
+                    console.error('팝업 처리 중 오류:', error);
                 }
-                window.close();
+
+                setTimeout(function() {
+                    console.log('팝업 닫기');
+                    window.close();
+                }, 1000);
             </script>
             <p>처리 중입니다. 잠시만 기다려주세요...</p>
         </body>
         </html>
         """
             .formatted(
-                type.toUpperCase(), data, accessToken != null ? "'" + accessToken + "'" : "null");
+                type,
+                data,
+                type.toUpperCase(),
+                data,
+                accessToken != null ? "'" + accessToken + "'" : "null",
+                redirectUri);
 
     response.getWriter().write(html);
     response.getWriter().flush();
