@@ -139,6 +139,7 @@ public class ContentSearchService {
         .data(data)
         .nextCursor(nextCursor)
         .nextIdAfter(nextIdAfter)
+        .hasNext(hasNext)
         .totalCount(totalCount)
         .sortBy(sortBy)
         .sortDirection(sortDirection)
