@@ -51,16 +51,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     String state = request.getParameter("state");
     String mode = extractModeFromState(state);
 
-    log.debug("=== OAuth2AuthenticationSuccessHandler ===");
-    log.debug("state: {}", state);
-    log.debug("추출된 mode: {}", mode);
-    log.debug("모드 판단: {}", "link".equals(mode) ? "연동 모드" : "로그인 모드");
-
     if ("link".equals(mode)) {
-      log.info("🔗 연동 모드로 처리");
       handleLinkMode(request, response, oAuth2User, authentication);
     } else {
-      log.info("🔐 로그인 모드로 처리");
       handleLoginMode(request, response, oAuth2User);
     }
   }
@@ -76,7 +69,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       UUID currentUserId = getCurrentUserIdFromCookie(request);
 
       if (currentUserId == null) {
-        log.warn("연동 모드이지만 userId가 null → UNAUTHORIZED");
         sendPopupCloseHtml(response, "error", "UNAUTHORIZED", null);
         return;
       }
@@ -95,11 +87,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
       csrfTokenRepository.saveToken(csrfToken, request, response);
 
-      log.info("연동 성공 - provider: {}", provider);
       sendPopupCloseHtml(response, "success", provider.name(), null);
 
     } catch (BusinessException e) {
-      log.warn("소셜 계정 연동 실패: {}", e.getMessage());
       String errorCode = ((Enum<?>) e.getErrorCode()).name();
       sendPopupCloseHtml(response, "error", errorCode, null);
     } catch (Exception e) {
@@ -123,7 +113,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     String targetUrl = redirectUri + "/#/contents";
 
-    log.info("로그인 성공 - 리다이렉트: {}", targetUrl);
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
   }
 
@@ -150,7 +139,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         try {
           return jwtTokenProvider.getUserId(cookie.getValue());
         } catch (Exception e) {
-          log.warn("Refresh Token에서 사용자 ID 추출 실패", e);
           return null;
         }
       }

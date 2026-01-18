@@ -11,9 +11,6 @@ public interface UserLinkedProviderRepository extends JpaRepository<UserLinkedPr
   /** 사용자의 모든 연동 계정 조회 */
   List<UserLinkedProvider> findByUserId(UUID userId);
 
-  /** 사용자의 특정 제공자 연동 계정 조회 */
-  Optional<UserLinkedProvider> findByUserIdAndProvider(UUID userId, AuthProvider provider);
-
   /** 제공자와 제공자의 사용자 ID로 연동 계정 조회 */
   Optional<UserLinkedProvider> findByProviderAndProviderUserId(
       AuthProvider provider, String providerUserId);

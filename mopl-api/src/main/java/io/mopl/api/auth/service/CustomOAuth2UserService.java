@@ -46,18 +46,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
       OAuth2UserInfo oAuth2UserInfo = getOAuth2UserInfo(userRequest, oAuth2User);
 
-      // ✅ state에서 mode 확인
       String state = getStateFromRequest();
       boolean isLinkMode = state != null && state.contains(":mode=link");
 
       User user;
       if (isLinkMode) {
-        // 연동 모드: 기존 사용자 조회만 수행 (신규 등록하지 않음)
-        log.debug("OAuth2 연동 모드 - 기존 사용자 조회만 수행");
         user = findExistingUserForLinking(userRequest, oAuth2UserInfo);
       } else {
-        // 로그인 모드: 기존 로직대로 처리
-        log.debug("OAuth2 로그인 모드 - 일반 처리");
         user = processOAuth2User(userRequest, oAuth2UserInfo);
         forceLogout(user);
       }
@@ -94,7 +89,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     AuthProvider authProvider = AuthProvider.valueOf(registrationId.toUpperCase());
     String providerId = oAuth2UserInfo.getProviderId();
 
-    // 이미 해당 제공자로 등록된 사용자가 있는지 확인
     Optional<User> existingUser =
         userRepository.findByAuthProviderAndProviderUserId(authProvider, providerId);
 
@@ -105,12 +99,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       }
       return user;
     }
-
-    // 연동 모드에서는 신규 사용자를 생성하지 않고 임시 사용자 객체 반환
-    // 실제 연동은 OAuth2AuthenticationSuccessHandler에서 처리됨
-    log.debug("연동 모드 - 신규 OAuth2 사용자 정보 (연동 대기 중)");
-
-    // 임시 User 객체 생성 (DB에 저장하지 않음)
     String temporaryPassword = passwordEncoder.encode("OAUTH2_TEMP");
     return User.createOAuth2User(
         oAuth2UserInfo.getEmail(),
@@ -142,7 +130,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     AuthProvider authProvider = AuthProvider.valueOf(registrationId.toUpperCase());
     String providerId = oAuth2UserInfo.getProviderId();
 
-    // 1. User 테이블에서 해당 제공자로 등록된 사용자 찾기
     Optional<User> existingUserByProvider =
         userRepository.findByAuthProviderAndProviderUserId(authProvider, providerId);
 
@@ -155,12 +142,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       return user;
     }
 
-    // 2. UserLinkedProvider 테이블에서 연동된 계정 찾기
     UserLinkedProvider linkedProvider =
         linkedProviderService.findByProviderAndProviderUserId(authProvider, providerId);
 
     if (linkedProvider != null) {
-      log.debug("연동된 계정 발견: userId={}, provider={}", linkedProvider.getUserId(), authProvider);
 
       User user =
           userRepository
@@ -174,7 +159,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
       return user;
     }
 
-    // 3. 이메일로 기존 사용자 찾기
     String email = oAuth2UserInfo.getEmail();
     Optional<User> existingUserByEmail = userRepository.findByEmail(email);
 
@@ -186,7 +170,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
           .addDetail("existingProvider", existingProviderName);
     }
 
-    // 4. 신규 사용자 등록
     return registerNewUser(authProvider, providerId, oAuth2UserInfo);
   }
 
@@ -206,9 +189,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     User savedUser = userRepository.save(newUser);
 
-    // ✅ 신규 OAuth2 사용자 등록 시 user_linked_providers 테이블에도 연동 정보 저장
-    log.info(
-        "신규 OAuth2 사용자 등록 - 연동 정보도 함께 저장: userId={}, provider={}", savedUser.getId(), authProvider);
     linkedProviderService.linkProvider(
         savedUser.getId(), authProvider, providerId, oAuth2UserInfo.getEmail());
 

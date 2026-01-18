@@ -45,12 +45,10 @@ public class UserLinkedProviderService {
             .findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-    // 1. 이미 이 제공자가 연동되어 있는지 확인
     if (linkedProviderRepository.existsByUserIdAndProvider(userId, provider)) {
       throw new BusinessException(AuthErrorCode.PROVIDER_ALREADY_LINKED);
     }
 
-    // 2. 이 제공자의 사용자 ID가 다른 사용자에게 연동되어 있는지 확인
     linkedProviderRepository
         .findByProviderAndProviderUserId(provider, providerUserId)
         .ifPresent(
@@ -60,7 +58,6 @@ public class UserLinkedProviderService {
               }
             });
 
-    // 3. 이 이메일로 이미 가입된 다른 사용자가 있는지 확인
     if (providerEmail != null) {
       userRepository
           .findByEmail(providerEmail)
@@ -89,12 +86,10 @@ public class UserLinkedProviderService {
       throw new BusinessException(AuthErrorCode.PROVIDER_NOT_LINKED);
     }
 
-    // ✅ 1. 최초 가입에 사용한 제공자는 해제 불가능
     if (user.getAuthProvider() == provider && user.getAuthProvider() != AuthProvider.LOCAL) {
       throw new BusinessException(AuthErrorCode.CANNOT_UNLINK_INITIAL_PROVIDER);
     }
 
-    // ✅ 2. 마지막 로그인 수단 체크 (로컬 계정이 없고 연동된 계정이 1개뿐이면 해제 불가)
     long linkedCount = linkedProviderRepository.countByUserId(userId);
     boolean hasLocalAccount = user.getAuthProvider() == AuthProvider.LOCAL;
 
