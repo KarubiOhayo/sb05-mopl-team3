@@ -3,9 +3,11 @@ package io.mopl.api.auth.oauth2;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.config.CookieSecurityProperties;
+import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.common.util.CookieUtils;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
+import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.service.UserLinkedProviderService;
 import io.mopl.core.error.BusinessException;
 import jakarta.servlet.http.Cookie;
@@ -35,6 +37,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final CsrfTokenRepository csrfTokenRepository;
   private final UserLinkedProviderService linkedProviderService;
   private final CookieUtils cookieUtils;
+  private final UserRepository userRepository;
 
   @Value("${oauth2.redirect-uri:http://localhost:8085}")
   private String redirectUri;
@@ -78,7 +81,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       if (currentUserId == null) {
         log.warn("연동 모드이지만 userId가 null → UNAUTHORIZED");
-        redirectToFrontendWithError(response, "UNAUTHORIZED");
+        sendPopupCloseHtml(response, "error", "UNAUTHORIZED", null);
         return;
       }
 
@@ -88,24 +91,35 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       User socialUser = oAuth2User.getUser();
       String providerUserId = socialUser.getProviderUserId();
-      String providerEmail = socialUser.getEmail();
+      String providerEmail = socialUser.getEmail(); // ✅ 이메일 추가
 
+      // ✅ 4개 파라미터 전달
       linkedProviderService.linkProvider(currentUserId, provider, providerUserId, providerEmail);
 
-      // ✅ 프론트엔드 설정 페이지로 성공 파라미터와 함께 리다이렉트
-      String targetUrl =
-          String.format("%s/#/settings/account?linked=%s", redirectUri, provider.name());
+      // ✅ 연동 성공 후 현재 사용자 정보로 새로운 액세스 토큰 발급
+      User currentUser =
+          userRepository
+              .findById(currentUserId)
+              .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
 
-      log.info("연동 성공 - 리다이렉트: {}", targetUrl);
-      getRedirectStrategy().sendRedirect(request, response, targetUrl);
+      String newAccessToken =
+          jwtTokenProvider.createAccessToken(
+              currentUser.getId(),
+              currentUser.getEmail(),
+              currentUser.getRole().name(),
+              currentUser.getName(),
+              currentUser.getProfileImageUrl());
+
+      log.info("연동 성공 - provider: {}, 새 액세스 토큰 발급", provider);
+      sendPopupCloseHtml(response, "success", provider.name(), newAccessToken);
 
     } catch (BusinessException e) {
       log.warn("소셜 계정 연동 실패: {}", e.getMessage());
       String errorCode = ((Enum<?>) e.getErrorCode()).name();
-      redirectToFrontendWithError(response, errorCode);
+      sendPopupCloseHtml(response, "error", errorCode, null);
     } catch (Exception e) {
       log.error("소셜 계정 연동 중 예외 발생", e);
-      redirectToFrontendWithError(response, "INTERNAL_SERVER_ERROR");
+      sendPopupCloseHtml(response, "error", "INTERNAL_SERVER_ERROR", null);
     }
   }
 
@@ -159,12 +173,40 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     return null;
   }
 
-  /** 프론트엔드로 에러와 함께 리다이렉트 */
-  private void redirectToFrontendWithError(HttpServletResponse response, String error)
+  /** 팝업 창을 닫고 부모 창에 메시지 전송하는 HTML 응답 */
+  private void sendPopupCloseHtml(
+      HttpServletResponse response, String type, String data, String accessToken)
       throws IOException {
-    String targetUrl = String.format("%s/#/settings/account?error=%s", redirectUri, error);
+    response.setContentType("text/html;charset=UTF-8");
+    response.setStatus(HttpServletResponse.SC_OK);
 
-    log.warn("연동 실패 - 설정 페이지로 리다이렉트: {}", targetUrl);
-    response.sendRedirect(targetUrl);
+    String html =
+        """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>연동 처리 중...</title>
+        </head>
+        <body>
+            <script>
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'OAUTH_LINK_%s',
+                        data: '%s',
+                        accessToken: %s
+                    }, window.location.origin);
+                }
+                window.close();
+            </script>
+            <p>처리 중입니다. 잠시만 기다려주세요...</p>
+        </body>
+        </html>
+        """
+            .formatted(
+                type.toUpperCase(), data, accessToken != null ? "'" + accessToken + "'" : "null");
+
+    response.getWriter().write(html);
+    response.getWriter().flush();
   }
 }
