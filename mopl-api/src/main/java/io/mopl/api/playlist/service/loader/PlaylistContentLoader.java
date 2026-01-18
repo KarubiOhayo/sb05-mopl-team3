@@ -89,7 +89,7 @@ public class PlaylistContentLoader {
                 c.type,
                 c.title,
                 c.description,
-                c.thumbnailUrl,
+                c.thumbnailImageKey,
                 c.averageRating,
                 c.reviewCount)
             .from(pc)
@@ -122,7 +122,7 @@ public class PlaylistContentLoader {
                 row.get(c.type),
                 row.get(c.title),
                 row.get(c.description),
-                row.get(c.thumbnailUrl),
+                row.get(c.thumbnailImageKey),
                 avgValue,
                 reviewCount != null ? reviewCount.intValue() : 0);
         baseByContentId.put(contentId, base);

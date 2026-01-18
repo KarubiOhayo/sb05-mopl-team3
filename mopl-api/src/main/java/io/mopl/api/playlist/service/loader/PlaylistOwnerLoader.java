@@ -64,7 +64,7 @@ public class PlaylistOwnerLoader {
             UserSummary.builder()
                 .userId(user.getId())
                 .name(user.getName())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(user.getProfileImageKey())
                 .build();
 
         result.put(user.getId(), summary);

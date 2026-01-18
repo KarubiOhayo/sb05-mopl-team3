@@ -64,7 +64,7 @@ public class AuthService {
     validatePassword(user, request.getPassword());
 
     String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageKey());
 
     String accessToken =
         jwtTokenProvider.createAccessToken(
@@ -107,7 +107,7 @@ public class AuthService {
     }
 
     String profileImageUrl =
-        profileImageUploadService.generatePresignedUrl(user.getProfileImageUrl());
+        profileImageUploadService.generatePresignedUrl(user.getProfileImageKey());
 
     String newAccessToken =
         jwtTokenProvider.createAccessToken(

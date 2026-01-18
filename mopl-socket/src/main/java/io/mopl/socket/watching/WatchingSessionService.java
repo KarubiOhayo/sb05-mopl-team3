@@ -228,7 +228,7 @@ public class WatchingSessionService {
                       .id(content.getId())
                       .title(content.getTitle())
                       .type(content.getType())
-                      .thumbnailUrl(content.getThumbnailUrl())
+                      .thumbnailUrl(content.getThumbnailImageKey())
                       .build();
 
               // Redis 저장 (TTL 24시간)

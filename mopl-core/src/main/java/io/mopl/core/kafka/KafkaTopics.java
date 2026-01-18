@@ -29,5 +29,10 @@ public final class KafkaTopics {
   // ===== watching =====
   public static final String WATCHING_SESSION_STARTED = "watching.session.started";
 
+  // ===== conversation =====
+  public static final String DIRECT_MESSAGE_SEND_REQUEST =
+      "conversation.direct-message.send-request";
+  public static final String DIRECT_MESSAGE_CREATED = "conversation.direct-message.created";
+
   private KafkaTopics() {}
 }

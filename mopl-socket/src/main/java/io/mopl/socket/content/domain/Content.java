@@ -38,6 +38,6 @@ public class Content {
   @Column(nullable = false)
   private String title;
 
-  @Column(name = "thumbnail_url", nullable = false, length = 2048)
-  private String thumbnailUrl;
+  @Column(name = "thumbnail_image_key", nullable = false, length = 2048)
+  private String thumbnailImageKey;
 }
