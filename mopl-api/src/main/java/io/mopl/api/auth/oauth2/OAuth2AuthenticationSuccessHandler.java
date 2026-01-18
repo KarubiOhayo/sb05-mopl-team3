@@ -110,6 +110,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
               currentUser.getName(),
               currentUser.getProfileImageUrl());
 
+      CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
+      csrfTokenRepository.saveToken(csrfToken, request, response);
+
       log.info("연동 성공 - provider: {}, 새 액세스 토큰 발급", provider);
       sendPopupCloseHtml(response, "success", provider.name(), newAccessToken);
 
