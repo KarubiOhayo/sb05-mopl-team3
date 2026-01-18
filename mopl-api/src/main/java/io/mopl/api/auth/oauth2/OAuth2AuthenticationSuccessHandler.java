@@ -3,11 +3,9 @@ package io.mopl.api.auth.oauth2;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.config.CookieSecurityProperties;
-import io.mopl.api.common.error.AuthErrorCode;
 import io.mopl.api.common.util.CookieUtils;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
-import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.service.UserLinkedProviderService;
 import io.mopl.core.error.BusinessException;
 import jakarta.servlet.http.Cookie;
@@ -37,7 +35,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final CsrfTokenRepository csrfTokenRepository;
   private final UserLinkedProviderService linkedProviderService;
   private final CookieUtils cookieUtils;
-  private final UserRepository userRepository;
 
   @Value("${oauth2.redirect-uri:http://localhost:8085}")
   private String redirectUri;
@@ -77,7 +74,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       throws IOException {
     try {
       UUID currentUserId = getCurrentUserIdFromCookie(request);
-      log.debug("추출된 userId: {}", currentUserId);
 
       if (currentUserId == null) {
         log.warn("연동 모드이지만 userId가 null → UNAUTHORIZED");
@@ -91,30 +87,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       User socialUser = oAuth2User.getUser();
       String providerUserId = socialUser.getProviderUserId();
-      String providerEmail = socialUser.getEmail(); // ✅ 이메일 추가
+      String providerEmail = socialUser.getEmail();
 
-      // ✅ 4개 파라미터 전달
       linkedProviderService.linkProvider(currentUserId, provider, providerUserId, providerEmail);
 
-      // ✅ 연동 성공 후 현재 사용자 정보로 새로운 액세스 토큰 발급
-      User currentUser =
-          userRepository
-              .findById(currentUserId)
-              .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
-
-      String newAccessToken =
-          jwtTokenProvider.createAccessToken(
-              currentUser.getId(),
-              currentUser.getEmail(),
-              currentUser.getRole().name(),
-              currentUser.getName(),
-              currentUser.getProfileImageUrl());
-
+      // ✅ CSRF 토큰 재발급만 하면 됨!
       CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
       csrfTokenRepository.saveToken(csrfToken, request, response);
 
-      log.info("연동 성공 - provider: {}, 새 액세스 토큰 발급", provider);
-      sendPopupCloseHtml(response, "success", provider.name(), newAccessToken);
+      log.info("연동 성공 - provider: {}", provider);
+      sendPopupCloseHtml(response, "success", provider.name(), null);
 
     } catch (BusinessException e) {
       log.warn("소셜 계정 연동 실패: {}", e.getMessage());
