@@ -23,6 +23,7 @@ public enum AuthErrorCode implements ErrorCode {
       400, "error.auth.provider-already-linked-to-another-user"),
   PROVIDER_NOT_LINKED(400, "error.auth.provider-not-linked"),
   CANNOT_UNLINK_LAST_LOGIN_METHOD(400, "error.auth.cannot-unlink-last-login-method"),
+  CANNOT_UNLINK_INITIAL_PROVIDER(400, "error.auth.cannot-unlink-initial-provider"),
   UNSUPPORTED_PROVIDER(400, "error.auth.unsupported-provider");
 
   private final int status;

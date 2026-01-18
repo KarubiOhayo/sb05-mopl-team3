@@ -204,7 +204,15 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             providerId,
             oAuth2UserInfo.getProfileImageUrl());
 
-    return userRepository.save(newUser);
+    User savedUser = userRepository.save(newUser);
+
+    // ✅ 신규 OAuth2 사용자 등록 시 user_linked_providers 테이블에도 연동 정보 저장
+    log.info(
+        "신규 OAuth2 사용자 등록 - 연동 정보도 함께 저장: userId={}, provider={}", savedUser.getId(), authProvider);
+    linkedProviderService.linkProvider(
+        savedUser.getId(), authProvider, providerId, oAuth2UserInfo.getEmail());
+
+    return savedUser;
   }
 
   /** 강제 로그아웃 */

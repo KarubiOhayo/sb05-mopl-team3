@@ -89,6 +89,12 @@ public class UserLinkedProviderService {
       throw new BusinessException(AuthErrorCode.PROVIDER_NOT_LINKED);
     }
 
+    // ✅ 1. 최초 가입에 사용한 제공자는 해제 불가능
+    if (user.getAuthProvider() == provider && user.getAuthProvider() != AuthProvider.LOCAL) {
+      throw new BusinessException(AuthErrorCode.CANNOT_UNLINK_INITIAL_PROVIDER);
+    }
+
+    // ✅ 2. 마지막 로그인 수단 체크 (로컬 계정이 없고 연동된 계정이 1개뿐이면 해제 불가)
     long linkedCount = linkedProviderRepository.countByUserId(userId);
     boolean hasLocalAccount = user.getAuthProvider() == AuthProvider.LOCAL;
 
