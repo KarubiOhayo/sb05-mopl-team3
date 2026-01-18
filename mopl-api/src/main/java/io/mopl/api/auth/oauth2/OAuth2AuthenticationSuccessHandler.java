@@ -3,6 +3,7 @@ package io.mopl.api.auth.oauth2;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.RefreshTokenService;
 import io.mopl.api.common.config.CookieSecurityProperties;
+import io.mopl.api.common.util.CookieUtils;
 import io.mopl.api.user.domain.AuthProvider;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.service.UserLinkedProviderService;
@@ -35,6 +36,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private final CookieSecurityProperties cookieSecurityProperties;
   private final CsrfTokenRepository csrfTokenRepository;
   private final UserLinkedProviderService linkedProviderService;
+  private final CookieUtils cookieUtils;
 
   @Value("${oauth2.redirect-uri:http://localhost:8085}")
   private String redirectUri;
@@ -129,7 +131,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
     refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
-    setRefreshTokenCookie(response, refreshToken);
+    cookieUtils.setRefreshTokenCookie(response, refreshToken);
 
     CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
     csrfTokenRepository.saveToken(csrfToken, request, response);
@@ -181,26 +183,5 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             .toUriString();
 
     response.sendRedirect(targetUrl);
-  }
-
-  /** Refresh Token 쿠키 설정 */
-  private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
-    cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
-    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
-
-    response.addCookie(cookie);
-  }
-
-  /** 리다이렉트 URL 생성 */
-  private String buildRedirectUrl(String accessToken) {
-    return UriComponentsBuilder.fromUriString(redirectUri)
-        .path("/oauth2/redirect")
-        .queryParam("token", accessToken)
-        .build()
-        .toUriString();
   }
 }
