@@ -21,7 +21,7 @@ public class ContentElasticInitInitializer {
   private final ContentMapper contentMapper;
 
   @EventListener(ApplicationReadyEvent.class)
-  @Transactional(readOnly = true)
+  @Transactional
   public void init() {
     contentElasticRepository.deleteAll();
 
