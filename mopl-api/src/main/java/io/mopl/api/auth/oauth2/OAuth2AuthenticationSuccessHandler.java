@@ -23,7 +23,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /** OAuth2 로그인 성공 핸들러 */
 @Slf4j
@@ -53,10 +52,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     String state = request.getParameter("state");
     String mode = extractModeFromState(state);
 
-    System.out.println("=== OAuth2AuthenticationSuccessHandler ===");
-    System.out.println("state: " + state);
-    System.out.println("추출된 mode: " + mode);
-    System.out.println("모드 판단: " + ("link".equals(mode) ? "연동 모드" : "로그인 모드"));
+    log.debug("=== OAuth2AuthenticationSuccessHandler ===");
+    log.debug("state: {}", state);
+    log.debug("추출된 mode: {}", mode);
+    log.debug("모드 판단: {}", "link".equals(mode) ? "연동 모드" : "로그인 모드");
 
     if ("link".equals(mode)) {
       log.info("🔗 연동 모드로 처리");
@@ -75,22 +74,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       Authentication authentication)
       throws IOException {
     try {
-      // ✅ 쿠키 디버깅
-      Cookie[] cookies = request.getCookies();
-      System.out.println("=== 쿠키 확인 ===");
-      if (cookies != null) {
-        for (Cookie cookie : cookies) {
-          System.out.println("쿠키: " + cookie.getName() + " = " + cookie.getValue());
-        }
-      } else {
-        System.out.println("쿠키 없음!");
-      }
-
       UUID currentUserId = getCurrentUserIdFromCookie(request);
-      System.out.println("추출된 userId: " + currentUserId);
+      log.debug("추출된 userId: {}", currentUserId);
 
       if (currentUserId == null) {
-        System.out.println("❌ userId가 null → UNAUTHORIZED 리다이렉트");
+        log.warn("연동 모드이지만 userId가 null → UNAUTHORIZED");
         redirectToError(response, CommonErrorCode.UNAUTHORIZED.name());
         return;
       }
@@ -104,13 +92,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       linkedProviderService.linkProvider(currentUserId, provider, providerUserId);
 
+      // ✅ 올바른 URL 구성: queryParam을 먼저, fragment는 마지막에
+      // http://localhost:8085/#/settings/account?linked=GOOGLE
       String targetUrl =
-          UriComponentsBuilder.fromUriString(redirectUri)
-              .fragment("/settings/account")
-              .queryParam("linked", provider.name())
-              .build()
-              .toUriString();
+          String.format("%s/#/settings/account?linked=%s", redirectUri, provider.name());
 
+      log.info("연동 성공 - 리다이렉트: {}", targetUrl);
       getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
     } catch (BusinessException e) {
@@ -136,9 +123,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
     csrfTokenRepository.saveToken(csrfToken, request, response);
 
-    String targetUrl =
-        UriComponentsBuilder.fromUriString(redirectUri).fragment("/contents").build().toUriString();
+    // ✅ 로그인 모드도 동일한 형태로 수정
+    String targetUrl = redirectUri + "/#/contents";
 
+    log.info("로그인 성공 - 리다이렉트: {}", targetUrl);
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
   }
 
@@ -175,13 +163,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
   /** 에러 페이지로 리다이렉트 */
   private void redirectToError(HttpServletResponse response, String error) throws IOException {
-    String targetUrl =
-        UriComponentsBuilder.fromUriString(redirectUri)
-            .fragment("/settings/account")
-            .queryParam("error", error)
-            .build()
-            .toUriString();
+    String targetUrl = String.format("%s/#/settings/account?error=%s", redirectUri, error);
 
+    log.warn("에러 페이지로 리다이렉트: {}", targetUrl);
     response.sendRedirect(targetUrl);
   }
 }

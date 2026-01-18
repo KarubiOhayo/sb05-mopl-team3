@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 
 public interface UserLinkedProviderRepository extends JpaRepository<UserLinkedProvider, UUID> {
 
@@ -24,5 +25,6 @@ public interface UserLinkedProviderRepository extends JpaRepository<UserLinkedPr
   long countByUserId(UUID userId);
 
   /** 사용자의 특정 제공자 연동 계정 삭제 */
+  @Modifying
   void deleteByUserIdAndProvider(UUID userId, AuthProvider provider);
 }
