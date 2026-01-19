@@ -2,6 +2,7 @@ name: Provision Kafka Topics
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 env:
   KAFKA_VERSION: 3.7.0

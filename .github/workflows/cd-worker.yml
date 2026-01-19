@@ -21,9 +21,15 @@ env:
   DOCKERFILE_PATH: mopl-worker/Dockerfile
 
 jobs:
+  provision-topics:
+    name: Provision Kafka Topics
+    uses: ./.github/workflows/provision-kafka-topics.yml
+    secrets: inherit
+
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    needs: provision-topics
 
     steps:
     - name: Checkout
