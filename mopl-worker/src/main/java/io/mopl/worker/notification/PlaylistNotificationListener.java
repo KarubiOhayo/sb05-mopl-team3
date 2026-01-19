@@ -1,6 +1,5 @@
 package io.mopl.worker.notification;
 
-import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.playlist.PlaylistContentAddedEvent;
 import io.mopl.core.event.playlist.PlaylistCreatedEvent;
 import io.mopl.core.event.playlist.PlaylistSubscribedEvent;
@@ -36,8 +35,10 @@ public class PlaylistNotificationListener {
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistSubscribedEvent")
   public void handleSubscribed(PlaylistSubscribedEvent event) {
     try {
-      UUID eventIdUuid = parseUuid(event.eventId(), "eventId", event.eventId());
-      UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
+      UUID eventIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.eventId(), "eventId", event.eventId());
+      UUID ownerIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.ownerId(), "ownerId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -57,7 +58,7 @@ public class PlaylistNotificationListener {
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
-      handleDataIntegrityViolation(e, event.eventId());
+      NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
@@ -70,7 +71,9 @@ public class PlaylistNotificationListener {
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistContentAddedEvent")
   public void handleContentAdded(PlaylistContentAddedEvent event) {
     try {
-      UUID playlistIdUuid = parseUuid(event.playlistId(), "playlistId", event.eventId());
+      UUID playlistIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.playlistId(), "playlistId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -95,7 +98,8 @@ public class PlaylistNotificationListener {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException ex) {
-          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, ex, event.eventId() + ":" + receiverId);
         }
       }
     } catch (IllegalArgumentException e) {
@@ -110,7 +114,8 @@ public class PlaylistNotificationListener {
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistCreatedEvent")
   public void handleCreated(PlaylistCreatedEvent event) {
     try {
-      UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
+      UUID ownerIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.ownerId(), "ownerId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -135,33 +140,12 @@ public class PlaylistNotificationListener {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException ex) {
-          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, ex, event.eventId() + ":" + receiverId);
         }
       }
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로그 처리.
-    }
-  }
-
-  private void handleDataIntegrityViolation(DataIntegrityViolationException e, String eventId) {
-    Throwable cause = e.getMostSpecificCause();
-    String message = cause != null ? cause.getMessage() : e.getMessage();
-
-    if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
-      log.debug("중복 이벤트 무시 (eventId={})", eventId);
-    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
-      log.error("수신자 참조 오류 (eventId={})", eventId, e);
-    } else {
-      log.error("알림 저장 중 오류 (eventId={})", eventId, e);
-    }
-  }
-
-  private UUID parseUuid(String value, String fieldName, String eventId) {
-    try {
-      return UUID.fromString(value);
-    } catch (IllegalArgumentException e) {
-      log.error("UUID 형식이 올바르지 않습니다: {} (eventId={})", fieldName, eventId, e);
-      throw e;
     }
   }
 

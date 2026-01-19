@@ -78,7 +78,18 @@ public class WatchingSessionEventListener {
             socketUser.userId().toString(),
             socketUser.name(),
             contentId);
-    kafkaTemplate.send(KafkaTopics.WATCHING_SESSION_STARTED, contentId, startedEvent);
+    kafkaTemplate
+        .send(KafkaTopics.WATCHING_SESSION_STARTED, contentId, startedEvent)
+        .whenComplete(
+            (result, ex) -> {
+              if (ex != null) {
+                log.warn(
+                    "시청 시작 알림 이벤트 발행 실패: contentId={}, watcherId={}",
+                    contentId,
+                    socketUser.userId(),
+                    ex);
+              }
+            });
 
     WatchingSessionChange change =
         WatchingSessionChange.builder()

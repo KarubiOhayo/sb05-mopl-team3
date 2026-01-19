@@ -1,6 +1,5 @@
 package io.mopl.worker.notification;
 
-import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.watching.WatchingSessionStartedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
@@ -34,8 +33,12 @@ public class WatchingSessionNotificationListener {
           "spring.json.value.default.type=io.mopl.core.event.watching.WatchingSessionStartedEvent")
   public void handle(WatchingSessionStartedEvent event) {
     try {
-      UUID watcherIdUuid = parseUuid(event.watcherId(), "watcherId", event.eventId());
-      UUID contentIdUuid = parseUuid(event.contentId(), "contentId", event.eventId());
+      UUID watcherIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.watcherId(), "watcherId", event.eventId());
+      UUID contentIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.contentId(), "contentId", event.eventId());
 
       String contentTitle = recipientQuery.findContentTitle(contentIdUuid);
       if (contentTitle == null || contentTitle.isBlank()) {
@@ -65,7 +68,8 @@ public class WatchingSessionNotificationListener {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException ex) {
-          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, ex, event.eventId() + ":" + receiverId);
         }
       }
     } catch (IllegalArgumentException e) {
@@ -76,27 +80,5 @@ public class WatchingSessionNotificationListener {
   private UUID toPerReceiverEventId(String eventId, UUID receiverId) {
     String source = eventId + ":" + receiverId;
     return UUID.nameUUIDFromBytes(source.getBytes(StandardCharsets.UTF_8));
-  }
-
-  private void handleDataIntegrityViolation(DataIntegrityViolationException e, String eventId) {
-    Throwable cause = e.getMostSpecificCause();
-    String message = cause != null ? cause.getMessage() : e.getMessage();
-
-    if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
-      log.debug("중복 이벤트 무시 (eventId={})", eventId);
-    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
-      log.error("수신자 참조 오류 (eventId={})", eventId, e);
-    } else {
-      log.error("알림 저장 중 오류 (eventId={})", eventId, e);
-    }
-  }
-
-  private UUID parseUuid(String value, String fieldName, String eventId) {
-    try {
-      return UUID.fromString(value);
-    } catch (IllegalArgumentException e) {
-      log.error("UUID 형식이 올바르지 않습니다: {} (eventId={})", fieldName, eventId, e);
-      throw e;
-    }
   }
 }
