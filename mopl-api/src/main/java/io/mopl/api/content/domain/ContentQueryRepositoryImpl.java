@@ -1,6 +1,7 @@
 package io.mopl.api.content.domain;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -8,11 +9,16 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
+import io.mopl.api.content.dto.ContentSearchRow;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -24,6 +30,118 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   private static final QContentTag ct = QContentTag.contentTag;
   private static final QTag t = QTag.tag;
   private final JPAQueryFactory queryFactory;
+
+  @Override
+  public List<ContentSearchRow> findAllForIndexing() {
+    List<Tuple> rows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                t.name,
+                c.averageRating,
+                c.reviewCount,
+                c.watcherCount,
+                c.createdAt)
+            .from(c)
+            .leftJoin(ct)
+            .on(ct.id.contentId.eq(c.id))
+            .leftJoin(t)
+            .on(ct.id.tagId.eq(t.id))
+            .fetch();
+
+    Map<UUID, ContentSearchRow> byId = new LinkedHashMap<>();
+    for (Tuple row : rows) {
+      UUID id = row.get(c.id);
+
+      Double avg = row.get(c.averageRating);
+      Integer rc = row.get(c.reviewCount);
+      Long wc = row.get(c.watcherCount);
+
+      ContentSearchRow base =
+          byId.computeIfAbsent(
+              id,
+              key ->
+                  ContentSearchRow.builder()
+                      .id(id)
+                      .type(row.get(c.type))
+                      .title(row.get(c.title))
+                      .description(row.get(c.description))
+                      .thumbnailImageKey((row.get(c.thumbnailImageKey)))
+                      .tags(new ArrayList<>())
+                      .averageRating((avg != null ? avg : 0.0))
+                      .reviewCount(rc != null ? rc : 0)
+                      .watcherCount(wc != null ? wc : 0L)
+                      .createdAt(row.get(c.createdAt))
+                      .build());
+
+      String tagName = row.get(t.name);
+      if (tagName != null) {
+        base.getTags().add(tagName);
+      }
+    }
+
+    return new ArrayList<>(byId.values());
+  }
+
+  @Override
+  public Optional<ContentSearchRow> findOneForIndexing(UUID contentId) {
+    List<Tuple> rows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                t.name,
+                c.averageRating,
+                c.reviewCount,
+                c.watcherCount,
+                c.createdAt)
+            .from(c)
+            .leftJoin(ct)
+            .on(ct.id.contentId.eq(c.id))
+            .leftJoin(t)
+            .on(ct.id.tagId.eq(t.id))
+            .where(c.id.eq(contentId))
+            .fetch();
+
+    if (rows.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Tuple first = rows.get(0);
+    Double avg = first.get(c.averageRating);
+    Integer rc = first.get(c.reviewCount);
+    Long wc = first.get(c.watcherCount);
+
+    ContentSearchRow base =
+        ContentSearchRow.builder()
+            .id(first.get(c.id))
+            .type(first.get(c.type))
+            .title(first.get(c.title))
+            .description(first.get(c.description))
+            .thumbnailImageKey((first.get(c.thumbnailImageKey)))
+            .tags(new ArrayList<>())
+            .averageRating(avg != null ? avg : 0.0)
+            .reviewCount(rc != null ? rc : 0)
+            .watcherCount(wc != null ? wc : 0L)
+            .createdAt(first.get(c.createdAt))
+            .build();
+
+    for (Tuple row : rows) {
+      String tagName = row.get(t.name);
+      if (tagName != null) {
+        base.getTags().add(tagName);
+      }
+    }
+
+    return Optional.of(base);
+  }
 
   @Override
   public ContentPage findContentPage(ContentSearchRequest request) {
