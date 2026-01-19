@@ -40,8 +40,7 @@ public class ContentSearchService {
   public ContentDto findById(UUID contentId) {
     log.info("ES 컨텐츠 단건 조회 시작 contentId={}", contentId);
 
-    Query termQuery =
-        Query.of(q -> q.term(t -> t.field("contentId.keyword").value(contentId.toString())));
+    Query termQuery = Query.of(q -> q.term(t -> t.field("contentId").value(contentId.toString())));
 
     NativeQuery query = NativeQuery.builder().withQuery(termQuery).build();
 
