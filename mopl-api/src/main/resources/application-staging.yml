@@ -19,7 +19,8 @@ spring:
       host: ${REDIS_HOST}
       port: 6379
       password: ${REDIS_AUTH_TOKEN}
-      ssl: true
+      ssl:
+        enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP}
     properties:
