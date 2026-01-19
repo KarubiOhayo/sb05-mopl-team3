@@ -3,9 +3,8 @@
 
 global:
   scrape_interval: 15s
-
-external_labels:
-  env: staging
+  external_labels:
+    env: staging
 
 remote_write:
   - url: ${GRAFANA_CLOUD_PROM_REMOTE_WRITE_URL}
