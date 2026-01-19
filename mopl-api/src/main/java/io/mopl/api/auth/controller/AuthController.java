@@ -7,7 +7,6 @@ import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
 import io.mopl.api.auth.service.RefreshTokenService;
-import io.mopl.api.common.config.CookieSecurityProperties;
 import io.mopl.api.common.util.CookieUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -33,7 +32,6 @@ public class AuthController {
   private final AuthService authService;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
-  private final CookieSecurityProperties cookieSecurityProperties;
   private final CookieUtils cookieUtils;
 
   // ★★★주의: 이 상수값은 application.yml의 REFRESH_TOKEN_NAME 기본값과 일치해야 함
