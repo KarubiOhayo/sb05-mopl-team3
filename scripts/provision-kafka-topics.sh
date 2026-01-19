@@ -48,7 +48,22 @@ ssl.endpoint.identification.algorithm=https
 EOP
 
 mapfile -t TOPICS < <(
-  awk '/public static final String/ { if (match($0, /"([^"]+)"/, a)) print a[1] }' "$TOPICS_FILE" | sort -u
+  awk '
+    /public static final String/ {
+      if (match($0, /"([^"]+)"/, a)) {
+        print a[1]
+        next
+      }
+      pending = 1
+      next
+    }
+    pending == 1 {
+      if (match($0, /"([^"]+)"/, a)) {
+        print a[1]
+      }
+      pending = 0
+    }
+  ' "$TOPICS_FILE" | sort -u
 )
 
 if [[ ${#TOPICS[@]} -eq 0 ]]; then
