@@ -7,6 +7,7 @@ import io.mopl.api.content.dto.ContentSearchRow;
 import io.mopl.api.content.mapper.ContentMapper;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.index.reset-on-startup", havingValue = "true")
 public class ContentElasticInitInitializer {
 
   private final ContentRepository contentRepository;

@@ -27,3 +27,7 @@ logging:
   level:
     root: INFO
     io.mopl: INFO
+
+search:
+  index:
+    reset-on-startup: false
