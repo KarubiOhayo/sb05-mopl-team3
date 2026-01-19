@@ -66,7 +66,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       Authentication authentication)
       throws IOException {
     try {
-      UUID currentUserId = getCurrentUserIdFromCookie(request);
+      UUID currentUserId = validateAndGetUserIdFromCookie(request);
 
       if (currentUserId == null) {
         sendPopupCloseHtml(response, "error", "UNAUTHORIZED", null);
@@ -97,6 +97,65 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
   }
 
+  /** 쿠키에서 리프레시 토큰 추출, 유효성 검증 */
+  private UUID validateAndGetUserIdFromCookie(HttpServletRequest request) {
+    String refreshToken = extractRefreshTokenFromCookie(request);
+    if (refreshToken == null) {
+      return null;
+    }
+
+    return validateRefreshTokenAndGetUserId(refreshToken);
+  }
+
+  /** 쿠키에서 리프레시 토큰 추출 */
+  private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) {
+      return null;
+    }
+
+    String refreshTokenName = cookieSecurityProperties.getRefreshToken().getName();
+
+    for (Cookie cookie : cookies) {
+      if (refreshTokenName.equals(cookie.getName())) {
+        return cookie.getValue();
+      }
+    }
+
+    return null;
+  }
+
+  /** 리프레시 토큰 검증 및 userId 추출 */
+  private UUID validateRefreshTokenAndGetUserId(String refreshToken) {
+    try {
+      if (!jwtTokenProvider.validateToken(refreshToken)) {
+        return null;
+      }
+
+      if (!jwtTokenProvider.isRefreshToken(refreshToken)) {
+        return null;
+      }
+
+      UUID userId = jwtTokenProvider.getUserId(refreshToken);
+
+      String storedRefreshToken = refreshTokenService.getRefreshToken(userId);
+
+      if (storedRefreshToken == null) {
+        return null;
+      }
+
+      if (!storedRefreshToken.equals(refreshToken)) {
+        return null;
+      }
+
+      return userId;
+
+    } catch (Exception e) {
+      log.error("Refresh Token 검증 중 예외 발생", e);
+      return null;
+    }
+  }
+
   /** 로그인 모드 처리 */
   private void handleLoginMode(
       HttpServletRequest request, HttpServletResponse response, CustomOAuth2User oAuth2User)
@@ -121,25 +180,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       String[] parts = state.split(":mode=");
       if (parts.length > 1) {
         return parts[1];
-      }
-    }
-    return null;
-  }
-
-  /** 쿠키에서 현재 사용자 ID 추출 */
-  private UUID getCurrentUserIdFromCookie(HttpServletRequest request) {
-    Cookie[] cookies = request.getCookies();
-    if (cookies == null) {
-      return null;
-    }
-
-    for (Cookie cookie : cookies) {
-      if (cookieSecurityProperties.getRefreshToken().getName().equals(cookie.getName())) {
-        try {
-          return jwtTokenProvider.getUserId(cookie.getValue());
-        } catch (Exception e) {
-          return null;
-        }
       }
     }
     return null;
