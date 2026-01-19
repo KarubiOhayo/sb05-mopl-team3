@@ -6,6 +6,7 @@ on:
     paths:
       - 'mopl-gateway/**'
       - '.github/workflows/cd-gateway.yml'
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-northeast-2
@@ -17,15 +18,9 @@ env:
   DOCKERFILE_PATH: mopl-gateway/Dockerfile
 
 jobs:
-  provision-topics:
-    name: Provision Kafka Topics
-    uses: ./.github/workflows/provision-kafka-topics.yml
-    secrets: inherit
-
   deploy:
     runs-on: ubuntu-latest
     environment: production
-    needs: provision-topics
 
     steps:
     - name: Checkout
