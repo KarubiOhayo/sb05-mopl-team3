@@ -1,0 +1,33 @@
+spring:
+  config:
+    activate:
+      on-profile: staging
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_AUTH_TOKEN}
+      ssl: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      sasl.jaas.config: >
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="${KAFKA_API_KEY}"
+        password="${KAFKA_API_SECRET}";
+
+logging:
+  level:
+    root: INFO
+    io.mopl: INFO
