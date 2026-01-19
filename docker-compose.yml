@@ -19,7 +19,7 @@ services:
       # (선택) 최초 생성 시 스키마 자동 실행
       - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot" ]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -27,13 +27,13 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: mopl_redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -84,6 +84,140 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       # 컨테이너 내부 접속 주소는 kafka:29092
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: mopl_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./mopl-monitor/prometheus/${PROM_CONFIG:-prometheus-dev.yml}:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || curl -fsS http://localhost:9090/-/healthy || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: mopl_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mopl-monitor/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || curl -fsS http://localhost:3000/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: mopl-api/Dockerfile
+    container_name: mopl_api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
+      MOPL_REDIS_HOST: redis
+      MOPL_REDIS_PORT: 6379
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  socket:
+    build:
+      context: .
+      dockerfile: mopl-socket/Dockerfile
+    container_name: mopl_socket
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
+      MOPL_REDIS_HOST: redis
+      MOPL_REDIS_PORT: 6379
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  worker:
+    build:
+      context: .
+      dockerfile: mopl-worker/Dockerfile
+    container_name: mopl_worker
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      MOPL_KAFKA_GROUP_ID: ${MOPL_KAFKA_GROUP_ID:-mopl-worker}
+      GMAIL_EMAIL: ${GMAIL_EMAIL}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  batch:
+    build:
+      context: .
+      dockerfile: mopl-batch/Dockerfile
+    container_name: mopl_batch
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MOPL_DB_USERNAME: ${MOPL_DB_USERNAME:-app}
+      MOPL_DB_PASSWORD: ${MOPL_DB_PASSWORD:-app}
+      MOPL_KAFKA_BOOTSTRAP: kafka:29092
+      MOPL_BATCH_JOB_ENABLED: ${MOPL_BATCH_JOB_ENABLED:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   gateway:
     image: nginx:alpine
     container_name: mopl_gateway
@@ -94,9 +228,16 @@ services:
       # 프론트 빌드 산출물 폴더를 여기에 연결
       - ./mopl-gateway/frontend/dist:/usr/share/nginx/html:ro
     depends_on:
-      - mysql
-      - redis
-      - kafka
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      api:
+        condition: service_healthy
+      socket:
+        condition: service_healthy
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.2.2
@@ -128,12 +269,15 @@ services:
       elasticsearch:
         condition: service_healthy
 
-
 volumes:
   mysql_data:
   redis_data:
   kafka_data:
+  grafana_data:
   es-data:
 
 # docker compose down -v
 # docker compose up -d --build
+
+# app 제외 빌드 (app을 포함 하려면 root .env에서 DB부분 localhost를 mysql로 변경)
+# docker compose up -d mysql redis kafka kafka-ui prometheus grafana gateway

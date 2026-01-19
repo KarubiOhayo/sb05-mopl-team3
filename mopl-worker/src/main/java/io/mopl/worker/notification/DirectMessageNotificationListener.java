@@ -1,6 +1,6 @@
 package io.mopl.worker.notification;
 
-import io.mopl.core.event.follow.UserFollowedEvent;
+import io.mopl.core.event.dm.DirectMessageReceivedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
@@ -17,44 +17,45 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FollowNotificationListener {
+public class DirectMessageNotificationListener {
 
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
 
+  // DM 수신 이벤트를 수신해 알림을 저장한다.
   @KafkaListener(
-      topics = KafkaTopics.USER_FOLLOWED,
-      properties = "spring.json.value.default.type=io.mopl.core.event.follow.UserFollowedEvent")
-  public void handle(UserFollowedEvent event) {
+      topics = KafkaTopics.DIRECT_MESSAGE_RECEIVED,
+      properties =
+          "spring.json.value.default.type=io.mopl.core.event.dm.DirectMessageReceivedEvent")
+  public void handle(DirectMessageReceivedEvent event) {
     try {
-      log.info("팔로우 이벤트 수신: eventId={}", event.eventId());
-
       UUID eventIdUuid =
           NotificationListenerSupport.parseUuid(log, event.eventId(), "eventId", event.eventId());
-      UUID followeeIdUuid =
+      UUID receiverIdUuid =
           NotificationListenerSupport.parseUuid(
-              log, event.followeeId(), "followeeId", event.eventId());
+              log, event.receiverId(), "receiverId", event.eventId());
 
       String title =
           messageSource.getMessage(
-              "notification.follow.title",
-              new Object[] {event.followerName()},
-              "새 팔로우: " + event.followerName(),
+              "notification.dm.received.title",
+              new Object[] {event.senderName()},
+              "새 메시지가 도착했습니다. 보낸 사람: " + event.senderName(),
               Locale.KOREAN);
+
+      String content = event.content() != null ? event.content() : "";
 
       Notification notification =
           Notification.builder()
               .eventId(eventIdUuid)
-              .receiverId(followeeIdUuid)
+              .receiverId(receiverIdUuid)
               .title(title)
-              .content("")
+              .content(content)
               .level(NotificationLevel.INFO)
               .build();
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
-      // 이미 처리된 이벤트는 무시한다.
       NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로그 처리.

@@ -1,5 +1,7 @@
 package io.mopl.socket.watching;
 
+import io.mopl.core.event.watching.WatchingSessionStartedEvent;
+import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.socket.content.dto.ContentSummary;
 import io.mopl.socket.user.dto.UserSummary;
 import io.mopl.socket.watching.dto.ChangeType;
@@ -16,6 +18,7 @@ import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +39,7 @@ public class WatchingSessionEventListener {
   private final WatchingSessionService watchingSessionService;
   private final SimpMessagingTemplate messagingTemplate;
   private final SessionSubscriptionRegistry subscriptionRegistry;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   @EventListener
   public void handleSubscribe(SessionSubscribeEvent event) {
@@ -65,6 +69,27 @@ public class WatchingSessionEventListener {
     long watcherCount =
         watchingSessionService.join(
             contentId, socketUser.userId(), socketUser.name(), socketUser.profileImageUrl());
+
+    // 시청 시작 알림 이벤트를 Kafka로 발행한다.
+    WatchingSessionStartedEvent startedEvent =
+        new WatchingSessionStartedEvent(
+            UUID.randomUUID().toString(),
+            Instant.now(),
+            socketUser.userId().toString(),
+            socketUser.name(),
+            contentId);
+    kafkaTemplate
+        .send(KafkaTopics.WATCHING_SESSION_STARTED, contentId, startedEvent)
+        .whenComplete(
+            (result, ex) -> {
+              if (ex != null) {
+                log.warn(
+                    "시청 시작 알림 이벤트 발행 실패: contentId={}, watcherId={}",
+                    contentId,
+                    socketUser.userId(),
+                    ex);
+              }
+            });
 
     WatchingSessionChange change =
         WatchingSessionChange.builder()
