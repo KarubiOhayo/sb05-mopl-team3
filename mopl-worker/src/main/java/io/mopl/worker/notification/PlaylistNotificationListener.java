@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -30,12 +29,12 @@ public class PlaylistNotificationListener {
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
 
-  // 플레이리스트 구독 이벤트를 소비해 소유자에게 알림을 저장한다.
+  // 플레이리스트 구독 이벤트를 소유자에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_SUBSCRIBED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistSubscribedEvent")
-  public void handleSubscribed(PlaylistSubscribedEvent event, Acknowledgment acknowledgment) {
+  public void handleSubscribed(PlaylistSubscribedEvent event) {
     try {
       UUID eventIdUuid = parseUuid(event.eventId(), "eventId", event.eventId());
       UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
@@ -60,18 +59,16 @@ public class PlaylistNotificationListener {
     } catch (DataIntegrityViolationException e) {
       handleDataIntegrityViolation(e, event.eventId());
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 
-  // 플레이리스트 콘텐츠 추가 이벤트를 소비해 구독자에게 알림을 저장한다.
+  // 플레이리스트 콘텐츠 추가 이벤트를 구독자에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CONTENT_ADDED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistContentAddedEvent")
-  public void handleContentAdded(PlaylistContentAddedEvent event, Acknowledgment acknowledgment) {
+  public void handleContentAdded(PlaylistContentAddedEvent event) {
     try {
       UUID playlistIdUuid = parseUuid(event.playlistId(), "playlistId", event.eventId());
 
@@ -85,7 +82,7 @@ public class PlaylistNotificationListener {
       List<UUID> receiverIds = recipientQuery.findSubscriberIds(playlistIdUuid);
       for (UUID receiverId : receiverIds) {
         try {
-          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
           UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
           Notification notification =
               Notification.builder()
@@ -102,18 +99,16 @@ public class PlaylistNotificationListener {
         }
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 
-  // 플레이리스트 생성 이벤트를 소비해 팔로워에게 알림을 저장한다.
+  // 플레이리스트 생성 이벤트를 팔로워에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CREATED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistCreatedEvent")
-  public void handleCreated(PlaylistCreatedEvent event, Acknowledgment acknowledgment) {
+  public void handleCreated(PlaylistCreatedEvent event) {
     try {
       UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
 
@@ -127,7 +122,7 @@ public class PlaylistNotificationListener {
       List<UUID> receiverIds = recipientQuery.findFollowerIds(ownerIdUuid);
       for (UUID receiverId : receiverIds) {
         try {
-          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
           UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
           Notification notification =
               Notification.builder()
@@ -144,9 +139,7 @@ public class PlaylistNotificationListener {
         }
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 

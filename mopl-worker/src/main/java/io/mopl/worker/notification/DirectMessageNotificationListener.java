@@ -1,7 +1,7 @@
 package io.mopl.worker.notification;
 
 import io.mopl.core.db.DbConstraintNames;
-import io.mopl.core.event.user.UserRoleChangedEvent;
+import io.mopl.core.event.dm.DirectMessageReceivedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
@@ -18,34 +18,37 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserRoleNotificationListener {
+public class DirectMessageNotificationListener {
 
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
 
-  // 사용자 권한 변경 이벤트를 수신해 알림을 저장한다.
+  // DM 수신 이벤트를 수신해 알림을 저장한다.
   @KafkaListener(
-      topics = KafkaTopics.USER_ROLE_CHANGED,
-      properties = "spring.json.value.default.type=io.mopl.core.event.user.UserRoleChangedEvent")
-  public void handle(UserRoleChangedEvent event) {
+      topics = KafkaTopics.DIRECT_MESSAGE_RECEIVED,
+      properties =
+          "spring.json.value.default.type=io.mopl.core.event.dm.DirectMessageReceivedEvent")
+  public void handle(DirectMessageReceivedEvent event) {
     try {
       UUID eventIdUuid = parseUuid(event.eventId(), "eventId", event.eventId());
-      UUID userIdUuid = parseUuid(event.userId(), "userId", event.eventId());
+      UUID receiverIdUuid = parseUuid(event.receiverId(), "receiverId", event.eventId());
 
       String title =
           messageSource.getMessage(
-              "notification.user.role-changed.title",
-              new Object[] {event.newRole()},
-              "권한이 " + event.newRole() + "(으)로 변경되었습니다.",
+              "notification.dm.received.title",
+              new Object[] {event.senderName()},
+              "새 메시지가 도착했습니다. 보낸 사람: " + event.senderName(),
               Locale.KOREAN);
+
+      String content = event.content() != null ? event.content() : "";
 
       Notification notification =
           Notification.builder()
               .eventId(eventIdUuid)
-              .receiverId(userIdUuid)
+              .receiverId(receiverIdUuid)
               .title(title)
-              .content("")
+              .content(content)
               .level(NotificationLevel.INFO)
               .build();
       Notification saved = notificationRepository.save(notification);
@@ -74,7 +77,7 @@ public class UserRoleNotificationListener {
     try {
       return UUID.fromString(value);
     } catch (IllegalArgumentException e) {
-      log.error("UUID 형식이 올바르지 않습니다. 필드: {} (eventId={})", fieldName, eventId, e);
+      log.error("UUID 형식이 올바르지 않습니다: {} (eventId={})", fieldName, eventId, e);
       throw e;
     }
   }

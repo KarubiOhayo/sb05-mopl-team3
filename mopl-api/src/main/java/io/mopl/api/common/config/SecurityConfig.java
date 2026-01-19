@@ -201,7 +201,8 @@ public class SecurityConfig {
                         HttpMethod.GET,
                         "/api/users/{watcherId}/watching-sessions",
                         "/api/contents/{contentId}/watching-sessions")
-                    .hasRole("ADMIN")
+                    .authenticated()
+                    //                    .hasRole("ADMIN")
 
                     /* ========== SSE ========== */
                     // 유저: 전체 기능

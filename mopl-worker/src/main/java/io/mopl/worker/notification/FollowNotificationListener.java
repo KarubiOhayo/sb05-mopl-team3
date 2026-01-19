@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -28,7 +27,7 @@ public class FollowNotificationListener {
   @KafkaListener(
       topics = KafkaTopics.USER_FOLLOWED,
       properties = "spring.json.value.default.type=io.mopl.core.event.follow.UserFollowedEvent")
-  public void handle(UserFollowedEvent event, Acknowledgment acknowledgment) {
+  public void handle(UserFollowedEvent event) {
     try {
       log.info("팔로우 이벤트 수신: eventId={}", event.eventId());
 
@@ -39,7 +38,7 @@ public class FollowNotificationListener {
           messageSource.getMessage(
               "notification.follow.title",
               new Object[] {event.followerName()},
-              "새 팔로워: " + event.followerName(),
+              "새 팔로우: " + event.followerName(),
               Locale.KOREAN);
 
       Notification notification =
@@ -65,9 +64,7 @@ public class FollowNotificationListener {
         log.error("알림 저장 중 오류 (eventId={})", event.eventId(), e);
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 
