@@ -3,6 +3,11 @@ name: Provision Kafka Topics
 on:
   workflow_dispatch:
   workflow_call:
+  push:
+    branches: [ "release-*" ]
+    paths:
+      - 'mopl-core/src/main/java/io/mopl/core/kafka/KafkaTopics.java'
+      - '.github/workflows/provision-kafka-topics.yml'
 
 env:
   KAFKA_VERSION: 3.7.0
