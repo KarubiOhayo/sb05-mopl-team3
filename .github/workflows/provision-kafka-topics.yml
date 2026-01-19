@@ -8,6 +8,7 @@ on:
     paths:
       - 'mopl-core/src/main/java/io/mopl/core/kafka/KafkaTopics.java'
       - '.github/workflows/provision-kafka-topics.yml'
+      - 'scripts/provision-kafka-topics.sh'
 
 env:
   KAFKA_VERSION: 3.7.0
