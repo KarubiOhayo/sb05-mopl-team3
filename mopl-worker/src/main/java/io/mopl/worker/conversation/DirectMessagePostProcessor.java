@@ -2,6 +2,7 @@ package io.mopl.worker.conversation;
 
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.event.conversation.DirectMessageCreatedEvent;
+import io.mopl.core.event.dm.DirectMessageReceivedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.common.WorkerErrorCode;
 import io.mopl.worker.conversation.domain.DirectMessage;
@@ -68,6 +69,20 @@ public class DirectMessagePostProcessor {
 
     kafkaTemplate.send(
         KafkaTopics.DIRECT_MESSAGE_CREATED, event.conversationId().toString(), createdEvent);
+
+    // 알림용 DM 수신 이벤트를 함께 발행한다.
+    DirectMessageReceivedEvent receivedEvent =
+        new DirectMessageReceivedEvent(
+            event.dmId().toString(),
+            event.createdAt(),
+            event.conversationId().toString(),
+            event.senderId().toString(),
+            sender.getName(),
+            event.receiverId().toString(),
+            event.content());
+
+    kafkaTemplate.send(
+        KafkaTopics.DIRECT_MESSAGE_RECEIVED, event.receiverId().toString(), receivedEvent);
 
     // 상태 업데이트 (SENT)
     // 트랜잭션 종료 시 더티 체킹으로 업데이트됨

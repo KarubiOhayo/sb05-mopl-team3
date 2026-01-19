@@ -91,6 +91,8 @@ public class SecurityConfig {
                     /* ========== Swagger ========== */
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/prometheus")
+                    .permitAll()
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
                     .requestMatchers(
@@ -198,12 +200,12 @@ public class SecurityConfig {
                     .authenticated()
 
                     /* ========== 시청 세션 관리 ========== */
-                    // 관리자: 전체 기능
+                    // 유저: 시청 세션 조회
                     .requestMatchers(
                         HttpMethod.GET,
                         "/api/users/{watcherId}/watching-sessions",
                         "/api/contents/{contentId}/watching-sessions")
-                    .hasRole("ADMIN")
+                    .authenticated()
 
                     /* ========== SSE ========== */
                     // 유저: 전체 기능
