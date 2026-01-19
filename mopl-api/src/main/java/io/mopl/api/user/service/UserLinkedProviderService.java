@@ -79,7 +79,7 @@ public class UserLinkedProviderService {
   public void unlinkProvider(UUID userId, AuthProvider provider) {
     User user =
         userRepository
-            .findById(userId)
+            .findByIdWithLock(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
     if (!linkedProviderRepository.existsByUserIdAndProvider(userId, provider)) {
