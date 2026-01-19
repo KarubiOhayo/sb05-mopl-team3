@@ -2,7 +2,7 @@ name: Deploy API to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-api/**'
       - 'mopl-core/**'

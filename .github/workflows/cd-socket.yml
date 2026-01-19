@@ -2,7 +2,7 @@ name: Deploy Socket to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-socket/**'
       - 'mopl-core/**'

@@ -2,7 +2,7 @@ name: Deploy Worker to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-worker/**'
       - 'mopl-core/**'

@@ -2,7 +2,7 @@ name: Deploy Batch to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-batch/**'
       - 'mopl-core/**'

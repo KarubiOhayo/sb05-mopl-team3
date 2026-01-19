@@ -2,7 +2,7 @@ name: Deploy Gateway (Nginx) to Amazon ECS
 
 on:
   push:
-    branches: [ "release/*" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-gateway/**'
       - '.github/workflows/cd-gateway.yml'
