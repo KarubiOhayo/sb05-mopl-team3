@@ -1,6 +1,7 @@
 package io.mopl.api.common.config;
 
 import io.mopl.api.auth.jwt.JwtAuthenticationFilter;
+import io.mopl.api.auth.oauth2.CustomOAuth2AuthorizationRequestResolver;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import io.mopl.api.auth.service.CustomOAuth2UserService;
@@ -30,6 +31,7 @@ public class SecurityConfig {
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
   private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+  private final CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -223,7 +225,11 @@ public class SecurityConfig {
             oauth2 ->
                 oauth2
                     .authorizationEndpoint(
-                        authorization -> authorization.baseUri("/oauth2/authorization"))
+                        authorization ->
+                            authorization
+                                .baseUri("/oauth2/authorization")
+                                .authorizationRequestResolver(
+                                    customOAuth2AuthorizationRequestResolver))
                     .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
                     .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                     .successHandler(oAuth2AuthenticationSuccessHandler)
