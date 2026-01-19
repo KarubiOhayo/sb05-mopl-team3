@@ -12,6 +12,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -188,8 +189,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   private void sendPopupCloseHtml(
       HttpServletResponse response, String type, String data, String accessToken)
       throws IOException {
-    response.setContentType("text/html;charset=UTF-8");
-    response.setStatus(HttpServletResponse.SC_OK);
+    URI uri = URI.create(redirectUri);
+    String targetOrigin = uri.getScheme() + "://" + uri.getAuthority();
 
     String html =
         """
@@ -201,20 +202,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         </head>
         <body>
             <script>
-                console.log('팝업 HTML 실행됨:', '%s', '%s');
-
                 try {
                     if (window.opener && !window.opener.closed) {
-                        console.log('부모 창 존재 확인');
-
                         window.opener.postMessage({
                             type: 'OAUTH_LINK_%s',
                             data: '%s',
                             accessToken: %s
                         }, '%s');
-
-                        console.log('postMessage 전송 완료');
-                        // ✅ reload() 호출 제거! 프론트엔드가 처리하도록
                     } else {
                         console.error('부모 창을 찾을 수 없음');
                     }
@@ -223,7 +217,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 }
 
                 setTimeout(function() {
-                    console.log('팝업 닫기');
                     window.close();
                 }, 1000);
             </script>
@@ -232,12 +225,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         </html>
         """
             .formatted(
-                type,
-                data,
                 type.toUpperCase(),
                 data,
                 accessToken != null ? "'" + accessToken + "'" : "null",
-                redirectUri);
+                targetOrigin);
 
     response.getWriter().write(html);
     response.getWriter().flush();
