@@ -83,11 +83,7 @@ public class ContentSearchService {
                             f.field(resolveSortField(sortByEnum))
                                 .order(resolveSortOrder(sortDirectionEnum))))
             .withSort(
-                s ->
-                    s.field(
-                        f ->
-                            f.field("contentId.keyword")
-                                .order(resolveSortOrder(sortDirectionEnum))));
+                s -> s.field(f -> f.field("contentId").order(resolveSortOrder(sortDirectionEnum))));
 
     applySearchAfter(queryBuilder, contentSearchRequest, sortByEnum);
 
