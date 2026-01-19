@@ -25,6 +25,10 @@ public final class KafkaTopics {
 
   // ===== notification =====
   public static final String NOTIFICATION_CREATED = "notification.created";
+  // ===== dm =====
+  // DM 대화 활성 상태 이벤트
+  public static final String DIRECT_MESSAGE_CONVERSATION_ACTIVE =
+      "direct-message.conversation.active";
 
   // ===== watching =====
   public static final String WATCHING_SESSION_STARTED = "watching.session.started";
