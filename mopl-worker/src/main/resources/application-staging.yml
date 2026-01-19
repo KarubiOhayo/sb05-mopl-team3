@@ -20,6 +20,8 @@ spring:
         enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    consumer:
+      group-id: ${KAFKA_GROUP_ID:mopl-worker}
     properties:
       security.protocol: SASL_SSL
       sasl.mechanism: PLAIN
