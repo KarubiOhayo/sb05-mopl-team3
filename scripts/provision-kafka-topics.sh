@@ -11,10 +11,24 @@ TOPICS_FILE="$ROOT_DIR/mopl-core/src/main/java/io/mopl/core/kafka/KafkaTopics.ja
 KAFKA_TOPIC_PARTITIONS=${KAFKA_TOPIC_PARTITIONS:-3}
 KAFKA_TOPIC_REPLICATION=${KAFKA_TOPIC_REPLICATION:-3}
 
-if [[ -n "${KAFKA_BIN:-}" ]]; then
+if [[ -n "${KAFKA_BIN:-}" ]] && [[ -x "$KAFKA_BIN/kafka-topics.sh" ]]; then
   KAFKA_TOPICS="$KAFKA_BIN/kafka-topics.sh"
 else
+  if [[ -n "${KAFKA_BIN:-}" ]]; then
+    echo "KAFKA_BIN not usable: $KAFKA_BIN" >&2
+  fi
   KAFKA_TOPICS="kafka-topics.sh"
+  if ! command -v "$KAFKA_TOPICS" >/dev/null 2>&1; then
+    CANDIDATE=$(find "$ROOT_DIR" -maxdepth 2 -type f -path "*/kafka_*/bin/kafka-topics.sh" | head -n 1 || true)
+    if [[ -n "$CANDIDATE" ]]; then
+      KAFKA_TOPICS="$CANDIDATE"
+    fi
+  fi
+fi
+
+if [[ ! -x "$KAFKA_TOPICS" ]]; then
+  echo "kafka-topics.sh not found or not executable: $KAFKA_TOPICS" >&2
+  exit 1
 fi
 
 if [[ ! -f "$TOPICS_FILE" ]]; then

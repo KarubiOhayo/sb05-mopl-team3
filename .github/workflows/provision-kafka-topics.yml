@@ -35,5 +35,5 @@ jobs:
         KAFKA_API_SECRET: ${{ secrets.KAFKA_API_SECRET }}
         KAFKA_TOPIC_PARTITIONS: ${{ vars.KAFKA_TOPIC_PARTITIONS }}
         KAFKA_TOPIC_REPLICATION: ${{ vars.KAFKA_TOPIC_REPLICATION }}
-        KAFKA_BIN: ${{ github.workspace }}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}/bin
+        KAFKA_BIN: ${{ format('{0}/kafka_{1}-{2}/bin', github.workspace, env.SCALA_VERSION, env.KAFKA_VERSION) }}
       run: ./scripts/provision-kafka-topics.sh
