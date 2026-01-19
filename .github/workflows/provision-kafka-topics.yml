@@ -1,0 +1,38 @@
+name: Provision Kafka Topics
+
+on:
+  workflow_dispatch:
+
+env:
+  KAFKA_VERSION: 3.7.0
+  SCALA_VERSION: 2.13
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Download Kafka CLI
+      run: |
+        curl -fsSLO "https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+        tar -xzf "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+
+    - name: Provision topics
+      env:
+        KAFKA_BOOTSTRAP: ${{ vars.KAFKA_BOOTSTRAP }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_API_SECRET: ${{ secrets.KAFKA_API_SECRET }}
+        KAFKA_TOPIC_PARTITIONS: ${{ vars.KAFKA_TOPIC_PARTITIONS }}
+        KAFKA_TOPIC_REPLICATION: ${{ vars.KAFKA_TOPIC_REPLICATION }}
+        KAFKA_BIN: ${{ github.workspace }}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}/bin
+      run: ./scripts/provision-kafka-topics.sh
