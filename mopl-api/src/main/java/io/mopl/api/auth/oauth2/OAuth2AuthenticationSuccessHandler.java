@@ -83,7 +83,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
       linkedProviderService.linkProvider(currentUserId, provider, providerUserId, providerEmail);
 
-      // ✅ CSRF 토큰 재발급만 하면 됨!
       CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
       csrfTokenRepository.saveToken(csrfToken, request, response);
 

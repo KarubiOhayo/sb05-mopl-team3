@@ -1,5 +1,7 @@
 package io.mopl.api.auth.oauth2;
 
+import java.util.Map;
+
 public interface OAuth2UserInfo {
 
   String getProviderId();
@@ -9,4 +11,6 @@ public interface OAuth2UserInfo {
   String getName();
 
   String getProfileImageUrl();
+
+  Map<String, Object> getAttributes();
 }
