@@ -25,7 +25,7 @@ jobs:
 
     - name: Download Kafka CLI
       run: |
-        curl -fsSLO "https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+        curl -fsSLO "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
         tar -xzf "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
 
     - name: Provision topics
