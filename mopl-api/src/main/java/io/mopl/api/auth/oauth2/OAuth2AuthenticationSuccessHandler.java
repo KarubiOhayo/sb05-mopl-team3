@@ -192,6 +192,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     URI uri = URI.create(redirectUri);
     String targetOrigin = uri.getScheme() + "://" + uri.getAuthority();
 
+    response.setContentType("text/html;charset=UTF-8");
+    response.setStatus(HttpServletResponse.SC_OK);
+
     String html =
         """
         <!DOCTYPE html>
