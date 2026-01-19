@@ -27,6 +27,17 @@ public final class RedisKeyPrefix {
 
   public static final String USER_INFO_PREFIX = "watching:user-info:";
 
+  // ===== playlist =====
+
+  /** 사용자 요약 캐시: user:summary:{userId} */
+  public static final String USER_SUMMARY = "user:summary:";
+
+  /** 플레이리스트 콘텐츠 캐시: playlist:contents:{playlistId} */
+  public static final String PLAYLIST_CONTENTS = "playlist:contents:";
+
+  /** 사용자 구독 플레이리스트 Set: playlist:subs:user:{userId} */
+  public static final String PLAYLIST_SUBS_BY_USER = "playlist:subs:user:";
+
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
     throw new AssertionError("Cannot instantiate constants class");

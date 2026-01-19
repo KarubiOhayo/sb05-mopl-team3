@@ -1,0 +1,218 @@
+{
+  "info": {
+    "_postman_id": "7e0c2a33-5e36-4cc9-b78b-4c7c8c9c2f2a",
+    "name": "mopl-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - CSRF Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+              "if (xsrfCookie) {",
+              "  pm.collectionVariables.set('xsrfToken', xsrfCookie);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/csrf-token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "csrf-token"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth - Sign In",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.accessToken) {",
+              "  pm.collectionVariables.set('accessToken', json.accessToken);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "admin@mopl.io",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "1234",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/sign-in",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "sign-in"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Conversations - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-XSRF-TOKEN",
+            "value": "{{xsrfToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"withUserId\": \"00000000-0000-0000-0000-000000000000\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/conversations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "conversations"
+          ]
+        }
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function setXsrfFromSetCookie(res) {",
+          "  const setCookies = res.headers.all()",
+          "    .filter(h => h.key.toLowerCase() === 'set-cookie')",
+          "    .map(h => h.value);",
+          "",
+          "  const match = setCookies",
+          "    .map(v => /XSRF-TOKEN=([^;]+)/.exec(v))",
+          "    .find(m => m && m[1]);",
+          "",
+          "  if (match) {",
+          "    pm.collectionVariables.set('xsrfToken', match[1]);",
+          "  }",
+          "}",
+          "",
+          "function ensureAuth(done) {",
+          "  const accessToken = pm.collectionVariables.get('accessToken');",
+          "  const xsrfToken = pm.collectionVariables.get('xsrfToken');",
+          "",
+          "  if (accessToken && xsrfToken) {",
+          "    return done();",
+          "  }",
+          "",
+          "  pm.sendRequest({",
+          "    url: pm.collectionVariables.get('baseUrl') + '/api/auth/csrf-token',",
+          "    method: 'GET'",
+          "  }, function (err, res) {",
+          "    if (err) return done(err);",
+          "",
+          "    setXsrfFromSetCookie(res);",
+          "",
+          "    pm.sendRequest({",
+          "      url: pm.collectionVariables.get('baseUrl') + '/api/auth/sign-in',",
+          "      method: 'POST',",
+          "      header: { 'Content-Type': 'application/x-www-form-urlencoded' },",
+          "      body: {",
+          "        mode: 'urlencoded',",
+          "        urlencoded: [",
+          "          { key: 'username', value: 'admin@mopl.io' },",
+          "          { key: 'password', value: '1234' }",
+          "        ]",
+          "      }",
+          "    }, function (err2, res2) {",
+          "      if (err2) return done(err2);",
+          "",
+          "      const json = res2.json();",
+          "      if (json && json.accessToken) {",
+          "        pm.collectionVariables.set('accessToken', json.accessToken);",
+          "      }",
+          "",
+          "      done();",
+          "    });",
+          "  });",
+          "}",
+          "",
+          "ensureAuth(function () {",
+          "  const xsrfToken = pm.collectionVariables.get('xsrfToken');",
+          "  if (xsrfToken) {",
+          "    pm.request.headers.upsert({ key: 'X-XSRF-TOKEN', value: xsrfToken });",
+          "    pm.request.headers.upsert({ key: 'Cookie', value: 'XSRF-TOKEN=' + xsrfToken });",
+          "  }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "xsrfToken",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}

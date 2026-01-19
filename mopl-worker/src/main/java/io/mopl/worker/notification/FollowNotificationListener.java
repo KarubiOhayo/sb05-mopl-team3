@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,20 +21,27 @@ public class FollowNotificationListener {
 
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
+  private final NotificationEventPublisher notificationEventPublisher;
 
   @KafkaListener(
       topics = KafkaTopics.USER_FOLLOWED,
       properties = "spring.json.value.default.type=io.mopl.core.event.follow.UserFollowedEvent")
-  public void handle(UserFollowedEvent event, Acknowledgment acknowledgment) {
+  public void handle(UserFollowedEvent event) {
     try {
-      log.info("follow event received: eventId={}", event.eventId());
+      log.info("팔로우 이벤트 수신: eventId={}", event.eventId());
 
-      UUID eventIdUuid = parseUuid(event.eventId(), "eventId", event.eventId());
-      UUID followeeIdUuid = parseUuid(event.followeeId(), "followeeId", event.eventId());
+      UUID eventIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.eventId(), "eventId", event.eventId());
+      UUID followeeIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.followeeId(), "followeeId", event.eventId());
 
       String title =
           messageSource.getMessage(
-              "notification.follow.title", new Object[] {event.followerName()}, Locale.KOREAN);
+              "notification.follow.title",
+              new Object[] {event.followerName()},
+              "새 팔로우: " + event.followerName(),
+              Locale.KOREAN);
 
       Notification notification =
           Notification.builder()
@@ -45,32 +51,13 @@ public class FollowNotificationListener {
               .content("")
               .level(NotificationLevel.INFO)
               .build();
-      notificationRepository.save(notification);
+      Notification saved = notificationRepository.save(notification);
+      notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
-      Throwable cause = e.getMostSpecificCause();
-      String message = cause != null ? cause.getMessage() : e.getMessage();
-
-      if (message != null && message.contains("uq_notifications_event_id")) {
-        // 중복 이벤트 → 무시
-        log.debug("중복 이벤트 무시 (eventId={})", event.eventId());
-      } else if (message != null && message.contains("fk_notifications_receiver")) {
-        log.error("수신자 외래키 위반 (eventId={})", event.eventId(), e);
-      } else {
-        log.error("데이터 무결성 오류 (eventId={})", event.eventId(), e);
-      }
+      // 이미 처리된 이벤트는 무시한다.
+      NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅됨
-    } finally {
-      acknowledgment.acknowledge();
-    }
-  }
-
-  private UUID parseUuid(String value, String fieldName, String eventId) {
-    try {
-      return UUID.fromString(value);
-    } catch (IllegalArgumentException e) {
-      log.error("Invalid UUID format for {} (eventId={})", fieldName, eventId, e);
-      throw e;
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 }
