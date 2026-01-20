@@ -9,9 +9,11 @@ import io.mopl.api.notification.dto.NotificationDto;
 import io.mopl.api.notification.dto.NotificationSearchRequest;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class NotificationService {
 
   private final NotificationRepository notificationRepository;
   private final NotificationQueryRepository notificationQueryRepository;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Transactional(readOnly = true)
   public CursorResponse<NotificationDto> findUnread(
@@ -48,7 +51,12 @@ public class NotificationService {
             .toList();
 
     // 전체 미읽음 개수를 별도로 계산해 응답에 포함
-    long totalCount = notificationQueryRepository.countUnread(userId);
+    Long cachedCount = getUnreadCountFromCache(userId);
+    long totalCount =
+        cachedCount != null ? cachedCount : notificationQueryRepository.countUnread(userId);
+    if (cachedCount == null) {
+      setUnreadCountCache(userId, totalCount);
+    }
 
     return CursorResponse.<NotificationDto>builder()
         .data(data)
@@ -78,5 +86,51 @@ public class NotificationService {
     }
 
     notificationRepository.deleteById(notificationId);
+    if (notification.getReadAt() == null) {
+      decrementUnreadCount(userId);
+    }
+  }
+
+  private Long getUnreadCountFromCache(UUID userId) {
+    String key = unreadCountKey(userId);
+    try {
+      String value = redisTemplate.opsForValue().get(key);
+      if (value == null) {
+        return null;
+      }
+      return Long.parseLong(value);
+    } catch (Exception e) {
+      redisTemplate.delete(key);
+      return null;
+    }
+  }
+
+  private void setUnreadCountCache(UUID userId, long count) {
+    String key = unreadCountKey(userId);
+    try {
+      redisTemplate.opsForValue().set(key, String.valueOf(Math.max(count, 0)));
+    } catch (Exception e) {
+      // 캐시 실패는 무시한다.
+    }
+  }
+
+  private void decrementUnreadCount(UUID userId) {
+    String key = unreadCountKey(userId);
+    try {
+      String current = redisTemplate.opsForValue().get(key);
+      if (current == null) {
+        return;
+      }
+      Long value = redisTemplate.opsForValue().increment(key, -1);
+      if (value != null && value < 0) {
+        redisTemplate.opsForValue().set(key, "0");
+      }
+    } catch (Exception e) {
+      // 캐시 실패는 무시한다.
+    }
+  }
+
+  private String unreadCountKey(UUID userId) {
+    return RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + userId;
   }
 }

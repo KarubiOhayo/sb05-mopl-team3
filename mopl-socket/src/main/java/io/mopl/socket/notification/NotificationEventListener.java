@@ -3,12 +3,14 @@ package io.mopl.socket.notification;
 import io.mopl.core.event.notification.NotificationCreatedEvent;
 import io.mopl.core.event.notification.NotificationType;
 import io.mopl.core.kafka.KafkaTopics;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import io.mopl.socket.dm.DirectMessageSubscriptionRegistry;
 import io.mopl.socket.notification.dto.NotificationDto;
 import io.mopl.socket.sse.SseService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -20,6 +22,7 @@ public class NotificationEventListener {
 
   private final SseService sseService;
   private final DirectMessageSubscriptionRegistry dmSubscriptionRegistry;
+  private final RedisTemplate<String, String> redisTemplate;
 
   // 알림 생성 이벤트를 수신해 SSE로 전송한다.
   @KafkaListener(
@@ -29,6 +32,7 @@ public class NotificationEventListener {
           "spring.json.value.default.type=io.mopl.core.event.notification.NotificationCreatedEvent")
   public void handleCreatedEvent(NotificationCreatedEvent event) {
     try {
+      incrementUnreadCount(event.receiverId());
       log.info("알림 생성 이벤트 수신: notificationId={}", event.notificationId());
 
       if (event.type() != null
@@ -71,6 +75,17 @@ public class NotificationEventListener {
     } catch (RuntimeException e) {
       log.warn("알림 이벤트 UUID 형식 오류로 무시: {}={}", fieldName, value);
       return null;
+    }
+  }
+
+  private void incrementUnreadCount(String receiverId) {
+    if (!StringUtils.hasText(receiverId)) {
+      return;
+    }
+    try {
+      redisTemplate.opsForValue().increment(RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + receiverId);
+    } catch (Exception e) {
+      log.warn("?좎쓽 誘몄씫??알림 카운트 증가 실패: receiverId={}", receiverId, e);
     }
   }
 }
