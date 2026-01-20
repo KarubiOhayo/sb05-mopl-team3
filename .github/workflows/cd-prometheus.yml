@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "release-*" ]
     paths:
-      - 'mopl-monitor/**'
+      - 'mopl-monitor/prometheus'
       - '.github/workflows/cd-prometheus.yml'
   workflow_dispatch:
 
