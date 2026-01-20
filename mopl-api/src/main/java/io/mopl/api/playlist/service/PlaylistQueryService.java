@@ -126,7 +126,11 @@ public class PlaylistQueryService {
             .findById(playlistId)
             .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
 
-    UserSummary owner = userService.getUserSummary(playlist.getOwnerId());
+    Map<UUID, UserSummary> ownerMap = playlistOwnerLoader.loadOwners(Set.of(playlist.getOwnerId()));
+    UserSummary owner = ownerMap.get(playlist.getOwnerId());
+    if (owner == null) {
+      owner = userService.getUserSummary(playlist.getOwnerId());
+    }
 
     boolean subscribedByMe = false;
     if (me != null) {
