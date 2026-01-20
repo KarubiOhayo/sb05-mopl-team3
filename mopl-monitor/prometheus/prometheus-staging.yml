@@ -26,9 +26,9 @@ scrape_configs:
   - job_name: mopl-worker
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["mopl-worker.mopl.staging:8082"]
+      - targets: ["mopl-worker.mopl.staging:8080"]
 
   - job_name: mopl-batch
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["mopl-batch.mopl.staging:8083"]
+      - targets: ["mopl-batch.mopl.staging:8080"]
