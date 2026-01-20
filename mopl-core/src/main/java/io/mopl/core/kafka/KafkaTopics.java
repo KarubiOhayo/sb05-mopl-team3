@@ -17,6 +17,9 @@ public final class KafkaTopics {
 
   // ===== dm =====
   public static final String DIRECT_MESSAGE_RECEIVED = "dm.received";
+  // DM 대화 활성 상태 이벤트
+  public static final String DIRECT_MESSAGE_CONVERSATION_ACTIVE =
+      "direct-message.conversation.active";
 
   // ===== playlist =====
   public static final String PLAYLIST_CREATED = "playlist.created";
