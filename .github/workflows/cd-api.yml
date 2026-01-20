@@ -11,12 +11,6 @@ on:
       - 'settings.gradle'
       - '.github/workflows/cd-api.yml'
   workflow_dispatch:
-    inputs:
-      provision_kafka:
-        description: "Kafka 토픽 선생성 실행 여부"
-        type: boolean
-        required: false
-        default: true
 
 env:
   AWS_REGION: ap-northeast-2
@@ -28,17 +22,10 @@ env:
   DOCKERFILE_PATH: mopl-api/Dockerfile
 
 jobs:
-  provision-topics:
-    name: Provision Kafka Topics
-    uses: ./.github/workflows/provision-kafka-topics.yml
-    secrets: inherit
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.provision_kafka == true }}
-
   deploy:
     name: Deploy API
     runs-on: ubuntu-latest
     environment: production
-    needs: provision-topics
 
     steps:
     - name: Checkout
