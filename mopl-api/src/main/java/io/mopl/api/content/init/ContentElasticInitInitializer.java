@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(name = "search.index.reset-on-startup", havingValue = "true")
 public class ContentElasticInitInitializer {
 
