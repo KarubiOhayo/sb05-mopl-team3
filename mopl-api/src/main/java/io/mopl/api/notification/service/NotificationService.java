@@ -10,6 +10,7 @@ import io.mopl.api.notification.dto.NotificationSearchRequest;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
+
+  private static final Duration UNREAD_COUNT_TTL = Duration.ofHours(1);
 
   private final NotificationRepository notificationRepository;
   private final NotificationQueryRepository notificationQueryRepository;
@@ -108,7 +111,7 @@ public class NotificationService {
   private void setUnreadCountCache(UUID userId, long count) {
     String key = unreadCountKey(userId);
     try {
-      redisTemplate.opsForValue().set(key, String.valueOf(Math.max(count, 0)));
+      redisTemplate.opsForValue().set(key, String.valueOf(Math.max(count, 0)), UNREAD_COUNT_TTL);
     } catch (Exception e) {
       // 캐시 실패는 무시한다.
     }

@@ -7,6 +7,7 @@ import io.mopl.redis.constants.RedisKeyPrefix;
 import io.mopl.socket.dm.DirectMessageSubscriptionRegistry;
 import io.mopl.socket.notification.dto.NotificationDto;
 import io.mopl.socket.sse.SseService;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,8 @@ import org.springframework.util.StringUtils;
 @Component
 @RequiredArgsConstructor
 public class NotificationEventListener {
+
+  private static final Duration UNREAD_COUNT_TTL = Duration.ofHours(1);
 
   private final SseService sseService;
   private final DirectMessageSubscriptionRegistry dmSubscriptionRegistry;
@@ -83,9 +86,13 @@ public class NotificationEventListener {
       return;
     }
     try {
-      redisTemplate.opsForValue().increment(RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + receiverId);
+      String key = RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + receiverId;
+      Long value = redisTemplate.opsForValue().increment(key);
+      if (value != null && value == 1L) {
+        redisTemplate.expire(key, UNREAD_COUNT_TTL);
+      }
     } catch (Exception e) {
-      log.warn("?좎쓽 誘몄씫??알림 카운트 증가 실패: receiverId={}", receiverId, e);
+      log.warn("미읽음 알림 카운트 증가 실패: receiverId={}", receiverId, e);
     }
   }
 }
