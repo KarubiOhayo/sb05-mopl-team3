@@ -51,5 +51,10 @@ jwt:
   access-token-validity-in-seconds: ${JWT_VALIDITY:86400}
   refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800}
 
+management:
+  health:
+    elasticsearch:
+      enabled: false
+
 search:
   enabled: false
