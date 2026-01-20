@@ -1,6 +1,7 @@
 package io.mopl.worker.notification;
 
 import io.mopl.core.event.dm.DirectMessageReceivedEvent;
+import io.mopl.core.event.notification.NotificationType;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
@@ -22,6 +23,7 @@ public class DirectMessageNotificationListener {
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
+  private final DirectMessageActiveConversationTracker activeConversationTracker;
 
   // DM 수신 이벤트를 수신해 알림을 저장한다.
   @KafkaListener(
@@ -35,6 +37,17 @@ public class DirectMessageNotificationListener {
       UUID receiverIdUuid =
           NotificationListenerSupport.parseUuid(
               log, event.receiverId(), "receiverId", event.eventId());
+      UUID conversationIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.conversationId(), "conversationId", event.eventId());
+
+      if (activeConversationTracker.isActive(receiverIdUuid, conversationIdUuid)) {
+        log.info(
+            "활성 대화는 DM 알림 저장을 건너뜁니다: receiverId={}, conversationId={}",
+            receiverIdUuid,
+            conversationIdUuid);
+        return;
+      }
 
       String title =
           messageSource.getMessage(
@@ -54,7 +67,8 @@ public class DirectMessageNotificationListener {
               .level(NotificationLevel.INFO)
               .build();
       Notification saved = notificationRepository.save(notification);
-      notificationEventPublisher.publish(saved);
+      notificationEventPublisher.publish(
+          saved, NotificationType.DIRECT_MESSAGE, event.conversationId());
     } catch (DataIntegrityViolationException e) {
       NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {

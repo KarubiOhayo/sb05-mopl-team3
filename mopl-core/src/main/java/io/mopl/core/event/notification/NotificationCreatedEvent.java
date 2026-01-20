@@ -14,4 +14,6 @@ public record NotificationCreatedEvent(
     String receiverId,
     String title,
     String content,
-    String level) {}
+    String level,
+    NotificationType type,
+    String referenceId) {}
