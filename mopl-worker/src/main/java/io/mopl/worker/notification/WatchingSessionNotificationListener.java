@@ -6,6 +6,7 @@ import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
 import io.mopl.worker.notification.domain.NotificationRepository;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -55,24 +56,36 @@ public class WatchingSessionNotificationListener {
               event.watcherName() + "님이 " + contentTitle + " 시청을 시작했습니다.",
               Locale.KOREAN);
 
-      List<UUID> receiverIds = recipientQuery.findFollowerIds(watcherIdUuid);
-      for (int start = 0; start < receiverIds.size(); start += BATCH_SIZE) {
-        List<UUID> batch =
-            receiverIds.subList(start, Math.min(start + BATCH_SIZE, receiverIds.size()));
-        List<Notification> notifications = new ArrayList<>(batch.size());
-        for (UUID receiverId : batch) {
-          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
-          UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
-          notifications.add(
-              Notification.builder()
-                  .eventId(eventIdUuid)
-                  .receiverId(receiverId)
-                  .title(title)
-                  .content("")
-                  .level(NotificationLevel.INFO)
-                  .build());
+      Instant cursorCreatedAt = null;
+      String cursorId = null;
+
+      while (true) {
+        NotificationRecipientQuery.RecipientPage page =
+            recipientQuery.findFollowerIdsPage(
+                watcherIdUuid, cursorCreatedAt, cursorId, BATCH_SIZE);
+
+        if (!page.receiverIds().isEmpty()) {
+          List<Notification> notifications = new ArrayList<>(page.receiverIds().size());
+          for (UUID receiverId : page.receiverIds()) {
+            // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
+            UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
+            notifications.add(
+                Notification.builder()
+                    .eventId(eventIdUuid)
+                    .receiverId(receiverId)
+                    .title(title)
+                    .content("")
+                    .level(NotificationLevel.INFO)
+                    .build());
+          }
+          saveAndPublishBatch(notifications, event.eventId());
         }
-        saveAndPublishBatch(notifications, event.eventId());
+
+        if (!page.hasNext() || page.nextCreatedAt() == null || page.nextCursorId() == null) {
+          break;
+        }
+        cursorCreatedAt = page.nextCreatedAt();
+        cursorId = page.nextCursorId();
       }
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로그 처리한다.
