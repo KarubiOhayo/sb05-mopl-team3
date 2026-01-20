@@ -103,6 +103,7 @@ CREATE TABLE playlist_subscriptions (
   user_id CHAR(36) NOT NULL,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (playlist_id, user_id),
+  KEY idx_playlist_subscriptions_playlist_created_user (playlist_id, created_at, user_id),
   CONSTRAINT fk_playlist_subscriptions_playlist
     FOREIGN KEY (playlist_id) REFERENCES playlists(id)
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -137,6 +138,7 @@ CREATE TABLE follows (
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_follows_pair (follower_id, followee_id),
+  KEY idx_follows_followee_created_id (followee_id, created_at, id),
   CONSTRAINT fk_follows_follower
     FOREIGN KEY (follower_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -198,6 +200,7 @@ CREATE TABLE notifications (
   read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_notifications_event_id (event_id),
+  KEY idx_notifications_receiver_read_created_id (receiver_id, read_at, created_at, id),
   CONSTRAINT fk_notifications_receiver
     FOREIGN KEY (receiver_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE
