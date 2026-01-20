@@ -26,7 +26,7 @@ import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 @RequiredArgsConstructor
 public class DirectMessageSubscriptionEventListener {
 
-  // DM 대화 구독 여부를 추적해 SSE 전송 여부 판단에 활용한다.
+  // DM 대화 구독 상태를 추적해 SSE 전송 여부 판단에 활용한다.
   private static final Pattern DM_DESTINATION_PATTERN =
       Pattern.compile("^/sub/conversations/([^/]+)/direct-messages$");
 
@@ -46,20 +46,20 @@ public class DirectMessageSubscriptionEventListener {
       return;
     }
 
-    if (StringUtils.hasText(sessionId)
-        && StringUtils.hasText(subscriptionId)
-        && StringUtils.hasText(destination)) {
-      subscriptionRegistry.register(sessionId, subscriptionId, destination);
-    }
-
     SocketUserPrincipal socketUser = resolvePrincipal(event.getUser());
     if (socketUser == null) {
       log.warn("사용자 인증 정보가 없어 DM 구독 이벤트를 무시했습니다. destination={}", destination);
       return;
     }
 
+    if (StringUtils.hasText(sessionId)
+        && StringUtils.hasText(subscriptionId)
+        && StringUtils.hasText(destination)) {
+      subscriptionRegistry.register(sessionId, subscriptionId, destination);
+    }
+
     dmSubscriptionRegistry.register(sessionId, socketUser.userId().toString(), conversationId);
-    // 대화가 활성화되면 worker가 알림 저장을 건너뛰도록 이벤트를 발행한다.
+    // 대화가 활성화되면 worker가 알림 전송을 건너뛰도록 이벤트를 발행한다.
     publishActiveEvent(socketUser.userId().toString(), conversationId, true);
   }
 
@@ -80,7 +80,7 @@ public class DirectMessageSubscriptionEventListener {
     }
 
     dmSubscriptionRegistry.unregister(sessionId, conversationId);
-    // 대화가 비활성화되면 알림 저장이 다시 가능하도록 이벤트를 발행한다.
+    // 대화가 비활성화되면 알림 전송을 다시 가능하게 이벤트를 발행한다.
     String userId = resolveUserId(event.getUser());
     if (userId != null) {
       publishActiveEvent(userId, conversationId, false);

@@ -32,6 +32,7 @@ public class DirectMessageConversationActiveEventListener {
       activeConversationTracker.setActive(userId, conversationId, event.active());
     } catch (IllegalArgumentException e) {
       // UUID 파싱 오류는 parseUuid에서 로그 처리.
+      log.debug("UUID 파싱 오류로 이벤트 처리 건너뜀: eventId={}", event.eventId());
     }
   }
 }

@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Slf4j
@@ -28,35 +27,50 @@ public class NotificationEventListener {
       groupId = "mopl-socket-notification-group",
       properties =
           "spring.json.value.default.type=io.mopl.core.event.notification.NotificationCreatedEvent")
-  @Transactional(readOnly = true)
   public void handleCreatedEvent(NotificationCreatedEvent event) {
     try {
       log.info("알림 생성 이벤트 수신: notificationId={}", event.notificationId());
 
-      NotificationDto dto =
-          NotificationDto.builder()
-              .id(UUID.fromString(event.notificationId()))
-              .createdAt(event.occurredAt())
-              .receiverId(UUID.fromString(event.receiverId()))
-              .title(event.title())
-              .content(event.content())
-              .level(event.level())
-              .build();
-
-      if (event.type() == NotificationType.DIRECT_MESSAGE
+      if (event.type() != null
+          && event.type() == NotificationType.DIRECT_MESSAGE
           && StringUtils.hasText(event.referenceId())
           && dmSubscriptionRegistry.isUserSubscribed(event.receiverId(), event.referenceId())) {
         log.info(
-            "활성 대화는 알림 SSE를 건너뜁니다: receiverId={}, conversationId={}",
+            "활성 대화 중인 알림 SSE 건너뜀: receiverId={}, conversationId={}",
             event.receiverId(),
             event.referenceId());
         return;
       }
 
-      sseService.send(event.receiverId(), "notifications", dto);
+      UUID notificationId = parseUuid(event.notificationId(), "notificationId");
+      UUID receiverId = parseUuid(event.receiverId(), "receiverId");
+      if (notificationId == null || receiverId == null) {
+        return;
+      }
+
+      NotificationDto dto =
+          NotificationDto.builder()
+              .id(notificationId)
+              .createdAt(event.occurredAt())
+              .receiverId(receiverId)
+              .title(event.title())
+              .content(event.content())
+              .level(event.level())
+              .build();
+
+      sseService.send(receiverId.toString(), "notifications", dto);
     } catch (Exception e) {
-      log.error("알림 생성 이벤트 처리 중 오류 발생 (재시도/DLQ 예정)", e);
+      log.error("알림 생성 이벤트 처리 중 오류 발생 (재시도 또는 DLQ 예정)", e);
       throw e;
+    }
+  }
+
+  private UUID parseUuid(String value, String fieldName) {
+    try {
+      return UUID.fromString(value);
+    } catch (RuntimeException e) {
+      log.warn("알림 이벤트 UUID 형식 오류로 무시: {}={}", fieldName, value);
+      return null;
     }
   }
 }
