@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ContentDto {
-
+public class ContentSearchRow {
   private UUID id;
   private ContentType type;
   private String title;
@@ -23,4 +22,5 @@ public class ContentDto {
   private double averageRating;
   private int reviewCount;
   private long watcherCount;
+  java.time.Instant createdAt;
 }
