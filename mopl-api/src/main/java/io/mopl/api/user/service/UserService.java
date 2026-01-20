@@ -99,6 +99,15 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
+  public String getUserName(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+    return user.getName();
+  }
+
+  @Transactional(readOnly = true)
   public boolean existsById(UUID userId) {
     return userRepository.existsById(userId);
   }

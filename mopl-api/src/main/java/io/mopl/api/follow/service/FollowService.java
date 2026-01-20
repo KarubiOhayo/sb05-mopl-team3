@@ -6,7 +6,6 @@ import io.mopl.api.follow.dto.FollowDto;
 import io.mopl.api.follow.dto.FollowRequest;
 import io.mopl.api.follow.event.FollowCreatedInternalEvent;
 import io.mopl.api.follow.repository.FollowRepository;
-import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
@@ -41,9 +40,8 @@ public class FollowService {
     try {
       Follow saved =
           followRepository.save(Follow.builder().followerId(userId).followeeId(followeeId).build());
-      UserSummary follower = userService.getUserSummary(userId);
-      eventPublisher.publishEvent(
-          new FollowCreatedInternalEvent(userId, followeeId, follower.getName()));
+      String followerName = userService.getUserName(userId);
+      eventPublisher.publishEvent(new FollowCreatedInternalEvent(userId, followeeId, followerName));
       return toDto(saved);
     } catch (DataIntegrityViolationException e) {
       return followRepository
