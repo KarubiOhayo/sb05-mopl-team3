@@ -62,4 +62,14 @@ public class Review {
       this.id = UuidV7Generator.generate();
     }
   }
+
+  public void update(String text, double rating) {
+
+    if(text != null) {
+      this.text = text;
+    }
+    if(rating != 0) {
+      this.rating = rating;
+    }
+  }
 }

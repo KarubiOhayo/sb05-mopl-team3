@@ -5,6 +5,7 @@ import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCreateRequest;
 import io.mopl.api.review.dto.ReviewCursorRequest;
 import io.mopl.api.review.dto.ReviewDto;
+import io.mopl.api.review.dto.ReviewUpdateRequest;
 import io.mopl.api.review.error.ReviewErrorCode;
 import io.mopl.api.review.mapper.ReviewMapper;
 import io.mopl.api.review.repository.ReviewQueryRepository;
@@ -54,7 +55,7 @@ public class ReviewService {
   }
 
   @Transactional(readOnly = true)
-  public ReviewDto findById(UUID reviewId, UUID userId) {
+  public ReviewDto findById(UUID reviewId) {
     Review review =
         reviewRepository
             .findById(reviewId)
@@ -90,6 +91,9 @@ public class ReviewService {
         .map(
             review -> {
               UserSummary author = authorMap.get(review.getAuthorId());
+              if (author == null) {
+                author = new UserSummary(review.getAuthorId(), "Unknown", null);
+              }
               return reviewMapper.toDto(review, author);
             })
         .toList();
@@ -117,6 +121,9 @@ public class ReviewService {
             .map(
                 review -> {
                   UserSummary author = authorMap.get(review.getAuthorId());
+                  if (author == null) {
+                    author = new UserSummary(review.getAuthorId(), "Unknown", null);
+                  }
                   return reviewMapper.toDto(review, author);
                 })
             .toList();
@@ -132,4 +139,44 @@ public class ReviewService {
         .sortDirection(entityResponse.getSortDirection())
         .build();
   }
+
+  @Transactional
+  public void delete(UUID reviewId, UUID authorId) {
+    //1. 존재 확인
+    Review review =
+        reviewRepository
+            .findById(reviewId)
+            .orElseThrow(() -> new BusinessException(ReviewErrorCode.NOT_FOUND_REVIEW));
+
+    //2. 작성자 확인
+    // 리뷰 삭제 권한 = 리뷰 작성한 본인만!
+    if(!review.getAuthorId().equals(authorId)) {
+      throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
+    }
+    //3. 삭제
+    reviewRepository.delete(review);
+  }
+
+
+  @Transactional
+  public ReviewDto update(UUID reviewId, ReviewUpdateRequest request, UUID authorId) {
+    //1. 존재 확인
+    Review review =
+        reviewRepository
+            .findById(reviewId)
+            .orElseThrow(() -> new BusinessException(ReviewErrorCode.NOT_FOUND_REVIEW));
+
+    if (!review.getAuthorId().equals(authorId)) {
+      throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
+    }
+
+    review.update(request.getText(), request.getRating());
+
+    UserSummary author = userService.getUserSummary(authorId);
+
+    // 4. 응답 (dirty checking으로 자동 저장됨)
+    return reviewMapper.toDto(review, author);
+  }
+
+
 }
