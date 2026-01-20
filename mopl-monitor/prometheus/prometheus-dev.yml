@@ -1,0 +1,26 @@
+# MOPL 서비스 메트릭 수집 설정 (로컬)
+# docker-compose 내부 서비스 기준 타깃
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: mopl-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api:8080']
+
+  - job_name: mopl-socket
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['socket:8081']
+
+  - job_name: mopl-worker
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['worker:8082']
+
+  - job_name: mopl-batch
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['batch:8083']

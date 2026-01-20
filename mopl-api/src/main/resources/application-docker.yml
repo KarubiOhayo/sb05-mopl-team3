@@ -1,12 +1,12 @@
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: docker
     import:
       - optional:file:./.env[.properties]
       - optional:file:./mopl-api/.env[.properties]
   datasource:
-    url: ${MOPL_DB_URL:jdbc:mysql://localhost:3306/mopl?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    url: jdbc:mysql://mysql:3306/mopl?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${MOPL_DB_USERNAME:app}
     password: ${MOPL_DB_PASSWORD:app}
   jpa:
@@ -18,10 +18,10 @@ spring:
           time_zone: UTC
   data:
     redis:
-      host: ${MOPL_REDIS_HOST:localhost}
+      host: ${MOPL_REDIS_HOST:redis}
       port: ${MOPL_REDIS_PORT:6379}
   kafka:
-    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:localhost:29092}
+    bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:kafka:29092}
 
 security:
   cookie:
@@ -29,10 +29,6 @@ security:
 
 server:
   port: ${MOPL_PORT:8080}
-  forward-headers-strategy: framework
-
-oauth2:
-  base-url: ${OAUTH2_BASE_URL:http://localhost:8085}
 
 logging:
   level:
@@ -40,10 +36,6 @@ logging:
     org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: off
 
 jwt:
-  secret: ${JWT_SECRET:dev-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
-  access-token-validity-in-seconds: ${JWT_VALIDITY:86400} # 디폴트 24시간
-  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800} # 디폴트 7일
-
-search:
-  index:
-    reset-on-startup: true
+  secret: ${JWT_SECRET}
+  access-token-validity-in-seconds: ${JWT_VALIDITY:86400}
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800}

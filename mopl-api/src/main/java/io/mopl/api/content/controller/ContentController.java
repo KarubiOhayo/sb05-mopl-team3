@@ -5,6 +5,7 @@ import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentSearchRequest;
 import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
+import io.mopl.api.content.service.ContentSearchService;
 import io.mopl.api.content.service.ContentService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContentController {
 
   private final ContentService contentService;
+  private final ContentSearchService contentSearchService;
 
   @PostMapping
   public ResponseEntity<ContentDto> create(
@@ -40,13 +42,13 @@ public class ContentController {
 
   @GetMapping("/{contentId}")
   public ResponseEntity<ContentDto> findById(@PathVariable("contentId") UUID contentId) {
-    return ResponseEntity.ok(contentService.findById(contentId));
+    return ResponseEntity.ok(contentSearchService.findById(contentId));
   }
 
   @GetMapping
   public ResponseEntity<CursorResponseContentDto> findAll(
       @Valid @ModelAttribute ContentSearchRequest contentSearchRequest) {
-    return ResponseEntity.ok(contentService.findAll(contentSearchRequest));
+    return ResponseEntity.ok(contentSearchService.findAll(contentSearchRequest));
   }
 
   @PatchMapping(value = "/{contentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
