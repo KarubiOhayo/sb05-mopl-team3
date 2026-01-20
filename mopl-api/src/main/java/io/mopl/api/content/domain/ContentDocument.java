@@ -12,6 +12,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.InnerField;
+import org.springframework.data.elasticsearch.annotations.MultiField;
 
 @Setter
 @Getter
@@ -27,10 +29,14 @@ public class ContentDocument {
   @Field(type = FieldType.Keyword)
   private ContentType type;
 
-  @Field(type = FieldType.Text)
+  @MultiField(
+      mainField = @Field(type = FieldType.Text),
+      otherFields = {@InnerField(suffix = "keyword", type = FieldType.Keyword)})
   private String title;
 
-  @Field(type = FieldType.Text)
+  @MultiField(
+      mainField = @Field(type = FieldType.Text),
+      otherFields = {@InnerField(suffix = "keyword", type = FieldType.Keyword)})
   private String description;
 
   @Field(type = FieldType.Keyword)
