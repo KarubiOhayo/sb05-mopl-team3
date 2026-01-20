@@ -24,15 +24,30 @@ public class ContentDocument {
   @Field(type = FieldType.Keyword)
   private UUID contentId;
 
+  @Field(type = FieldType.Keyword)
   private ContentType type;
+
+  @Field(type = FieldType.Text)
   private String title;
+
+  @Field(type = FieldType.Text)
   private String description;
+
+  @Field(type = FieldType.Keyword)
   private String thumbnailImageKey;
+
+  @Field(type = FieldType.Keyword)
   private List<String> tags;
 
+  @Field(type = FieldType.Double)
   private double averageRating;
+
+  @Field(type = FieldType.Integer)
   private int reviewCount;
+
+  @Field(type = FieldType.Long)
   private long watcherCount;
 
+  @Field(type = FieldType.Date)
   private Instant createdAt;
 }

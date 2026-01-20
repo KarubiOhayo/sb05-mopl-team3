@@ -7,6 +7,7 @@ import io.mopl.api.content.dto.ContentSearchRow;
 import io.mopl.api.content.mapper.ContentMapper;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -16,6 +17,7 @@ import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "search.enabled", havingValue = "true", matchIfMissing = true)
@@ -34,13 +36,16 @@ public class ContentElasticInitInitializer {
   public void init() {
     IndexOperations indexOps = elasticsearchOperations.indexOps(ContentDocument.class);
     boolean indexExists = indexOps.exists();
+    log.info("Elastic index init start: index=contents exists={}", indexExists);
     if (!indexExists) {
       indexOps.create();
       indexOps.putMapping(indexOps.createMapping(ContentDocument.class));
+      log.info("Elastic index created and mapping applied: index=contents");
     }
 
     if (resetOnStartup && indexExists) {
       contentElasticRepository.deleteAll();
+      log.info("Elastic index reset: index=contents");
     }
 
     if (!indexExists || resetOnStartup) {
@@ -50,6 +55,7 @@ public class ContentElasticInitInitializer {
           rows.stream().map(contentMapper::toContentDocument).toList();
 
       contentElasticRepository.saveAll(documents);
+      log.info("Elastic index seeded: index=contents count={}", documents.size());
     }
   }
 }
