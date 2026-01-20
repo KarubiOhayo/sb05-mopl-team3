@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/KarubiOhayo/sb05-mopl-team3/ci.yml?branch=main&style=flat-square)](https://github.com/KarubiOhayo/sb05-mopl-team3/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2+-brightgreen?style=flat-square&logo=spring-boot)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-17+-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
 
 [🌐 데모 사이트](https://project.sb.sprint.learn.codeit.kr/sb/mopl/) | [📖 API 문서](https://project.sb.sprint.learn.codeit.kr/sb/mopl/api/swagger-ui.html) | [📝 협업 문서](https://www.notion.so/Project-Home-2cdfdef79f2d8073ae4ee3d060a0361a)
 
