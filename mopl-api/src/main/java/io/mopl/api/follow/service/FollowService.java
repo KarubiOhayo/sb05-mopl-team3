@@ -1,5 +1,6 @@
 package io.mopl.api.follow.service;
 
+import io.mopl.api.common.error.UserErrorCode;
 import io.mopl.api.follow.domain.Follow;
 import io.mopl.api.follow.dto.FollowDto;
 import io.mopl.api.follow.dto.FollowRequest;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,32 +28,29 @@ public class FollowService {
 
   @Transactional
   public FollowDto create(@Valid FollowRequest request, UUID userId) {
-    // null값 검증
     if (userId == null || request == null || request.getFolloweeId() == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
 
     UUID followeeId = request.getFolloweeId();
-    // 자신 팔로우 막기
     if (followeeId.equals(userId)) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
-    // followee 존재 확인
-    userService.getUserSummary(followeeId);
+    validateIdsAndFolloweeExists(followeeId, userId);
 
-    return followRepository
-        .findByFollowerIdAndFolloweeId(userId, followeeId)
-        .map(this::toDto)
-        .orElseGet(
-            () -> {
-              UserSummary follower = userService.getUserSummary(userId);
-              Follow saved =
-                  followRepository.save(
-                      Follow.builder().followerId(userId).followeeId(followeeId).build());
-              eventPublisher.publishEvent(
-                  new FollowCreatedInternalEvent(userId, followeeId, follower.getName()));
-              return toDto(saved);
-            });
+    try {
+      Follow saved =
+          followRepository.save(Follow.builder().followerId(userId).followeeId(followeeId).build());
+      UserSummary follower = userService.getUserSummary(userId);
+      eventPublisher.publishEvent(
+          new FollowCreatedInternalEvent(userId, followeeId, follower.getName()));
+      return toDto(saved);
+    } catch (DataIntegrityViolationException e) {
+      return followRepository
+          .findByFollowerIdAndFolloweeId(userId, followeeId)
+          .map(this::toDto)
+          .orElseThrow(() -> new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR));
+    }
   }
 
   @Transactional(readOnly = true)
@@ -86,7 +85,6 @@ public class FollowService {
     followRepository.deleteById(followId);
   }
 
-  // -- 헬퍼 메서드 --
   private FollowDto toDto(Follow follow) {
     return FollowDto.builder()
         .id(follow.getId())
@@ -99,6 +97,8 @@ public class FollowService {
     if (userId == null || followeeId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
-    userService.getUserSummary(followeeId);
+    if (!userService.existsById(followeeId)) {
+      throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
+    }
   }
 }

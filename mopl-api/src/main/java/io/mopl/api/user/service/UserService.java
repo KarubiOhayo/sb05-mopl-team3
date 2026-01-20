@@ -98,6 +98,11 @@ public class UserService {
     return UserSummary.from(user, profileImageUrl);
   }
 
+  @Transactional(readOnly = true)
+  public boolean existsById(UUID userId) {
+    return userRepository.existsById(userId);
+  }
+
   /** 비밀번호 변경 */
   @Transactional
   public void changePassword(UUID userId, ChangePasswordRequest request) {
