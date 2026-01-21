@@ -100,11 +100,9 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public String getUserName(UUID userId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-    return user.getName();
+    return userRepository
+        .findNameById(userId)
+        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
   }
 
   @Transactional(readOnly = true)

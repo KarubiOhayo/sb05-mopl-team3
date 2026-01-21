@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 public class NotificationEventListener {
 
   private static final Duration UNREAD_COUNT_TTL = Duration.ofHours(1);
+  private static final Duration UNREAD_DEDUP_TTL = Duration.ofDays(1);
 
   private final SseService sseService;
   private final DirectMessageSubscriptionRegistry dmSubscriptionRegistry;
@@ -35,7 +36,7 @@ public class NotificationEventListener {
           "spring.json.value.default.type=io.mopl.core.event.notification.NotificationCreatedEvent")
   public void handleCreatedEvent(NotificationCreatedEvent event) {
     try {
-      incrementUnreadCount(event.receiverId());
+      incrementUnreadCount(event.receiverId(), event.notificationId());
       log.info("알림 생성 이벤트 수신: notificationId={}", event.notificationId());
 
       if (event.type() != null
@@ -81,11 +82,17 @@ public class NotificationEventListener {
     }
   }
 
-  private void incrementUnreadCount(String receiverId) {
-    if (!StringUtils.hasText(receiverId)) {
+  private void incrementUnreadCount(String receiverId, String notificationId) {
+    if (!StringUtils.hasText(receiverId) || !StringUtils.hasText(notificationId)) {
       return;
     }
     try {
+      String dedupKey = RedisKeyPrefix.NOTIFICATION_UNREAD_DEDUP + notificationId;
+      Boolean first = redisTemplate.opsForValue().setIfAbsent(dedupKey, "1", UNREAD_DEDUP_TTL);
+      if (first == null || !first) {
+        return;
+      }
+
       String key = RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + receiverId;
       Long value = redisTemplate.opsForValue().increment(key);
       if (value != null && value == 1L) {

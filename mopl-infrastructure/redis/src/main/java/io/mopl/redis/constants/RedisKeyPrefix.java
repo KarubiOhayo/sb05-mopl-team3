@@ -38,7 +38,13 @@ public final class RedisKeyPrefix {
   /** 사용자 구독 플레이리스트 Set: playlist:subs:user:{userId} */
   public static final String PLAYLIST_SUBS_BY_USER = "playlist:subs:user:";
 
+  // ===== 알림 (notification:) =====
+
+  /** 미읽음 알림 카운트: notification:unread-count:{userId} */
   public static final String NOTIFICATION_UNREAD_COUNT = "notification:unread-count:";
+
+  /** 미읽음 카운트 중복 방지 키: notification:unread-dedup:{notificationId} */
+  public static final String NOTIFICATION_UNREAD_DEDUP = "notification:unread-dedup:";
 
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
