@@ -33,21 +33,24 @@ public class DirectMessageController {
       @DestinationVariable String conversationId,
       @Payload @Valid DirectMessageSendRequest request,
       Principal principal) {
+    socketMetrics.recordWsMessageHandle(
+        "dm",
+        () -> {
+          SocketUserPrincipal user = resolvePrincipal(principal);
+          socketMetrics.onWsMessageIn("dm");
 
-    SocketUserPrincipal user = resolvePrincipal(principal);
-    socketMetrics.onWsMessageIn("dm");
+          DirectMessageSendEvent event =
+              new DirectMessageSendEvent(
+                  UUID.randomUUID().toString(),
+                  Instant.now(),
+                  conversationId,
+                  user.userId().toString(),
+                  request.content());
 
-    DirectMessageSendEvent event =
-        new DirectMessageSendEvent(
-            UUID.randomUUID().toString(),
-            Instant.now(),
-            conversationId,
-            user.userId().toString(),
-            request.content());
+          kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, conversationId, event);
 
-    kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, conversationId, event);
-
-    log.info("DM 전송 요청 발행 완료: conversationId={}, senderId={}", conversationId, user.userId());
+          log.info("DM 전송 요청 발행 완료: conversationId={}, senderId={}", conversationId, user.userId());
+        });
   }
 
   private SocketUserPrincipal resolvePrincipal(Principal principal) {

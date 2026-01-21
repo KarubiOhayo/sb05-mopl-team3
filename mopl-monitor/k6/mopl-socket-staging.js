@@ -26,6 +26,9 @@ const MODE = __ENV.K6_SOCKET_MODE || 'ws';
 const TOPIC_MODE = __ENV.K6_SOCKET_TOPIC_MODE || 'mix';
 const SSE_URL = __ENV.SSE_URL || `${BASE_URL}/api/sse`;
 const WS_MESSAGE_INTERVAL_MS = Number(__ENV.K6_WS_MSG_INTERVAL_MS || 3000);
+const WS_HOLD_VUS = Number(__ENV.K6_SOCKET_WS_HOLD_VUS || 0);
+const WS_HOLD_DURATION = __ENV.K6_SOCKET_WS_HOLD_DURATION || '10m';
+const WS_HOLD_RAMP = __ENV.K6_SOCKET_WS_HOLD_RAMP || '5m';
 
 const ENABLE_WS = MODE === 'ws' || MODE === 'both' || MODE === 'mix';
 const ENABLE_REST = MODE === 'rest' || MODE === 'both' || MODE === 'mix';
@@ -33,16 +36,22 @@ const ENABLE_SSE = MODE === 'sse' || MODE === 'both' || MODE === 'mix';
 
 const scenarios = {};
 if (ENABLE_WS) {
-  const wsStages = parseStages(
-    __ENV.K6_SOCKET_WS_STAGES,
+  const holdStages =
+    WS_HOLD_VUS > 0
+      ? [
+          { duration: WS_HOLD_RAMP, target: WS_HOLD_VUS },
+          { duration: WS_HOLD_DURATION, target: WS_HOLD_VUS },
+        ]
+      : null;
+  const defaultRampStages =
     __ENV.K6_SOCKET_WS_RAMP === 'true' || __ENV.K6_SOCKET_WS_RAMP === '1'
       ? [
           { duration: '5m', target: 30 },
           { duration: '5m', target: 60 },
           { duration: '5m', target: 100 },
         ]
-      : null
-  );
+      : null;
+  const wsStages = parseStages(__ENV.K6_SOCKET_WS_STAGES, holdStages || defaultRampStages);
   if (wsStages) {
     scenarios.socket_ws = {
       executor: 'ramping-vus',

@@ -3,6 +3,7 @@ package io.mopl.socket.metrics;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.mopl.socket.websocket.session.SessionSubscriptionRegistry;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,6 +23,7 @@ public class SocketMetrics {
   private final Map<String, Counter> wsSubscribeCounters = new ConcurrentHashMap<>();
   private final Map<String, Counter> wsUnsubscribeCounters = new ConcurrentHashMap<>();
   private final Map<String, Counter> wsMessageInCounters = new ConcurrentHashMap<>();
+  private final Map<String, Timer> wsMessageHandleTimers = new ConcurrentHashMap<>();
   private final Map<String, Counter> sseSendCounters = new ConcurrentHashMap<>();
   private final Map<String, Counter> sseSendFailCounters = new ConcurrentHashMap<>();
 
@@ -69,6 +71,11 @@ public class SocketMetrics {
     wsMessageInCounters.computeIfAbsent(type, this::buildWsMessageInCounter).increment();
   }
 
+  public void recordWsMessageHandle(String type, Runnable runnable) {
+    Timer timer = wsMessageHandleTimers.computeIfAbsent(type, this::buildWsMessageHandleTimer);
+    timer.record(runnable);
+  }
+
   public void onSseConnect() {
     sseConnectTotal.increment();
     sseActiveConnections.incrementAndGet();
@@ -97,6 +104,15 @@ public class SocketMetrics {
 
   private Counter buildWsMessageInCounter(String type) {
     return Counter.builder("mopl_socket_ws_messages_in_total").tag("type", type).register(registry);
+  }
+
+  private Timer buildWsMessageHandleTimer(String type) {
+    return Timer.builder("mopl_socket_ws_message_handle_seconds")
+        .description("WebSocket 메시지 핸들러 처리 시간")
+        .publishPercentileHistogram()
+        .publishPercentiles(0.95, 0.99)
+        .tag("type", type)
+        .register(registry);
   }
 
   private Counter buildSseSendCounter(String type) {

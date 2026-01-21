@@ -28,20 +28,24 @@ public class ContentChatController {
       @DestinationVariable String contentId,
       @Payload ContentChatSendRequest request,
       Principal principal) {
-    SocketUserPrincipal socketUser = resolvePrincipal(principal);
-    socketMetrics.onWsMessageIn("chat");
+    socketMetrics.recordWsMessageHandle(
+        "chat",
+        () -> {
+          SocketUserPrincipal socketUser = resolvePrincipal(principal);
+          socketMetrics.onWsMessageIn("chat");
 
-    UserSummary sender =
-        UserSummary.builder()
-            .userId(socketUser.userId())
-            .name(socketUser.name())
-            .profileImageUrl(socketUser.profileImageUrl())
-            .build();
+          UserSummary sender =
+              UserSummary.builder()
+                  .userId(socketUser.userId())
+                  .name(socketUser.name())
+                  .profileImageUrl(socketUser.profileImageUrl())
+                  .build();
 
-    ContentChatDto payload =
-        ContentChatDto.builder().sender(sender).content(request.content()).build();
+          ContentChatDto payload =
+              ContentChatDto.builder().sender(sender).content(request.content()).build();
 
-    messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/chat", payload);
+          messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/chat", payload);
+        });
   }
 
   private SocketUserPrincipal resolvePrincipal(Principal principal) {
