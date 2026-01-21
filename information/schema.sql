@@ -171,9 +171,9 @@ CREATE TABLE direct_messages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
-                               id CHAR(36) NOT NULL,
-                               event_id CHAR(36) NOT NULL,
-                               receiver_id CHAR(36) NOT NULL,
+  id CHAR(36) NOT NULL,
+  event_id CHAR(36) NOT NULL,
+  receiver_id CHAR(36) NOT NULL,
                                title VARCHAR(255) NOT NULL,
                                content VARCHAR(1000) NOT NULL,
                                level VARCHAR(20) NOT NULL,
@@ -181,9 +181,16 @@ CREATE TABLE notifications (
                                read_at TIMESTAMP(6) NULL,
                                PRIMARY KEY (id),
                                UNIQUE KEY uq_notifications_event_id (event_id),
-                               CONSTRAINT fk_notifications_receiver
-                                   FOREIGN KEY (receiver_id) REFERENCES users(id)
-                                       ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT fk_notifications_receiver
+    FOREIGN KEY (receiver_id) REFERENCES users(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE processed_events (
+  event_id CHAR(36) NOT NULL,
+  processed_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (event_id),
+  UNIQUE KEY uq_processed_events_event_id (event_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE watching_sessions (

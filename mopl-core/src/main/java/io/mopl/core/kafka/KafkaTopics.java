@@ -10,6 +10,10 @@ public final class KafkaTopics {
   public static final String CONTENT_THUMBNAIL_REQUESTED_DLQ = "content.thumbnail.requested.dlq";
   public static final String CONTENT_THUMBNAIL_COMPLETED = "content.thumbnail.completed";
   public static final String CONTENT_THUMBNAIL_FAILED = "content.thumbnail.failed";
+  public static final String CONTENT_AGGREGATE_UPDATED = "content.aggregate.updated";
+
+  // ===== review =====
+  public static final String REVIEW_CREATED = "review.created";
 
   // ===== user =====
   public static final String USER_FOLLOWED = "user.followed";

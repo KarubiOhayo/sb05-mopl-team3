@@ -7,6 +7,7 @@ import io.mopl.api.review.dto.ReviewCursorRequest;
 import io.mopl.api.review.dto.ReviewDto;
 import io.mopl.api.review.dto.ReviewUpdateRequest;
 import io.mopl.api.review.error.ReviewErrorCode;
+import io.mopl.api.review.event.ReviewEventPublisher;
 import io.mopl.api.review.mapper.ReviewMapper;
 import io.mopl.api.review.repository.ReviewQueryRepository;
 import io.mopl.api.review.repository.ReviewRepository;
@@ -16,15 +17,19 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.core.event.review.ReviewCreatedEvent;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
@@ -32,6 +37,9 @@ public class ReviewService {
   private final ReviewRepository reviewRepository;
   private final ReviewQueryRepository reviewQueryRepository;
   private final ReviewMapper reviewMapper;
+  private final ReviewEventPublisher reviewEventPublisher;
+
+  // private final UserService userService; // UserService 구현 전까지 주석 처리
   private final UserService userService;
   private final UserRepository userRepository;
 
@@ -48,6 +56,19 @@ public class ReviewService {
 
     Review review = reviewMapper.toEntity(request, authorId);
     Review savedReview = reviewRepository.save(review);
+
+    reviewEventPublisher.publish(
+        new ReviewCreatedEvent(
+            UUID.randomUUID().toString(),
+            Instant.now(),
+            savedReview.getId().toString(),
+            savedReview.getContentId().toString(),
+            savedReview.getRating()));
+    log.info(
+        "리뷰 이벤트 발행: reviewId={}, contentId={}, rating={}",
+        savedReview.getId(),
+        savedReview.getContentId(),
+        savedReview.getRating());
 
     UserSummary author = userService.getUserSummary(authorId);
 
@@ -142,25 +163,24 @@ public class ReviewService {
 
   @Transactional
   public void delete(UUID reviewId, UUID authorId) {
-    //1. 존재 확인
+    // 1. 존재 확인
     Review review =
         reviewRepository
             .findById(reviewId)
             .orElseThrow(() -> new BusinessException(ReviewErrorCode.NOT_FOUND_REVIEW));
 
-    //2. 작성자 확인
+    // 2. 작성자 확인
     // 리뷰 삭제 권한 = 리뷰 작성한 본인만!
-    if(!review.getAuthorId().equals(authorId)) {
+    if (!review.getAuthorId().equals(authorId)) {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
-    //3. 삭제
+    // 3. 삭제
     reviewRepository.delete(review);
   }
 
-
   @Transactional
   public ReviewDto update(UUID reviewId, ReviewUpdateRequest request, UUID authorId) {
-    //1. 존재 확인
+    // 1. 존재 확인
     Review review =
         reviewRepository
             .findById(reviewId)
@@ -177,6 +197,4 @@ public class ReviewService {
     // 4. 응답 (dirty checking으로 자동 저장됨)
     return reviewMapper.toDto(review, author);
   }
-
-
 }
