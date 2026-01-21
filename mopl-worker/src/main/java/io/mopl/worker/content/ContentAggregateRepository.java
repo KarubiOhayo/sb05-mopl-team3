@@ -71,4 +71,44 @@ public class ContentAggregateRepository {
 
     return updated;
   }
+
+  @Transactional
+  public int removeReview(UUID contentId, double rating) {
+    int updated =
+        entityManager
+            .createNativeQuery(
+                "UPDATE contents "
+                    + "SET average_rating = CASE "
+                    + "WHEN review_count <= 1 THEN 0 "
+                    + "ELSE (average_rating * review_count - ?1) / (review_count - 1) "
+                    + "END, "
+                    + "review_count = CASE "
+                    + "WHEN review_count <= 1 THEN 0 "
+                    + "ELSE review_count - 1 "
+                    + "END "
+                    + "WHERE id = ?2 AND review_count > 0")
+            .setParameter(1, rating)
+            .setParameter(2, contentId.toString())
+            .executeUpdate();
+
+    if (updated == 0) {
+      log.warn("removeReview skipped: contentId={}, rating={}", contentId, rating);
+      return 0;
+    }
+
+    Object[] row =
+        (Object[])
+            entityManager
+                .createNativeQuery(
+                    "SELECT review_count, average_rating FROM contents WHERE id = ?1")
+                .setParameter(1, contentId.toString())
+                .getSingleResult();
+    log.info(
+        "removeReview read-back: contentId={}, reviewCount={}, averageRating={}",
+        contentId,
+        row[0],
+        row[1]);
+
+    return updated;
+  }
 }

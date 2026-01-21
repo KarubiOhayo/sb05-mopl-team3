@@ -18,6 +18,7 @@ import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.review.ReviewCreatedEvent;
+import io.mopl.core.event.review.ReviewDeletedEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +177,19 @@ public class ReviewService {
     }
     // 3. 삭제
     reviewRepository.delete(review);
+
+    reviewEventPublisher.publish(
+        new ReviewDeletedEvent(
+            UUID.randomUUID().toString(),
+            Instant.now(),
+            review.getId().toString(),
+            review.getContentId().toString(),
+            review.getRating()));
+    log.info(
+        "review delete event published: reviewId={}, contentId={}, rating={}",
+        review.getId(),
+        review.getContentId(),
+        review.getRating());
   }
 
   @Transactional
