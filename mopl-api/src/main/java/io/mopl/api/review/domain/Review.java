@@ -65,10 +65,10 @@ public class Review {
 
   public void update(String text, double rating) {
 
-    if(text != null) {
+    if (text != null) {
       this.text = text;
     }
-    if(rating != 0) {
+    if (rating != 0) {
       this.rating = rating;
     }
   }
