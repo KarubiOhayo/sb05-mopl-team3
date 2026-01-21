@@ -1,6 +1,7 @@
 package io.mopl.api.review.repository;
 
 import io.mopl.api.review.domain.Review;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Repository;
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
   Page<Review> findByContentId(UUID contentId, Pageable pageable);
+
+  List<Review> findByContentId(UUID contentId);
 
   boolean existsByContentIdAndAuthorId(UUID contentId, UUID authorId);
 
