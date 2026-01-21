@@ -15,6 +15,7 @@ public final class KafkaTopics {
   // ===== review =====
   public static final String REVIEW_CREATED = "review.created";
   public static final String REVIEW_DELETED = "review.deleted";
+  public static final String REVIEW_UPDATED = "review.updated";
 
   // ===== user =====
   public static final String USER_FOLLOWED = "user.followed";

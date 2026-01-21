@@ -19,6 +19,7 @@ import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.review.ReviewCreatedEvent;
 import io.mopl.core.event.review.ReviewDeletedEvent;
+import io.mopl.core.event.review.ReviewUpdatedEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +187,7 @@ public class ReviewService {
             review.getContentId().toString(),
             review.getRating()));
     log.info(
-        "review delete event published: reviewId={}, contentId={}, rating={}",
+        "리뷰 삭제 이벤트 발행: reviewId={}, contentId={}, rating={}",
         review.getId(),
         review.getContentId(),
         review.getRating());
@@ -204,9 +205,27 @@ public class ReviewService {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
 
+    double beforeRating = review.getRating();
     Double rating = request.getRating();
     double safeRating = rating == null ? 0.0 : rating;
     review.update(request.getText(), safeRating);
+
+    if (Double.compare(beforeRating, safeRating) != 0) {
+      reviewEventPublisher.publish(
+          new ReviewUpdatedEvent(
+              UUID.randomUUID().toString(),
+              Instant.now(),
+              review.getId().toString(),
+              review.getContentId().toString(),
+              beforeRating,
+              safeRating));
+      log.info(
+          "리뷰 업데이트 이벤트 발행: reviewId={}, contentId={}, beforeRating={}, afterRating={}",
+          review.getId(),
+          review.getContentId(),
+          beforeRating,
+          safeRating);
+    }
 
     UserSummary author = userService.getUserSummary(authorId);
 
