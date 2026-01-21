@@ -10,7 +10,10 @@ import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.common.dto.SortDirection;
 import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCursorRequest;
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
+  private static final int MIN_LIMIT = 1;
+  private static final int MAX_LIMIT = 100;
 
   private final JPAQueryFactory queryFactory;
 
@@ -26,8 +31,12 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
   public CursorResponse<Review> findReviewsPage(UUID contentId, ReviewCursorRequest cursorRequest) {
 
     int limit = cursorRequest.getLimitOrDefault();
-    String sortBy = cursorRequest.getSortBy();
-    String sortDirection = cursorRequest.getSortDirection();
+    if (limit < MIN_LIMIT || limit > MAX_LIMIT) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+          .addDetail("limit", String.valueOf(limit));
+    }
+    String sortBy = normalizeSortBy(cursorRequest.getSortBy());
+    String sortDirection = normalizeSortDirection(cursorRequest.getSortDirection());
     String cursor = cursorRequest.getCursor();
     UUID idAfter = cursorRequest.getIdAfter();
 
@@ -96,7 +105,7 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
   }
 
   private OrderSpecifier<?>[] getOrderSpecifier(String sortBy, String sortDirection) {
-    Order order = "ASCENDING".equalsIgnoreCase(sortDirection) ? Order.ASC : Order.DESC;
+    Order order = "ASCENDING".equals(sortDirection) ? Order.ASC : Order.DESC;
 
     if ("rating".equalsIgnoreCase(sortBy)) {
       return new OrderSpecifier[] {
@@ -113,13 +122,28 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
   private BooleanExpression cursorCondition(
       String cursor, UUID idAfter, String sortBy, String sortDirection) {
 
-    if (cursor == null || idAfter == null) {
+    boolean hasCursor = cursor != null && !cursor.isBlank();
+    if (hasCursor ^ (idAfter != null)) {
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+          .addDetail("reason", "cursor requires idAfter")
+          .addDetail("cursor", String.valueOf(cursor))
+          .addDetail("idAfter", String.valueOf(idAfter));
+    }
+    if (!hasCursor) {
       return null;
     }
 
-    boolean isAscending = "ASCENDING".equalsIgnoreCase(sortDirection);
+    String trimmedCursor = cursor.trim();
+    boolean isAscending = "ASCENDING".equals(sortDirection);
     if ("rating".equalsIgnoreCase(sortBy)) {
-      double ratingCursor = Double.parseDouble(cursor);
+      double ratingCursor;
+      try {
+        ratingCursor = Double.parseDouble(trimmedCursor);
+      } catch (NumberFormatException e) {
+        throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+            .addDetail("reason", "invalid cursor format")
+            .addDetail("cursor", trimmedCursor);
+      }
       return isAscending
           // 오름차순: (평점 > 커서) OR (평점 == 커서 AND ID > 커서ID)
           ? review
@@ -132,7 +156,14 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
               .lt(ratingCursor)
               .or(review.rating.eq(ratingCursor).and(review.id.gt(idAfter)));
     } else {
-      Instant createdAtCursor = Instant.parse(cursor);
+      Instant createdAtCursor;
+      try {
+        createdAtCursor = Instant.parse(trimmedCursor);
+      } catch (DateTimeParseException e) {
+        throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+            .addDetail("reason", "invalid cursor format")
+            .addDetail("cursor", trimmedCursor);
+      }
 
       return isAscending
           // 오름차순: (작성일 > 커서) OR (작성일 == 커서 AND ID > 커서ID)
@@ -146,5 +177,33 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
               .lt(createdAtCursor)
               .or(review.createdAt.eq(createdAtCursor).and(review.id.gt(idAfter)));
     }
+  }
+
+  private String normalizeSortBy(String sortBy) {
+    if (sortBy == null || sortBy.isBlank()) {
+      return "createdAt";
+    }
+    if ("rating".equalsIgnoreCase(sortBy)) {
+      return "rating";
+    }
+    if ("createdAt".equalsIgnoreCase(sortBy)) {
+      return "createdAt";
+    }
+    throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+        .addDetail("sortBy", String.valueOf(sortBy));
+  }
+
+  private String normalizeSortDirection(String sortDirection) {
+    if (sortDirection == null || sortDirection.isBlank()) {
+      return "DESCENDING";
+    }
+    if ("ASCENDING".equalsIgnoreCase(sortDirection)) {
+      return "ASCENDING";
+    }
+    if ("DESCENDING".equalsIgnoreCase(sortDirection)) {
+      return "DESCENDING";
+    }
+    throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
+        .addDetail("sortDirection", String.valueOf(sortDirection));
   }
 }

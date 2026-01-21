@@ -190,7 +190,9 @@ public class ReviewService {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
 
-    review.update(request.getText(), request.getRating());
+    Double rating = request.getRating();
+    double safeRating = rating == null ? 0.0 : rating;
+    review.update(request.getText(), safeRating);
 
     UserSummary author = userService.getUserSummary(authorId);
 
