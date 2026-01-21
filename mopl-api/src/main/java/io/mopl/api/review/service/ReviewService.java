@@ -142,25 +142,24 @@ public class ReviewService {
 
   @Transactional
   public void delete(UUID reviewId, UUID authorId) {
-    //1. 존재 확인
+    // 1. 존재 확인
     Review review =
         reviewRepository
             .findById(reviewId)
             .orElseThrow(() -> new BusinessException(ReviewErrorCode.NOT_FOUND_REVIEW));
 
-    //2. 작성자 확인
+    // 2. 작성자 확인
     // 리뷰 삭제 권한 = 리뷰 작성한 본인만!
-    if(!review.getAuthorId().equals(authorId)) {
+    if (!review.getAuthorId().equals(authorId)) {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
-    //3. 삭제
+    // 3. 삭제
     reviewRepository.delete(review);
   }
 
-
   @Transactional
   public ReviewDto update(UUID reviewId, ReviewUpdateRequest request, UUID authorId) {
-    //1. 존재 확인
+    // 1. 존재 확인
     Review review =
         reviewRepository
             .findById(reviewId)
@@ -170,13 +169,13 @@ public class ReviewService {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
 
-    review.update(request.getText(), request.getRating());
+    Double rating = request.getRating();
+    double safeRating = rating == null ? 0.0 : rating;
+    review.update(request.getText(), safeRating);
 
     UserSummary author = userService.getUserSummary(authorId);
 
     // 4. 응답 (dirty checking으로 자동 저장됨)
     return reviewMapper.toDto(review, author);
   }
-
-
 }
