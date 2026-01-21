@@ -5,6 +5,7 @@ import io.mopl.core.event.conversation.DirectMessageSendEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.socket.common.error.SocketErrorCode;
 import io.mopl.socket.dm.dto.DirectMessageSendRequest;
+import io.mopl.socket.metrics.SocketMetrics;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Controller;
 public class DirectMessageController {
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final SocketMetrics socketMetrics;
 
   @MessageMapping("/conversations/{conversationId}/direct-messages")
   public void sendDirectMessage(
@@ -33,6 +35,7 @@ public class DirectMessageController {
       Principal principal) {
 
     SocketUserPrincipal user = resolvePrincipal(principal);
+    socketMetrics.onWsMessageIn("dm");
 
     DirectMessageSendEvent event =
         new DirectMessageSendEvent(

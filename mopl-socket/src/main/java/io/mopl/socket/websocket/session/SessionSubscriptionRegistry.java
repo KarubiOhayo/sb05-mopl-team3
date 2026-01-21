@@ -21,6 +21,10 @@ public class SessionSubscriptionRegistry {
     subscriptions.keySet().removeIf(key -> key.startsWith(sessionId + ":"));
   }
 
+  public int size() {
+    return subscriptions.size();
+  }
+
   private String key(String sessionId, String subscriptionId) {
     return sessionId + ":" + subscriptionId;
   }

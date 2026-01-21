@@ -4,6 +4,7 @@ import io.mopl.core.error.BusinessException;
 import io.mopl.socket.chat.dto.ContentChatDto;
 import io.mopl.socket.chat.dto.ContentChatSendRequest;
 import io.mopl.socket.common.error.SocketErrorCode;
+import io.mopl.socket.metrics.SocketMetrics;
 import io.mopl.socket.user.dto.UserSummary;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import java.security.Principal;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Controller;
 public class ContentChatController {
 
   private final SimpMessagingTemplate messagingTemplate;
+  private final SocketMetrics socketMetrics;
 
   @MessageMapping("/contents/{contentId}/chat")
   public void sendChat(
@@ -27,6 +29,7 @@ public class ContentChatController {
       @Payload ContentChatSendRequest request,
       Principal principal) {
     SocketUserPrincipal socketUser = resolvePrincipal(principal);
+    socketMetrics.onWsMessageIn("chat");
 
     UserSummary sender =
         UserSummary.builder()
