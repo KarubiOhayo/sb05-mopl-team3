@@ -20,6 +20,7 @@ public class DirectMessageEventListener {
 
   private final SimpMessagingTemplate messagingTemplate;
   private final SseService sseService;
+  private final DirectMessageSubscriptionRegistry dmSubscriptionRegistry;
 
   @KafkaListener(
       topics = KafkaTopics.DIRECT_MESSAGE_CREATED,
@@ -54,8 +55,10 @@ public class DirectMessageEventListener {
       messagingTemplate.convertAndSend(
           "/sub/conversations/" + event.conversationId() + "/direct-messages", dto);
 
-      sseService.send(event.receiverId(), "direct-messages", dto);
-      sseService.send(event.senderId(), "direct-messages", dto);
+      // 해당 대화가 열려 있지 않을 때만 SSE로 보낸다.
+      if (!dmSubscriptionRegistry.isUserSubscribed(event.receiverId(), event.conversationId())) {
+        sseService.send(event.receiverId(), "direct-messages", dto);
+      }
 
     } catch (Exception e) {
       log.error("DM 생성 이벤트 처리 중 오류 발생 (재시도/DLQ 예정)", e);
