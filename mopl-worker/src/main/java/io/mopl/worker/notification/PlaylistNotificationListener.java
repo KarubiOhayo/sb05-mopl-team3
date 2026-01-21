@@ -1,6 +1,5 @@
 package io.mopl.worker.notification;
 
-import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.event.playlist.PlaylistContentAddedEvent;
 import io.mopl.core.event.playlist.PlaylistCreatedEvent;
 import io.mopl.core.event.playlist.PlaylistSubscribedEvent;
@@ -17,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -30,15 +28,17 @@ public class PlaylistNotificationListener {
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
 
-  // 플레이리스트 구독 이벤트를 소비해 소유자에게 알림을 저장한다.
+  // 플레이리스트 구독 이벤트를 소유자에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_SUBSCRIBED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistSubscribedEvent")
-  public void handleSubscribed(PlaylistSubscribedEvent event, Acknowledgment acknowledgment) {
+  public void handleSubscribed(PlaylistSubscribedEvent event) {
     try {
-      UUID eventIdUuid = parseUuid(event.eventId(), "eventId", event.eventId());
-      UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
+      UUID eventIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.eventId(), "eventId", event.eventId());
+      UUID ownerIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.ownerId(), "ownerId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -58,22 +58,22 @@ public class PlaylistNotificationListener {
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
-      handleDataIntegrityViolation(e, event.eventId());
+      NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 
-  // 플레이리스트 콘텐츠 추가 이벤트를 소비해 구독자에게 알림을 저장한다.
+  // 플레이리스트 콘텐츠 추가 이벤트를 구독자에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CONTENT_ADDED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistContentAddedEvent")
-  public void handleContentAdded(PlaylistContentAddedEvent event, Acknowledgment acknowledgment) {
+  public void handleContentAdded(PlaylistContentAddedEvent event) {
     try {
-      UUID playlistIdUuid = parseUuid(event.playlistId(), "playlistId", event.eventId());
+      UUID playlistIdUuid =
+          NotificationListenerSupport.parseUuid(
+              log, event.playlistId(), "playlistId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -85,7 +85,7 @@ public class PlaylistNotificationListener {
       List<UUID> receiverIds = recipientQuery.findSubscriberIds(playlistIdUuid);
       for (UUID receiverId : receiverIds) {
         try {
-          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
           UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
           Notification notification =
               Notification.builder()
@@ -98,24 +98,24 @@ public class PlaylistNotificationListener {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException ex) {
-          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, ex, event.eventId() + ":" + receiverId);
         }
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 
-  // 플레이리스트 생성 이벤트를 소비해 팔로워에게 알림을 저장한다.
+  // 플레이리스트 생성 이벤트를 팔로워에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_CREATED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistCreatedEvent")
-  public void handleCreated(PlaylistCreatedEvent event, Acknowledgment acknowledgment) {
+  public void handleCreated(PlaylistCreatedEvent event) {
     try {
-      UUID ownerIdUuid = parseUuid(event.ownerId(), "ownerId", event.eventId());
+      UUID ownerIdUuid =
+          NotificationListenerSupport.parseUuid(log, event.ownerId(), "ownerId", event.eventId());
 
       String title =
           messageSource.getMessage(
@@ -127,7 +127,7 @@ public class PlaylistNotificationListener {
       List<UUID> receiverIds = recipientQuery.findFollowerIds(ownerIdUuid);
       for (UUID receiverId : receiverIds) {
         try {
-          // 수신자별로 event_id를 분리해 유니크 제약 충돌을 방지한다.
+          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
           UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
           Notification notification =
               Notification.builder()
@@ -140,35 +140,12 @@ public class PlaylistNotificationListener {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException ex) {
-          handleDataIntegrityViolation(ex, event.eventId() + ":" + receiverId);
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, ex, event.eventId() + ":" + receiverId);
         }
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로깅한다.
-    } finally {
-      acknowledgment.acknowledge();
-    }
-  }
-
-  private void handleDataIntegrityViolation(DataIntegrityViolationException e, String eventId) {
-    Throwable cause = e.getMostSpecificCause();
-    String message = cause != null ? cause.getMessage() : e.getMessage();
-
-    if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
-      log.debug("중복 이벤트 무시 (eventId={})", eventId);
-    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
-      log.error("수신자 참조 오류 (eventId={})", eventId, e);
-    } else {
-      log.error("알림 저장 중 오류 (eventId={})", eventId, e);
-    }
-  }
-
-  private UUID parseUuid(String value, String fieldName, String eventId) {
-    try {
-      return UUID.fromString(value);
-    } catch (IllegalArgumentException e) {
-      log.error("UUID 형식이 올바르지 않습니다: {} (eventId={})", fieldName, eventId, e);
-      throw e;
+      // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
 

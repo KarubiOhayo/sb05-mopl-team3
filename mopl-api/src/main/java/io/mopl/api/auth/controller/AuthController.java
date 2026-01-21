@@ -7,8 +7,7 @@ import io.mopl.api.auth.dto.SignInRequest;
 import io.mopl.api.auth.jwt.JwtTokenProvider;
 import io.mopl.api.auth.service.AuthService;
 import io.mopl.api.auth.service.RefreshTokenService;
-import io.mopl.api.common.config.CookieSecurityProperties;
-import jakarta.servlet.http.Cookie;
+import io.mopl.api.common.util.CookieUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -33,7 +32,7 @@ public class AuthController {
   private final AuthService authService;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
-  private final CookieSecurityProperties cookieSecurityProperties;
+  private final CookieUtils cookieUtils;
 
   // ★★★주의: 이 상수값은 application.yml의 REFRESH_TOKEN_NAME 기본값과 일치해야 함
   private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
@@ -43,7 +42,7 @@ public class AuthController {
   public ResponseEntity<JwtDto> signIn(
       @Valid @ModelAttribute SignInRequest request, HttpServletResponse response) {
     AuthTokens authTokens = authService.signIn(request);
-    setRefreshTokenCookie(response, authTokens.getRefreshToken());
+    cookieUtils.setRefreshTokenCookie(response, authTokens.getRefreshToken());
     return ResponseEntity.ok(authTokens.getJwtDto());
   }
 
@@ -59,22 +58,10 @@ public class AuthController {
       }
     } catch (Exception ignored) {
     } finally {
-      clearRefreshTokenCookie(response);
+      cookieUtils.clearRefreshTokenCookie(response);
     }
 
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-  }
-
-  /** 리프레시 토큰 쿠키 제거 */
-  private void clearRefreshTokenCookie(HttpServletResponse response) {
-    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), null);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
-    cookie.setMaxAge(0);
-    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
-
-    response.addCookie(cookie);
   }
 
   /** 토큰 재발급 - POST */
@@ -93,23 +80,11 @@ public class AuthController {
 
     try {
       AuthTokens authTokens = authService.reissueToken(refreshToken);
-      setRefreshTokenCookie(response, authTokens.getRefreshToken());
+      cookieUtils.setRefreshTokenCookie(response, authTokens.getRefreshToken());
       return ResponseEntity.ok(authTokens.getJwtDto());
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
-  }
-
-  /** 리프레시 토큰 쿠키 설정 */
-  private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-    Cookie cookie = new Cookie(cookieSecurityProperties.getRefreshToken().getName(), refreshToken);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(cookieSecurityProperties.isSecure());
-    cookie.setPath("/api/auth");
-    cookie.setMaxAge((int) jwtTokenProvider.getRefreshTokenValidityInSeconds());
-    cookie.setAttribute("SameSite", cookieSecurityProperties.getSameSite());
-
-    response.addCookie(cookie);
   }
 
   /** CSRF 토큰 조회 */
