@@ -19,21 +19,45 @@ const WS_CONNECT_ERRORS = new Counter('k6_ws_connect_errors');
 const WS_MESSAGES_SENT = new Counter('k6_ws_msgs_sent');
 const WS_MESSAGES_RECEIVED = new Counter('k6_ws_msgs_received');
 const WS_STOMP_ERRORS = new Counter('k6_ws_stomp_errors');
+const SSE_CONNECTS = new Counter('k6_sse_connects');
+const SSE_ERRORS = new Counter('k6_sse_errors');
 
 const MODE = __ENV.K6_SOCKET_MODE || 'ws';
 const TOPIC_MODE = __ENV.K6_SOCKET_TOPIC_MODE || 'mix';
+const SSE_URL = __ENV.SSE_URL || `${BASE_URL}/api/sse`;
+const WS_MESSAGE_INTERVAL_MS = Number(__ENV.K6_WS_MSG_INTERVAL_MS || 3000);
 
 const ENABLE_WS = MODE === 'ws' || MODE === 'both' || MODE === 'mix';
 const ENABLE_REST = MODE === 'rest' || MODE === 'both' || MODE === 'mix';
+const ENABLE_SSE = MODE === 'sse' || MODE === 'both' || MODE === 'mix';
 
 const scenarios = {};
 if (ENABLE_WS) {
-  scenarios.socket_ws = {
-    executor: 'constant-vus',
-    vus: Number(__ENV.K6_SOCKET_VUS || 30),
-    duration: __ENV.K6_SOCKET_DURATION || '15m',
-    exec: 'socketScenario',
-  };
+  const wsStages = parseStages(
+    __ENV.K6_SOCKET_WS_STAGES,
+    __ENV.K6_SOCKET_WS_RAMP === 'true' || __ENV.K6_SOCKET_WS_RAMP === '1'
+      ? [
+          { duration: '5m', target: 30 },
+          { duration: '5m', target: 60 },
+          { duration: '5m', target: 100 },
+        ]
+      : null
+  );
+  if (wsStages) {
+    scenarios.socket_ws = {
+      executor: 'ramping-vus',
+      stages: wsStages,
+      gracefulStop: __ENV.K6_SOCKET_WS_GRACEFUL_STOP || '30s',
+      exec: 'socketScenario',
+    };
+  } else {
+    scenarios.socket_ws = {
+      executor: 'constant-vus',
+      vus: Number(__ENV.K6_SOCKET_VUS || 30),
+      duration: __ENV.K6_SOCKET_DURATION || '15m',
+      exec: 'socketScenario',
+    };
+  }
 }
 if (ENABLE_REST) {
   scenarios.socket_rest = {
@@ -41,6 +65,14 @@ if (ENABLE_REST) {
     vus: Number(__ENV.K6_SOCKET_REST_VUS || 20),
     duration: __ENV.K6_SOCKET_REST_DURATION || '15m',
     exec: 'restScenario',
+  };
+}
+if (ENABLE_SSE) {
+  scenarios.socket_sse = {
+    executor: 'constant-vus',
+    vus: Number(__ENV.K6_SOCKET_SSE_VUS || 20),
+    duration: __ENV.K6_SOCKET_SSE_DURATION || '10m',
+    exec: 'sseScenario',
   };
 }
 if (Object.keys(scenarios).length === 0) {
@@ -54,7 +86,9 @@ if (Object.keys(scenarios).length === 0) {
 
 export const options = {
   thresholds: {
-    http_req_failed: ['rate<0.02'],
+    'http_req_failed{scenario:socket_ws}': ['rate<0.02'],
+    'http_req_failed{scenario:socket_rest}': ['rate<0.02'],
+    'http_req_failed{scenario:socket_sse}': ['rate<0.5'],
   },
   scenarios,
 };
@@ -287,7 +321,7 @@ export function socketScenario(data) {
           WS_STOMP_ERRORS.add(1);
         }
       }
-    }, 3000);
+    }, WS_MESSAGE_INTERVAL_MS);
 
     socket.setTimeout(() => {
       socket.close();
@@ -339,10 +373,51 @@ export function restScenario(data) {
   sleep(1);
 }
 
+export function sseScenario(data) {
+  const auths = data.auths || [];
+  if (!auths.length) {
+    sleep(1);
+    return;
+  }
+
+  const auth = auths[(__VU - 1) % auths.length];
+  const timeout = __ENV.K6_SSE_TIMEOUT || '60s';
+  SSE_CONNECTS.add(1);
+  const res = http.get(SSE_URL, {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      Accept: 'text/event-stream',
+    },
+    tags: { name: 'sse_subscribe' },
+    timeout,
+  });
+
+  if (!res || res.status !== 200) {
+    SSE_ERRORS.add(1);
+  }
+  sleep(1);
+}
+
 export default function (data) {
   if (ENABLE_WS) {
     socketScenario(data);
   } else {
     sleep(1);
   }
+}
+
+function parseStages(raw, fallback) {
+  if (raw && raw.trim()) {
+    const stages = raw
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const [duration, target] = part.split(':');
+        return { duration: duration.trim(), target: Number(target) };
+      })
+      .filter((stage) => stage.duration && Number.isFinite(stage.target));
+    return stages.length ? stages : fallback;
+  }
+  return fallback;
 }
