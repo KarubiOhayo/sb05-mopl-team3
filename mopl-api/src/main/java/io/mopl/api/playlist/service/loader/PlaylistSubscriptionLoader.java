@@ -3,7 +3,6 @@ package io.mopl.api.playlist.service.loader;
 import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionRepository;
 import io.mopl.redis.constants.RedisKeyPrefix;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,27 +47,17 @@ public class PlaylistSubscriptionLoader {
       // fallback to DB query below
     }
 
-    // 캐시가 없으면 사용자의 전체 구독 목록을 DB에서 조회
-    List<PlaylistSubscription> allSubs = subscriptionRepository.findByIdUserId(me);
-    Set<UUID> allSubscribedIds = new HashSet<>();
-    for (PlaylistSubscription sub : allSubs) {
-      allSubscribedIds.add(sub.getId().getPlaylistId());
-    }
-
-    // 전체 구독 목록을 Redis에 저장
-    if (!allSubscribedIds.isEmpty()) {
-      try {
-        String[] values = allSubscribedIds.stream().map(UUID::toString).toArray(String[]::new);
-        redisTemplate.opsForSet().add(key, values);
-        redisTemplate.expire(key, Duration.ofHours(6));
-      } catch (Exception e) {
-        log.warn("Redis 캐시 저장 실패 key={} error={}", key, e.getMessage());
-      }
+    // 캐시가 없으면 현재 페이지의 playlistIds만 DB에서 조회
+    List<PlaylistSubscription> subs =
+        subscriptionRepository.findByIdUserIdAndIdPlaylistIdIn(me, playlistIds);
+    Set<UUID> subscribedIds = new HashSet<>();
+    for (PlaylistSubscription sub : subs) {
+      subscribedIds.add(sub.getId().getPlaylistId());
     }
 
     // 요청된 playlistIds 중 구독된 것만 반환
     for (UUID playlistId : playlistIds) {
-      if (allSubscribedIds.contains(playlistId)) {
+      if (subscribedIds.contains(playlistId)) {
         result.add(playlistId);
       }
     }
