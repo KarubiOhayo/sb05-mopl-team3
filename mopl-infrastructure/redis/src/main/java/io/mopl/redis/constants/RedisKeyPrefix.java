@@ -38,6 +38,11 @@ public final class RedisKeyPrefix {
   /** 사용자 구독 플레이리스트 Set: playlist:subs:user:{userId} */
   public static final String PLAYLIST_SUBS_BY_USER = "playlist:subs:user:";
 
+  // ===== review =====
+
+  /** 리뷰 목록 캐시(첫 페이지): review:list:content:{contentId} */
+  public static final String REVIEW_LIST = "review:list:content:";
+
   /** 인스턴스화 방지 */
   private RedisKeyPrefix() {
     throw new AssertionError("Cannot instantiate constants class");
