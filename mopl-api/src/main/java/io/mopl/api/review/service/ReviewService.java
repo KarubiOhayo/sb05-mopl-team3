@@ -30,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -59,19 +61,21 @@ public class ReviewService {
     Review review = reviewMapper.toEntity(request, authorId);
     Review savedReview = reviewRepository.save(review);
 
-    reviewEventPublisher.publish(
-        new ReviewCreatedEvent(
-            UUID.randomUUID().toString(),
-            Instant.now(),
-            savedReview.getId().toString(),
-            savedReview.getContentId().toString(),
-            savedReview.getRating()));
-    log.info(
-        "리뷰 이벤트 발행: reviewId={}, contentId={}, rating={}",
-        savedReview.getId(),
-        savedReview.getContentId(),
-        savedReview.getRating());
-
+    runAfterCommit(
+        () -> {
+          reviewEventPublisher.publish(
+              new ReviewCreatedEvent(
+                  UUID.randomUUID().toString(),
+                  Instant.now(),
+                  savedReview.getId().toString(),
+                  savedReview.getContentId().toString(),
+                  savedReview.getRating()));
+          log.info(
+              "리뷰 이벤트 발행: reviewId={}, contentId={}, rating={}",
+              savedReview.getId(),
+              savedReview.getContentId(),
+              savedReview.getRating());
+        });
     UserSummary author = userService.getUserSummary(authorId);
 
     return reviewMapper.toDto(savedReview, author);
@@ -179,18 +183,21 @@ public class ReviewService {
     // 3. 삭제
     reviewRepository.delete(review);
 
-    reviewEventPublisher.publish(
-        new ReviewDeletedEvent(
-            UUID.randomUUID().toString(),
-            Instant.now(),
-            review.getId().toString(),
-            review.getContentId().toString(),
-            review.getRating()));
-    log.info(
-        "리뷰 삭제 이벤트 발행: reviewId={}, contentId={}, rating={}",
-        review.getId(),
-        review.getContentId(),
-        review.getRating());
+    runAfterCommit(
+        () -> {
+          reviewEventPublisher.publish(
+              new ReviewDeletedEvent(
+                  UUID.randomUUID().toString(),
+                  Instant.now(),
+                  review.getId().toString(),
+                  review.getContentId().toString(),
+                  review.getRating()));
+          log.info(
+              "리뷰 삭제 이벤트 발행: reviewId={}, contentId={}, rating={}",
+              review.getId(),
+              review.getContentId(),
+              review.getRating());
+        });
   }
 
   @Transactional
@@ -211,25 +218,43 @@ public class ReviewService {
     review.update(request.getText(), safeRating);
 
     if (Double.compare(beforeRating, safeRating) != 0) {
-      reviewEventPublisher.publish(
-          new ReviewUpdatedEvent(
-              UUID.randomUUID().toString(),
-              Instant.now(),
-              review.getId().toString(),
-              review.getContentId().toString(),
-              beforeRating,
-              safeRating));
-      log.info(
-          "리뷰 업데이트 이벤트 발행: reviewId={}, contentId={}, beforeRating={}, afterRating={}",
-          review.getId(),
-          review.getContentId(),
-          beforeRating,
-          safeRating);
+      runAfterCommit(
+          () -> {
+            reviewEventPublisher.publish(
+                new ReviewUpdatedEvent(
+                    UUID.randomUUID().toString(),
+                    Instant.now(),
+                    review.getId().toString(),
+                    review.getContentId().toString(),
+                    beforeRating,
+                    safeRating));
+            log.info(
+                "리뷰 업데이트 이벤트 발행: reviewId={}, contentId={}, beforeRating={}, afterRating={}",
+                review.getId(),
+                review.getContentId(),
+                beforeRating,
+                safeRating);
+          });
     }
 
     UserSummary author = userService.getUserSummary(authorId);
 
     // 4. 응답 (dirty checking으로 자동 저장됨)
     return reviewMapper.toDto(review, author);
+  }
+
+  // 트랜잭션 커밋 이후에만 캐시 작업을 실행
+  private void runAfterCommit(Runnable action) {
+    if (TransactionSynchronizationManager.isActualTransactionActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+              action.run();
+            }
+          });
+    } else {
+      action.run();
+    }
   }
 }
