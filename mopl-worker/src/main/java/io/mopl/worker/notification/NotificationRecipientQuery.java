@@ -1,5 +1,7 @@
 package io.mopl.worker.notification;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -16,24 +18,70 @@ public class NotificationRecipientQuery {
 
   private final JdbcTemplate jdbcTemplate;
 
-  // 팔로우/구독 알림 수신자 목록을 DB에서 조회한다.
-  // TODO: 대량 수신자 대비 배치/페이지네이션 처리 검토
-  public List<UUID> findFollowerIds(UUID followeeId) {
-    List<String> rows =
-        jdbcTemplate.queryForList(
-            "SELECT follower_id FROM follows WHERE followee_id = ? LIMIT 10000",
-            String.class,
-            followeeId.toString());
-    return toUuids(rows, "follower_id");
+  // 팔로워 알림 수신자를 커서 기반으로 조회한다.
+  public RecipientPage findFollowerIdsPage(
+      UUID followeeId, Instant cursorCreatedAt, String cursorId, int limit) {
+    StringBuilder sql =
+        new StringBuilder(
+            "SELECT follower_id AS receiver_id, created_at, id AS cursor_id "
+                + "FROM follows WHERE followee_id = ?");
+    List<Object> params = new ArrayList<>();
+    params.add(followeeId.toString());
+
+    if (cursorCreatedAt != null && cursorId != null) {
+      sql.append(" AND (created_at > ? OR (created_at = ? AND id > ?))");
+      params.add(Timestamp.from(cursorCreatedAt));
+      params.add(Timestamp.from(cursorCreatedAt));
+      params.add(cursorId);
+    }
+
+    sql.append(" ORDER BY created_at ASC, id ASC LIMIT ?");
+    params.add(limit + 1);
+
+    List<RecipientRow> rows =
+        jdbcTemplate.query(
+            sql.toString(),
+            (rs, rowNum) ->
+                new RecipientRow(
+                    rs.getString("receiver_id"),
+                    toInstant(rs.getTimestamp("created_at")),
+                    rs.getString("cursor_id")),
+            params.toArray());
+
+    return toRecipientPage(rows, limit, "follower_id");
   }
 
-  public List<UUID> findSubscriberIds(UUID playlistId) {
-    List<String> rows =
-        jdbcTemplate.queryForList(
-            "SELECT user_id FROM playlist_subscriptions WHERE playlist_id = ?",
-            String.class,
-            playlistId.toString());
-    return toUuids(rows, "user_id");
+  // 플레이리스트 구독자 알림 수신자를 커서 기반으로 조회한다.
+  public RecipientPage findSubscriberIdsPage(
+      UUID playlistId, Instant cursorCreatedAt, String cursorUserId, int limit) {
+    StringBuilder sql =
+        new StringBuilder(
+            "SELECT user_id AS receiver_id, created_at, user_id AS cursor_id "
+                + "FROM playlist_subscriptions WHERE playlist_id = ?");
+    List<Object> params = new ArrayList<>();
+    params.add(playlistId.toString());
+
+    if (cursorCreatedAt != null && cursorUserId != null) {
+      sql.append(" AND (created_at > ? OR (created_at = ? AND user_id > ?))");
+      params.add(Timestamp.from(cursorCreatedAt));
+      params.add(Timestamp.from(cursorCreatedAt));
+      params.add(cursorUserId);
+    }
+
+    sql.append(" ORDER BY created_at ASC, user_id ASC LIMIT ?");
+    params.add(limit + 1);
+
+    List<RecipientRow> rows =
+        jdbcTemplate.query(
+            sql.toString(),
+            (rs, rowNum) ->
+                new RecipientRow(
+                    rs.getString("receiver_id"),
+                    toInstant(rs.getTimestamp("created_at")),
+                    rs.getString("cursor_id")),
+            params.toArray());
+
+    return toRecipientPage(rows, limit, "user_id");
   }
 
   // 시청 알림 메시지에 사용할 콘텐츠 제목을 조회한다.
@@ -47,20 +95,38 @@ public class NotificationRecipientQuery {
     }
   }
 
-  private List<UUID> toUuids(List<String> rows, String columnName) {
-    List<UUID> results = new ArrayList<>(rows.size());
+  private RecipientPage toRecipientPage(List<RecipientRow> rows, int limit, String columnName) {
+    if (rows.isEmpty()) {
+      return new RecipientPage(List.of(), null, null, false);
+    }
+
+    boolean hasNext = rows.size() > limit;
+    List<RecipientRow> slice = hasNext ? rows.subList(0, limit) : rows;
+
+    List<UUID> results = new ArrayList<>(slice.size());
     int invalidCount = 0;
-    for (String value : rows) {
+    for (RecipientRow row : slice) {
       try {
-        results.add(UUID.fromString(value));
+        results.add(UUID.fromString(row.receiverId()));
       } catch (IllegalArgumentException e) {
-        log.warn("UUID 형식이 올바르지 않습니다: {}={}", columnName, value);
+        log.warn("UUID 형식이 올바르지 않습니다: {}={}", columnName, row.receiverId());
         invalidCount++;
       }
     }
     if (invalidCount > 0) {
-      log.error("총 {}개의 잘못된 UUID가 필터링되었습니다 (column={})", invalidCount, columnName);
+      log.error("총 {}개의 잘못된 UUID가 포함되어 있습니다 (column={})", invalidCount, columnName);
     }
-    return results;
+
+    RecipientRow last = slice.get(slice.size() - 1);
+    return new RecipientPage(results, last.createdAt(), last.cursorId(), hasNext);
   }
+
+  private Instant toInstant(Timestamp timestamp) {
+    return timestamp == null ? null : timestamp.toInstant();
+  }
+
+  private record RecipientRow(String receiverId, Instant createdAt, String cursorId) {}
+
+  public record RecipientPage(
+      List<UUID> receiverIds, Instant nextCreatedAt, String nextCursorId, boolean hasNext) {}
 }

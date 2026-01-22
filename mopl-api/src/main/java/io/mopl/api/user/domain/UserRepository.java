@@ -24,4 +24,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, UserRepositor
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT u FROM User u WHERE u.id = :id")
   Optional<User> findByIdWithLock(@Param("id") UUID id);
+
+  @Query("SELECT u.name FROM User u WHERE u.id = :userId")
+  Optional<String> findNameById(@Param("userId") UUID userId);
 }

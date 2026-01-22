@@ -1,6 +1,7 @@
 package io.mopl.api.playlist.service.loader;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.content.domain.QContent;
 import io.mopl.api.content.domain.QContentTag;
@@ -29,6 +30,179 @@ public class PlaylistContentLoader {
   private final JPAQueryFactory queryFactory;
   private final RedisTemplate<String, Object> redisTemplateForObject;
 
+  public Map<UUID, List<ContentSummary>> loadThumbnailContentsByPlaylistIds(
+      List<UUID> playlistIds) {
+    if (playlistIds == null || playlistIds.isEmpty()) {
+      return Map.of();
+    }
+
+    List<UUID> playlistIdList = new ArrayList<>(playlistIds);
+    List<String> keys =
+        playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + id).toList();
+
+    List<Object> cached;
+    try {
+      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+    } catch (Exception e) {
+      log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
+      cached = null;
+    }
+    if (cached == null) {
+      cached = new ArrayList<>(keys.size());
+      for (int i = 0; i < keys.size(); i++) {
+        cached.add(null);
+      }
+    }
+
+    Map<UUID, List<ContentSummary>> result = new HashMap<>();
+    List<UUID> missIds = new ArrayList<>();
+
+    for (int i = 0; i < playlistIdList.size(); i++) {
+      Object value = cached.get(i);
+      if (value instanceof List<?> list) {
+        if (list.isEmpty()) {
+          result.put(playlistIdList.get(i), List.of());
+        } else if (list.get(0) instanceof ContentSummary) {
+          @SuppressWarnings("unchecked")
+          List<ContentSummary> summaries = (List<ContentSummary>) list;
+          result.put(playlistIdList.get(i), summaries);
+        } else {
+          missIds.add(playlistIdList.get(i));
+        }
+      } else {
+        missIds.add(playlistIdList.get(i));
+      }
+    }
+
+    if (missIds.isEmpty()) {
+      return result;
+    }
+
+    QPlaylistContent pc = QPlaylistContent.playlistContent;
+    QPlaylistContent pcSub = new QPlaylistContent("pcSub");
+    QContent c = QContent.content;
+
+    List<Tuple> rows =
+        queryFactory
+            .select(
+                pc.id.playlistId,
+                pc.id.contentId,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                c.averageRating,
+                c.reviewCount)
+            .from(pc)
+            .join(c)
+            .on(pc.id.contentId.eq(c.id))
+            .where(
+                pc.id
+                    .playlistId
+                    .in(missIds)
+                    .and(
+                        pc.addedAt.eq(
+                            JPAExpressions.select(pcSub.addedAt.max())
+                                .from(pcSub)
+                                .where(pcSub.id.playlistId.eq(pc.id.playlistId)))))
+            .orderBy(pc.id.playlistId.asc(), pc.addedAt.desc())
+            .fetch();
+
+    Map<UUID, UUID> thumbnailContentIdByPlaylistId = new HashMap<>();
+    Map<UUID, ContentBase> baseByContentId = new HashMap<>();
+    Set<UUID> allContentIds = new HashSet<>();
+
+    for (Tuple row : rows) {
+      UUID playlistId = row.get(pc.id.playlistId);
+      if (thumbnailContentIdByPlaylistId.containsKey(playlistId)) {
+        continue;
+      }
+
+      UUID contentId = row.get(pc.id.contentId);
+      thumbnailContentIdByPlaylistId.put(playlistId, contentId);
+      allContentIds.add(contentId);
+
+      Double avg = row.get(c.averageRating);
+      double avgValue = avg != null ? avg.doubleValue() : 0.0d;
+      Integer reviewCount = row.get(c.reviewCount);
+
+      ContentBase base =
+          new ContentBase(
+              contentId,
+              row.get(c.type),
+              row.get(c.title),
+              row.get(c.description),
+              row.get(c.thumbnailImageKey),
+              avgValue,
+              reviewCount != null ? reviewCount.intValue() : 0);
+      baseByContentId.put(contentId, base);
+    }
+
+    if (allContentIds.isEmpty()) {
+      for (UUID playlistId : missIds) {
+        result.putIfAbsent(playlistId, List.of());
+      }
+      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
+      return result;
+    }
+
+    QContentTag ct = QContentTag.contentTag;
+    QTag t = QTag.tag;
+
+    List<Tuple> tagRows =
+        queryFactory
+            .select(ct.id.contentId, t.name)
+            .from(ct)
+            .join(t)
+            .on(ct.id.tagId.eq(t.id))
+            .where(ct.id.contentId.in(allContentIds))
+            .fetch();
+
+    Map<UUID, List<String>> tagsByContentId = new HashMap<>();
+    for (Tuple row : tagRows) {
+      UUID contentId = row.get(ct.id.contentId);
+      String tagName = row.get(t.name);
+      tagsByContentId.computeIfAbsent(contentId, k -> new ArrayList<>()).add(tagName);
+    }
+
+    Map<UUID, ContentSummary> summaryByContentId = new HashMap<>();
+    for (Map.Entry<UUID, ContentBase> entry : baseByContentId.entrySet()) {
+      UUID contentId = entry.getKey();
+      ContentBase base = entry.getValue();
+
+      List<String> tags = tagsByContentId.get(contentId);
+      if (tags == null) {
+        tags = List.of();
+      }
+
+      ContentSummary summary =
+          ContentSummary.builder()
+              .id(base.id)
+              .type(base.type)
+              .title(base.title)
+              .description(base.description)
+              .thumbnailUrl(base.thumbnailUrl)
+              .tags(tags)
+              .averageRating(base.averageRating)
+              .reviewCount(base.reviewCount)
+              .build();
+      summaryByContentId.put(contentId, summary);
+    }
+
+    for (UUID playlistId : missIds) {
+      UUID contentId = thumbnailContentIdByPlaylistId.get(playlistId);
+      if (contentId == null) {
+        result.put(playlistId, List.of());
+        continue;
+      }
+      ContentSummary summary = summaryByContentId.get(contentId);
+      result.put(playlistId, summary != null ? List.of(summary) : List.of());
+    }
+
+    cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
+    return result;
+  }
+
   public Map<UUID, List<ContentSummary>> loadContentsByPlaylistIds(List<UUID> playlistIds) {
     if (playlistIds == null || playlistIds.isEmpty()) {
       return Map.of();
@@ -40,13 +214,16 @@ public class PlaylistContentLoader {
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_CONTENTS + id).toList();
 
     // 개별 조회로 역직렬화 문제 키만 제거
-    List<Object> cached = new ArrayList<>(keys.size());
-    for (String key : keys) {
-      try {
-        cached.add(redisTemplateForObject.opsForValue().get(key));
-      } catch (Exception e) {
-        log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
-        redisTemplateForObject.delete(key);
+    List<Object> cached;
+    try {
+      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+    } catch (Exception e) {
+      log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
+      cached = null;
+    }
+    if (cached == null) {
+      cached = new ArrayList<>(keys.size());
+      for (int i = 0; i < keys.size(); i++) {
         cached.add(null);
       }
     }
@@ -133,7 +310,7 @@ public class PlaylistContentLoader {
       for (UUID playlistId : missIds) {
         result.putIfAbsent(playlistId, List.of());
       }
-      cacheContents(result, missIds);
+      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_CONTENTS);
       return result;
     }
 
@@ -204,17 +381,18 @@ public class PlaylistContentLoader {
     }
 
     // 캐시 저장
-    cacheContents(result, missIds);
+    cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_CONTENTS);
     return result;
   }
 
-  private void cacheContents(Map<UUID, List<ContentSummary>> result, List<UUID> missIds) {
+  private void cacheContents(
+      Map<UUID, List<ContentSummary>> result, List<UUID> missIds, String keyPrefix) {
     for (UUID playlistId : missIds) {
       try {
         redisTemplateForObject
             .opsForValue()
             .set(
-                RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
+                keyPrefix + playlistId,
                 result.getOrDefault(playlistId, List.of()),
                 Duration.ofMinutes(30));
       } catch (Exception e) {
