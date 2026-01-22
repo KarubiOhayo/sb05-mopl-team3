@@ -158,12 +158,15 @@ public class PlaylistQueryService {
 
   // totalCount 캐시 키 생성
   private String buildTotalCountCacheKey(PlaylistSearchRequest request) {
+    String keyword = nullToEmpty(request.getKeywordLike());
     String raw =
-        String.join(
-            "|",
-            nullToEmpty(request.getKeywordLike()),
-            String.valueOf(request.getOwnerIdEqual()),
-            String.valueOf(request.getSubscriberIdEqual()));
+        keyword.length()
+            + ":"
+            + keyword
+            + "|"
+            + String.valueOf(request.getOwnerIdEqual())
+            + "|"
+            + String.valueOf(request.getSubscriberIdEqual());
     return RedisKeyPrefix.PLAYLIST_COUNT + sha256Hex(raw);
   }
 

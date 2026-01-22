@@ -51,7 +51,8 @@ public class PlaylistSubscriptionLoader {
                       for (UUID playlistId : playlistIds) {
                         byte[] valueBytes = serializer.serialize(playlistId.toString());
                         if (valueBytes == null) {
-                          continue;
+                          throw new IllegalStateException(
+                              "Failed to serialize playlistId: " + playlistId);
                         }
                         connection.sIsMember(keyBytes, valueBytes);
                       }
