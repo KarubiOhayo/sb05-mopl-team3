@@ -9,7 +9,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 2
-      minimum-idle: 0
+      minimum-idle: 1
       connection-timeout: 30000
   jpa:
     hibernate:
