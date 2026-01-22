@@ -37,6 +37,8 @@ public final class RedisKeyPrefix {
 
   public static final String PLAYLIST_THUMBNAIL_CONTENT = "playlist:thumbnail-content:";
 
+  public static final String PLAYLIST_COUNT = "playlist:count:";
+
   /** 사용자 구독 플레이리스트 Set: playlist:subs:user:{userId} */
   public static final String PLAYLIST_SUBS_BY_USER = "playlist:subs:user:";
 

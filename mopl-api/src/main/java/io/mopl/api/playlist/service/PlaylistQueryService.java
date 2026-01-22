@@ -18,6 +18,11 @@ import io.mopl.api.user.dto.UserSummary;
 import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
+import io.mopl.redis.constants.RedisKeyPrefix;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,10 +30,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PlaylistQueryService {
@@ -40,6 +48,7 @@ public class PlaylistQueryService {
   private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
   private final PlaylistRepository playlistRepository;
   private final UserService userService;
+  private final RedisTemplate<String, String> redisTemplate;
 
   // 플레이리스트 목록 조회
   public CursorResponse<PlaylistDto> findPlaylists(PlaylistSearchRequest request, UUID me) {
@@ -52,7 +61,7 @@ public class PlaylistQueryService {
     PlaylistPage page = playlistQueryRepository.findPlaylistsPage(request);
 
     // totalCount는 동일 필터 조건으로 계산
-    long totalCount = playlistQueryRepository.countPlaylists(request);
+    long totalCount = getTotalCount(request);
 
     List<Playlist> playlists = page.getPlaylists();
 
@@ -116,6 +125,56 @@ public class PlaylistQueryService {
     } catch (IllegalArgumentException e) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST)
           .addDetail("reason", "Invalid sortDirection. Use ASCENDING or DESCENDING.");
+    }
+  }
+
+  private long getTotalCount(PlaylistSearchRequest request) {
+    String cacheKey = buildTotalCountCacheKey(request);
+    try {
+      String cached = redisTemplate.opsForValue().get(cacheKey);
+      if (cached != null) {
+        return Long.parseLong(cached);
+      }
+    } catch (Exception e) {
+      log.warn("Redis 캐시 조회 실패 key={} error={}", cacheKey, e.getMessage());
+    }
+
+    long totalCount = playlistQueryRepository.countPlaylists(request);
+
+    try {
+      redisTemplate.opsForValue().set(cacheKey, String.valueOf(totalCount), Duration.ofMinutes(5));
+    } catch (Exception e) {
+      log.warn("Redis 캐시 저장 실패 key={} error={}", cacheKey, e.getMessage());
+    }
+
+    return totalCount;
+  }
+
+  private String buildTotalCountCacheKey(PlaylistSearchRequest request) {
+    String raw =
+        String.join(
+            "|",
+            nullToEmpty(request.getKeywordLike()),
+            String.valueOf(request.getOwnerIdEqual()),
+            String.valueOf(request.getSubscriberIdEqual()));
+    return RedisKeyPrefix.PLAYLIST_COUNT + sha256Hex(raw);
+  }
+
+  private String nullToEmpty(String value) {
+    return value == null ? "" : value;
+  }
+
+  private String sha256Hex(String value) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+      StringBuilder sb = new StringBuilder(bytes.length * 2);
+      for (byte b : bytes) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 not available", e);
     }
   }
 
