@@ -41,3 +41,4 @@ logging:
   level:
     root: INFO
     io.mopl: INFO
+
