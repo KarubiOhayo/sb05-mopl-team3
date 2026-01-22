@@ -180,6 +180,7 @@ public class PlaylistService {
           try {
             String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
             redisTemplate.delete(key);
+            redisTemplate.delete(RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + playlistId);
           } catch (Exception e) {
             log.warn(
                 "레디스 캐시 삭제 실패 key={} error={}",
@@ -210,6 +211,7 @@ public class PlaylistService {
           try {
             String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
             redisTemplate.delete(key);
+            redisTemplate.delete(RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + playlistId);
           } catch (Exception e) {
             log.warn(
                 "레디스 캐시 삭제 실패 key={} error={}",
@@ -233,6 +235,7 @@ public class PlaylistService {
           try {
             String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
             redisTemplate.delete(key);
+            redisTemplate.delete(RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + playlistId);
           } catch (Exception e) {
             log.warn(
                 "레디스 캐시 삭제 실패 key={} error={}",

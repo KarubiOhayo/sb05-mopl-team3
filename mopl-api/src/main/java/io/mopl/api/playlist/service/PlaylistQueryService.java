@@ -69,7 +69,7 @@ public class PlaylistQueryService {
     Set<UUID> subscribedPlaylistIds =
         playlistSubscriptionLoader.loadSubscribedPlaylistIdsByMe(me, playlistIds);
     Map<UUID, List<ContentSummary>> contentsMap =
-        playlistContentLoader.loadContentsByPlaylistIds(playlistIds);
+        playlistContentLoader.loadThumbnailContentsByPlaylistIds(playlistIds);
 
     // 응답 DTO 조립
     List<PlaylistDto> data = new ArrayList<>();
