@@ -19,6 +19,9 @@ import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,22 +50,22 @@ public class PlaylistQueryService {
   private final UserService userService;
   private final RedisTemplate<String, String> redisTemplate;
 
-  // 플레이리스트 목록 조회
+  // 플레이리스트 목록 조회 및 응답 조립
   public CursorResponse<PlaylistDto> findPlaylists(PlaylistSearchRequest request, UUID me) {
 
-    // 정렬 기본값
+    // 정렬 기본값 결정
     String sortBy = request.getSortByOrDefault();
     String sortDirection = request.getSortDirectionOrDefault();
 
-    // 요청 객체 그대로 리포지토리 전달
+    // 페이지네이션 조회
     PlaylistPage page = playlistQueryRepository.findPlaylistsPage(request);
 
-    // totalCount는 동일 필터 조건으로 계산
+    // 동일 필터 조건으로 totalCount 계산(캐시 포함)
     long totalCount = getTotalCount(request);
 
     List<Playlist> playlists = page.getPlaylists();
 
-    // ownerId, playlistId 수집 (배치 로딩용)
+    // ownerId, playlistId 수집(배치 로딩용)
     Set<UUID> ownerIds = new HashSet<>();
     List<UUID> playlistIds = new ArrayList<>();
     for (Playlist playlist : playlists) {
@@ -70,7 +73,7 @@ public class PlaylistQueryService {
       playlistIds.add(playlist.getId());
     }
 
-    // 연관 데이터 일괄 로딩
+    // 관련 데이터 배치 로딩
     Map<UUID, UserSummary> ownerMap = playlistOwnerLoader.loadOwners(ownerIds);
     Set<UUID> subscribedPlaylistIds =
         playlistSubscriptionLoader.loadSubscribedPlaylistIdsByMe(me, playlistIds);
@@ -116,6 +119,7 @@ public class PlaylistQueryService {
         .build();
   }
 
+  // 정렬 방향 문자열 파싱
   private SortDirection parseSortDirection(String raw) {
     try {
       return SortDirection.valueOf(raw);
@@ -125,6 +129,7 @@ public class PlaylistQueryService {
     }
   }
 
+  // totalCount 캐시 조회 후 없으면 계산
   private long getTotalCount(PlaylistSearchRequest request) {
     String cacheKey = buildTotalCountCacheKey(request);
     try {
@@ -151,6 +156,7 @@ public class PlaylistQueryService {
     return totalCount;
   }
 
+  // totalCount 캐시 키 생성
   private String buildTotalCountCacheKey(PlaylistSearchRequest request) {
     String raw =
         String.join(
@@ -161,15 +167,34 @@ public class PlaylistQueryService {
     return RedisKeyPrefix.PLAYLIST_COUNT + sha256Hex(raw);
   }
 
+  // null 안전 처리
   private String nullToEmpty(String value) {
     return value == null ? "" : value;
   }
 
+  private static final ThreadLocal<MessageDigest> SHA256_DIGEST =
+      ThreadLocal.withInitial(
+          () -> {
+            try {
+              return MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+              throw new IllegalStateException("SHA-256 not available", e);
+            }
+          });
+
+  // SHA-256 해시를 16진 문자열로 변환
   private String sha256Hex(String value) {
-    return Integer.toHexString(value.hashCode());
+    MessageDigest digest = SHA256_DIGEST.get();
+    digest.reset();
+    byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+    StringBuilder hexString = new StringBuilder(hash.length * 2);
+    for (byte b : hash) {
+      hexString.append(String.format("%02x", b));
+    }
+    return hexString.toString();
   }
 
-  // 플레이리스트 단건 조회
+  // 플레이리스트 상세 조회
   public PlaylistDto findPlaylist(UUID playlistId, UUID me) {
     Playlist playlist =
         playlistRepository
