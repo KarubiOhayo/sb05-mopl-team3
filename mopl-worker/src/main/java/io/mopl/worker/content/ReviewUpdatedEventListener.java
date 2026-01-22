@@ -1,6 +1,8 @@
 package io.mopl.worker.content;
 
 import io.mopl.core.db.DbConstraintNames;
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.content.ContentAggregateUpdatedEvent;
 import io.mopl.core.event.review.ReviewUpdatedEvent;
 import io.mopl.core.kafka.KafkaTopics;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -24,6 +27,7 @@ public class ReviewUpdatedEventListener {
   private final ContentAggregateRepository contentAggregateRepository;
   private final ContentAggregateEventPublisher contentAggregateEventPublisher;
 
+  @Transactional
   @KafkaListener(
       topics = KafkaTopics.REVIEW_UPDATED,
       properties = "spring.json.value.default.type=io.mopl.core.event.review.ReviewUpdatedEvent")
@@ -64,7 +68,7 @@ public class ReviewUpdatedEventListener {
             contentId, event.beforeRating(), event.afterRating());
     if (updated == 0) {
       log.warn("콘텐츠 업데이트 실패 (contentId={}, eventId={})", event.contentId(), event.eventId());
-      return;
+      throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
     log.info("콘텐츠 업데이트 완료 (contentId={}, eventId={})", event.contentId(), event.eventId());
 
