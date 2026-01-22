@@ -20,7 +20,9 @@ public class ContentThumbnailRequestedListener {
    * @param event 요청 이벤트
    * @param acknowledgment Kafka ACK
    */
-  @KafkaListener(topics = KafkaTopics.CONTENT_THUMBNAIL_REQUESTED)
+  @KafkaListener(
+      topics = KafkaTopics.CONTENT_THUMBNAIL_REQUESTED,
+      containerFactory = "manualAckKafkaListenerContainerFactory")
   public void handle(ContentThumbnailRequestedEvent event, Acknowledgment acknowledgment) {
     handler.handleAsync(event, acknowledgment);
   }
