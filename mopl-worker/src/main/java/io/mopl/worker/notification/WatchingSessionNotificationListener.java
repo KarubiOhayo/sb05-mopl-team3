@@ -5,14 +5,14 @@ import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.notification.domain.Notification;
 import io.mopl.worker.notification.domain.NotificationLevel;
 import io.mopl.worker.notification.domain.NotificationRepository;
-import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class WatchingSessionNotificationListener {
+
+  private static final int BATCH_SIZE = 500;
 
   private final NotificationRepository notificationRepository;
   private final NotificationRecipientQuery recipientQuery;
@@ -52,33 +54,46 @@ public class WatchingSessionNotificationListener {
               event.watcherName() + "님이 " + contentTitle + " 시청을 시작했습니다.",
               Locale.KOREAN);
 
-      List<UUID> receiverIds = recipientQuery.findFollowerIds(watcherIdUuid);
-      for (UUID receiverId : receiverIds) {
-        try {
-          // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
-          UUID eventIdUuid = toPerReceiverEventId(event.eventId(), receiverId);
-          Notification notification =
-              Notification.builder()
-                  .eventId(eventIdUuid)
-                  .receiverId(receiverId)
-                  .title(title)
-                  .content("")
-                  .level(NotificationLevel.INFO)
-                  .build();
-          Notification saved = notificationRepository.save(notification);
-          notificationEventPublisher.publish(saved);
-        } catch (DataIntegrityViolationException ex) {
-          NotificationListenerSupport.handleDataIntegrityViolation(
-              log, ex, event.eventId() + ":" + receiverId);
+      Instant cursorCreatedAt = null;
+      String cursorId = null;
+
+      while (true) {
+        NotificationRecipientQuery.RecipientPage page =
+            recipientQuery.findFollowerIdsPage(
+                watcherIdUuid, cursorCreatedAt, cursorId, BATCH_SIZE);
+
+        if (!page.receiverIds().isEmpty()) {
+          List<Notification> notifications = new ArrayList<>(page.receiverIds().size());
+          for (UUID receiverId : page.receiverIds()) {
+            // 수신자별로 event_id를 분리해 중복 충돌을 방지한다.
+            UUID eventIdUuid =
+                NotificationListenerSupport.toPerReceiverEventId(event.eventId(), receiverId);
+            notifications.add(
+                Notification.builder()
+                    .eventId(eventIdUuid)
+                    .receiverId(receiverId)
+                    .title(title)
+                    .content("")
+                    .level(NotificationLevel.INFO)
+                    .build());
+          }
+          NotificationListenerSupport.saveAndPublishBatch(
+              log,
+              notifications,
+              event.eventId(),
+              notificationRepository,
+              notificationEventPublisher);
         }
+
+        if (!page.hasNext() || page.nextCreatedAt() == null || page.nextCursorId() == null) {
+          break;
+        }
+        cursorCreatedAt = page.nextCreatedAt();
+        cursorId = page.nextCursorId();
       }
     } catch (IllegalArgumentException e) {
-      // UUID 파싱 오류는 parseUuid에서 로그 처리.
+      // UUID 파싱 오류는 parseUuid에서 로그 처리된다.
+      return;
     }
-  }
-
-  private UUID toPerReceiverEventId(String eventId, UUID receiverId) {
-    String source = eventId + ":" + receiverId;
-    return UUID.nameUUIDFromBytes(source.getBytes(StandardCharsets.UTF_8));
   }
 }
