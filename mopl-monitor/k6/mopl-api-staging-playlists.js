@@ -41,6 +41,32 @@ function loadAccounts() {
 
 const ACCOUNTS = loadAccounts();
 const MODE = __ENV.K6_MODE || 'vus';
+const RPS_START_RATE = Number(__ENV.K6_RPS_START_RATE || 50);
+const RPS_TIME_UNIT = __ENV.K6_RPS_TIME_UNIT || '1s';
+const RPS_PREALLOCATED_VUS = Number(__ENV.K6_RPS_PREALLOCATED_VUS || 120);
+const RPS_MAX_VUS = Number(__ENV.K6_RPS_MAX_VUS || 240);
+
+function parseRpsStages(value, fallbackStages) {
+  if (!value) {
+    return fallbackStages;
+  }
+  const stages = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [targetRaw, durationRaw] = entry.split(':').map((part) => part.trim());
+      const target = Number(targetRaw);
+      if (!Number.isFinite(target) || !durationRaw) {
+        console.warn(`Invalid K6_RPS_STAGES entry: "${entry}"`);
+        return null;
+      }
+      return { target, duration: durationRaw };
+    })
+    .filter(Boolean);
+
+  return stages.length > 0 ? stages : fallbackStages;
+}
 
 const VUS_SCENARIOS = {
   baseline: {
@@ -65,16 +91,16 @@ const VUS_SCENARIOS = {
 const RPS_SCENARIOS = {
   rps_probe: {
     executor: 'ramping-arrival-rate',
-    startRate: 150,
-    timeUnit: '1s',
-    preAllocatedVUs: 120,
-    maxVUs: 240,
-    stages: [
+    startRate: RPS_START_RATE,
+    timeUnit: RPS_TIME_UNIT,
+    preAllocatedVUs: RPS_PREALLOCATED_VUS,
+    maxVUs: RPS_MAX_VUS,
+    stages: parseRpsStages(__ENV.K6_RPS_STAGES, [
       { target: 150, duration: '5m' },
       { target: 200, duration: '5m' },
       { target: 250, duration: '5m' },
       { target: 300, duration: '5m' },
-    ],
+    ]),
   },
 };
 
