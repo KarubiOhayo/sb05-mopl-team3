@@ -7,24 +7,38 @@ CREATE TABLE users (
   provider_user_id VARCHAR(255) NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'USER',
   locked TINYINT(1) NOT NULL DEFAULT 0,
-  profile_image_url VARCHAR(2048) NULL,
-  temp_password_hash VARCHAR(255) NULL,
-  temp_password_expires_at TIMESTAMP(6) NULL,
+  profile_image_key VARCHAR(2048) NULL,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id),
-  INDEX idx_temp_password_expires_at (temp_password_expires_at)
+  UNIQUE KEY uq_users_provider (auth_provider, provider_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE user_linked_providers (
+  id CHAR(36) NOT NULL,
+  user_id CHAR(36) NOT NULL,
+  provider VARCHAR(20) NOT NULL,
+  provider_user_id VARCHAR(255) NOT NULL,
+  provider_email VARCHAR(255) NULL,
+  linked_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_user_provider (user_id, provider),
+  UNIQUE KEY uk_provider_user_id (provider, provider_user_id),
+  KEY idx_user_id (user_id),
+  KEY idx_provider (provider),
+  CONSTRAINT fk_user_linked_providers_user
+  FOREIGN KEY (user_id) REFERENCES users(id)
+  ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사용자 연동 소셜 계정';
 
 CREATE TABLE contents (
   id CHAR(36) NOT NULL,
   type VARCHAR(20) NOT NULL,
   external_id VARCHAR(255) NULL,
   title VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  thumbnail_url VARCHAR(2048) NOT NULL,
+  description VARCHAR(4000) NOT NULL,
+  thumbnail_image_key VARCHAR(2048) NULL,
   average_rating DOUBLE(3,2) NOT NULL DEFAULT 0.00,
   review_count INT NOT NULL DEFAULT 0,
   watcher_count BIGINT NOT NULL DEFAULT 0,
@@ -60,7 +74,7 @@ CREATE TABLE playlists (
   id CHAR(36) NOT NULL,
   owner_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
+  description VARCHAR(2000) NOT NULL,
   subscriber_count BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
@@ -101,7 +115,7 @@ CREATE TABLE reviews (
   id CHAR(36) NOT NULL,
   content_id CHAR(36) NOT NULL,
   author_id CHAR(36) NOT NULL,
-  text TEXT NOT NULL,
+  text VARCHAR(2000) NOT NULL,
   rating DOUBLE(3,2) NOT NULL,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
@@ -157,7 +171,8 @@ CREATE TABLE direct_messages (
   conversation_id CHAR(36) NOT NULL,
   sender_id CHAR(36) NOT NULL,
   receiver_id CHAR(36) NOT NULL,
-  content TEXT NOT NULL,
+  content VARCHAR(4000) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
@@ -174,13 +189,15 @@ CREATE TABLE direct_messages (
 
 CREATE TABLE notifications (
   id CHAR(36) NOT NULL,
+  event_id CHAR(36) NOT NULL,
   receiver_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
+  content VARCHAR(1000) NOT NULL,
   level VARCHAR(20) NOT NULL,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   read_at TIMESTAMP(6) NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_notifications_event_id (event_id),
   CONSTRAINT fk_notifications_receiver
     FOREIGN KEY (receiver_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE

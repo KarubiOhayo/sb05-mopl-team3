@@ -5,6 +5,8 @@ import io.mopl.api.user.dto.ChangePasswordRequest;
 import io.mopl.api.user.dto.CursorResponseUserDto;
 import io.mopl.api.user.dto.UserCreateRequest;
 import io.mopl.api.user.dto.UserDto;
+import io.mopl.api.user.dto.UserLockUpdateRequest;
+import io.mopl.api.user.dto.UserRoleUpdateRequest;
 import io.mopl.api.user.dto.UserSearchRequest;
 import io.mopl.api.user.dto.UserUpdateRequest;
 import io.mopl.api.user.service.UserQueryService;
@@ -39,6 +41,7 @@ public class UserController {
   private final UserService userService;
   private final UserQueryService userQueryService;
 
+  // ========== ADMIN 전용 API ==========
   /** 사용자 목록 조회 */
   @GetMapping
   @PreAuthorize("hasRole('ADMIN')")
@@ -47,6 +50,44 @@ public class UserController {
     return ResponseEntity.ok(response);
   }
 
+  /** 사용자 계정 잠금 */
+  @PatchMapping("/{userId}/locked")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> lockUser(
+      @PathVariable UUID userId, @Valid @RequestBody UserLockUpdateRequest request) {
+    userService.lockUser(userId, request);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** 사용자 계정 권한 변경 */
+  @PatchMapping("/{userId}/role")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> updateUserRole(
+      @PathVariable UUID userId,
+      @Valid @RequestBody UserRoleUpdateRequest request,
+      @AuthenticationPrincipal AuthUser authUser) {
+    userService.updateUserRole(userId, request, authUser.getUserId());
+    return ResponseEntity.noContent().build();
+  }
+
+  // ========== USER 전용 API ==========
+  /** 프로필 변경 */
+  @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<UserDto> updateProfile(
+      @PathVariable UUID userId,
+      @RequestPart("request") @Valid UserUpdateRequest request,
+      @RequestPart(value = "image", required = false) MultipartFile profileImage,
+      @AuthenticationPrincipal AuthUser authUser) {
+
+    if (!userId.equals(authUser.getUserId())) {
+      throw new BusinessException(CommonErrorCode.FORBIDDEN);
+    }
+
+    UserDto response = userService.updateProfile(userId, request, profileImage);
+    return ResponseEntity.ok(response);
+  }
+
+  // ========== 전체 API ==========
   /** 회원가입 */
   @PostMapping
   public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreateRequest request) {
@@ -74,21 +115,5 @@ public class UserController {
 
     userService.changePassword(userId, request);
     return ResponseEntity.noContent().build();
-  }
-
-  /** 프로필 변경 */
-  @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<UserDto> updateProfile(
-      @PathVariable UUID userId,
-      @RequestPart("request") @Valid UserUpdateRequest request,
-      @RequestPart(value = "image", required = false) MultipartFile profileImage,
-      @AuthenticationPrincipal AuthUser authUser) {
-
-    if (!userId.equals(authUser.getUserId())) {
-      throw new BusinessException(CommonErrorCode.FORBIDDEN);
-    }
-
-    UserDto response = userService.updateProfile(userId, request, profileImage);
-    return ResponseEntity.ok(response);
   }
 }

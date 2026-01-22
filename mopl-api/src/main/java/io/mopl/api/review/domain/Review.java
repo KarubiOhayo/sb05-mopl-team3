@@ -5,7 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -43,8 +42,7 @@ public class Review {
   @JdbcTypeCode(SqlTypes.CHAR)
   private UUID authorId;
 
-  @Lob
-  @Column(nullable = false)
+  @Column(nullable = false, length = 2000)
   private String text;
 
   @Column(nullable = false)
@@ -62,6 +60,16 @@ public class Review {
   public void generateId() {
     if (this.id == null) {
       this.id = UuidV7Generator.generate();
+    }
+  }
+
+  public void update(String text, double rating) {
+
+    if (text != null) {
+      this.text = text;
+    }
+    if (rating != 0) {
+      this.rating = rating;
     }
   }
 }

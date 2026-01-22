@@ -16,4 +16,8 @@ public class S3Properties {
   private String region;
   private String bucket;
   private String profileImagePath = "profiles/";
+  private String thumbnailMoviePath = "thumbnails/movie/";
+  private String thumbnailTvSeriesPath = "thumbnails/tv_series/";
+  private String thumbnailSportPath = "thumbnails/sport/";
+  private long presignedUrlExpirationSeconds = 3600;
 }

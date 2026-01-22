@@ -10,13 +10,20 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'software.amazon.awssdk:s3:2.40.17'
 
     testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+    // Email 전송
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // 재시도 메커니즘
+    implementation 'org.springframework.retry:spring-retry:2.0.5'
+    implementation 'org.springframework:spring-aspects'
+
+    // UUIDv7
+    implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
 }

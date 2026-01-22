@@ -14,6 +14,7 @@ spring:
     properties:
       hibernate:
         format_sql: false
+
   data:
     redis:
       host: ${REDIS_HOST}
@@ -27,3 +28,7 @@ logging:
   level:
     root: INFO
     io.mopl: INFO
+
+search:
+  index:
+    reset-on-startup: false

@@ -46,7 +46,7 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
             .externalId(String.valueOf(item.getId()))
             .title(item.getName())
             .description(item.getOverview() != null ? item.getOverview() : "")
-            .thumbnailUrl("")
+            .thumbnailImageKey("")
             .type(ContentType.TV_SERIES)
             .build();
 
@@ -59,7 +59,6 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
       List<String> tags =
           item.getGenreIds().stream().map(TmdbGenre::getNameById).collect(Collectors.toList());
       content.setTags(tags);
-      content.getTags().add("TV 시리즈");
     }
 
     return content;

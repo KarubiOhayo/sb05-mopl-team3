@@ -3,24 +3,39 @@ package io.mopl.api.content.service;
 import io.mopl.api.common.error.ContentErrorCode;
 import io.mopl.api.content.domain.Content;
 import io.mopl.api.content.domain.ContentRepository;
+import io.mopl.api.content.domain.ContentTag;
+import io.mopl.api.content.domain.ContentTagId;
 import io.mopl.api.content.domain.ContentTagRepository;
+import io.mopl.api.content.domain.EventType;
+import io.mopl.api.content.domain.Tag;
+import io.mopl.api.content.domain.TagRepository;
+import io.mopl.api.content.dto.ContentCreateRequest;
 import io.mopl.api.content.dto.ContentDto;
 import io.mopl.api.content.dto.ContentPage;
 import io.mopl.api.content.dto.ContentSearchRequest;
+import io.mopl.api.content.dto.ContentUpdateRequest;
 import io.mopl.api.content.dto.CursorResponseContentDto;
-import io.mopl.api.playlist.repository.PlaylistContentRepository;
+import io.mopl.api.content.event.ContentIndexEvent;
+import io.mopl.api.content.event.ThumbnailDeleteAfterCommitEvent;
+import io.mopl.api.content.event.ThumbnailUploadedEvent;
+import io.mopl.api.playlist.domain.PlaylistContentRepository;
 import io.mopl.api.review.repository.ReviewRepository;
 import io.mopl.core.error.BusinessException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -31,6 +46,72 @@ public class ContentService {
   private final ContentTagRepository contentTagRepository;
   private final ReviewRepository reviewRepository;
   private final PlaylistContentRepository playlistContentRepository;
+  private final TagRepository tagRepository;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
+  private final ApplicationEventPublisher eventPublisher;
+
+  @Transactional
+  @PreAuthorize("hasRole('ADMIN')")
+  public ContentDto create(ContentCreateRequest contentCreateRequest, MultipartFile thumbnail) {
+    log.info(
+        "컨텐츠 생성 시작 - type: {}, titleLen: {}, tags: {}, thumbnail: {}",
+        contentCreateRequest.getType(),
+        contentCreateRequest.getTitle() != null ? contentCreateRequest.getTitle().length() : 0,
+        contentCreateRequest.getTags() != null ? contentCreateRequest.getTags().size() : 0,
+        (thumbnail != null && !thumbnail.isEmpty()));
+
+    String title = contentCreateRequest.getTitle();
+    String description = contentCreateRequest.getDescription();
+
+    String thumbnailImageKey = null;
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      thumbnailImageKey =
+          contentThumbnailUploadService.uploadThumbnail(thumbnail, contentCreateRequest.getType());
+      log.info(
+          "썸네일 업로드 완료 - urlLen: {}", thumbnailImageKey != null ? thumbnailImageKey.length() : 0);
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(thumbnailImageKey));
+    }
+
+    Content content =
+        Content.builder()
+            .type(contentCreateRequest.getType())
+            .title(title)
+            .description(description)
+            .thumbnailImageKey(thumbnailImageKey)
+            .build();
+    Content saved = contentRepository.save(content);
+    log.info("컨텐츠 저장 완료 - contentId: {}", content.getId());
+
+    List<String> tagNames = contentCreateRequest.getTags();
+    List<ContentTag> contentTags = new ArrayList<>();
+    if (tagNames != null && !tagNames.isEmpty()) {
+      for (String tagName : tagNames) {
+        Tag newTag =
+            tagRepository.findByName(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
+
+        ContentTag contentTag =
+            ContentTag.builder().id(new ContentTagId(content.getId(), newTag.getId())).build();
+
+        contentTags.add(contentTag);
+      }
+      contentTagRepository.saveAll(contentTags);
+    }
+
+    log.info("컨텐츠 생성을 완료했습니다.");
+
+    eventPublisher.publishEvent(new ContentIndexEvent(saved.getId(), EventType.UPSERT));
+
+    return new ContentDto(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        content.getThumbnailImageKey(),
+        tagNames,
+        0.0,
+        0,
+        0L);
+  }
 
   @Transactional(readOnly = true)
   public ContentDto findById(UUID contentId) {
@@ -44,12 +125,14 @@ public class ContentService {
     List<String> tagNames = contentTagRepository.findTagNamesByContentId(contentId);
 
     log.info("컨텐츠 조회를 완료했습니다. contentId: {}", contentId);
+    String thumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailImageKey());
     return new ContentDto(
         content.getId(),
         content.getType(),
         content.getTitle(),
         content.getDescription(),
-        content.getThumbnailUrl(),
+        thumbnailUrl,
         tagNames,
         content.getAverageRating(),
         content.getReviewCount(),
@@ -60,14 +143,102 @@ public class ContentService {
   @PreAuthorize("hasRole('ADMIN')")
   public void delete(UUID contentId) {
     log.info("컨텐츠 삭제 시작: contentId: {}", contentId);
-    contentRepository
-        .findById(contentId)
-        .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
+    Content content =
+        contentRepository
+            .findById(contentId)
+            .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
     reviewRepository.deleteByContentId(contentId);
     playlistContentRepository.deleteByIdContentId(contentId);
     contentTagRepository.deleteByIdContentId(contentId);
+    contentThumbnailUploadService.deleteThumbnail(content.getThumbnailImageKey());
     contentRepository.deleteById(contentId);
     log.info("컨텐츠 삭제 완료: contentId: {}", contentId);
+    eventPublisher.publishEvent(new ContentIndexEvent(contentId, EventType.DELETE));
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @Transactional
+  public ContentDto update(
+      UUID contentId, ContentUpdateRequest contentUpdateRequest, MultipartFile thumbnail) {
+    log.debug("컨텐츠 수정 시작: contentId={}, request = {}", contentId, contentUpdateRequest);
+
+    Content content =
+        contentRepository
+            .findById(contentId)
+            .orElseThrow(() -> new BusinessException(ContentErrorCode.CONTENT_NOT_FOUND));
+
+    String title = contentUpdateRequest.getTitle();
+    String description = contentUpdateRequest.getDescription();
+
+    String deletedKey = content.getThumbnailImageKey();
+    String updatedKey = deletedKey;
+
+    boolean hasNewThumbnail = thumbnail != null && !thumbnail.isEmpty();
+    if (hasNewThumbnail) {
+      updatedKey = contentThumbnailUploadService.uploadThumbnail(thumbnail, content.getType());
+      eventPublisher.publishEvent(new ThumbnailUploadedEvent(updatedKey));
+    }
+    content.update(title, description, updatedKey);
+
+    List<String> requestedTags = contentUpdateRequest.getTags();
+    if (requestedTags != null) {
+      Set<String> requested = new HashSet<>(requestedTags);
+      Set<String> existing = new HashSet<>(contentTagRepository.findTagNamesByContentId(contentId));
+
+      Set<String> toRemove = new HashSet<>(existing);
+      toRemove.removeAll(requested);
+
+      Set<String> toAdd = new HashSet<>(requested);
+      toAdd.removeAll(existing);
+
+      if (!toRemove.isEmpty()) {
+        List<Tag> removeTags = tagRepository.findByNameIn(toRemove);
+        List<UUID> removeTagIds = removeTags.stream().map(Tag::getId).toList();
+        if (!removeTagIds.isEmpty()) {
+          contentTagRepository.deleteByContentIdAndTagIdIn(contentId, removeTagIds);
+        }
+      }
+
+      if (!toAdd.isEmpty()) {
+        List<Tag> existingTags = tagRepository.findByNameIn(toAdd);
+        Map<String, Tag> tagByName =
+            existingTags.stream().collect(Collectors.toMap(Tag::getName, t -> t, (a, b) -> a));
+
+        List<ContentTag> contentTags = new ArrayList<>();
+        for (String tagName : toAdd) {
+          Tag tag = tagByName.get(tagName);
+          if (tag == null) {
+            tag = tagRepository.save(new Tag(tagName));
+          }
+          contentTags.add(
+              ContentTag.builder().id(new ContentTagId(contentId, tag.getId())).build());
+        }
+        contentTagRepository.saveAll(contentTags);
+      }
+    } else {
+      requestedTags = contentTagRepository.findTagNamesByContentId(contentId);
+    }
+
+    if (hasNewThumbnail && deletedKey != null) {
+      eventPublisher.publishEvent(new ThumbnailDeleteAfterCommitEvent(deletedKey));
+    }
+
+    log.info("컨텐츠 수정을 완료하였습니다. contentId: {}", contentId);
+
+    eventPublisher.publishEvent(new ContentIndexEvent(content.getId(), EventType.UPSERT));
+
+    String thumbnailUrl =
+        contentThumbnailUploadService.generatePresignedUrl(content.getThumbnailImageKey());
+    return new ContentDto(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        thumbnailUrl,
+        requestedTags,
+        content.getAverageRating(),
+        content.getReviewCount(),
+        content.getWatcherCount());
   }
 
   @Transactional(readOnly = true)
@@ -103,7 +274,8 @@ public class ContentService {
                         c.getType(),
                         c.getTitle(),
                         c.getDescription(),
-                        c.getThumbnailUrl(),
+                        contentThumbnailUploadService.generatePresignedUrl(
+                            c.getThumbnailImageKey()),
                         tagsByContentId.getOrDefault(c.getId(), List.of()),
                         c.getAverageRating(),
                         c.getReviewCount(),
