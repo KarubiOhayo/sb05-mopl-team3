@@ -19,9 +19,6 @@ import io.mopl.api.user.service.UserService;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.redis.constants.RedisKeyPrefix;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -133,7 +130,11 @@ public class PlaylistQueryService {
     try {
       String cached = redisTemplate.opsForValue().get(cacheKey);
       if (cached != null) {
-        return Long.parseLong(cached);
+        try {
+          return Long.parseLong(cached);
+        } catch (NumberFormatException e) {
+          log.warn("Redis 캐시 값 파싱 실패 key={} value={}", cacheKey, cached);
+        }
       }
     } catch (Exception e) {
       log.warn("Redis 캐시 조회 실패 key={} error={}", cacheKey, e.getMessage());
@@ -165,17 +166,7 @@ public class PlaylistQueryService {
   }
 
   private String sha256Hex(String value) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-      StringBuilder sb = new StringBuilder(bytes.length * 2);
-      for (byte b : bytes) {
-        sb.append(String.format("%02x", b));
-      }
-      return sb.toString();
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 not available", e);
-    }
+    return Integer.toHexString(value.hashCode());
   }
 
   // 플레이리스트 단건 조회

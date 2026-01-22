@@ -142,7 +142,7 @@ public class PlaylistContentLoader {
       for (UUID playlistId : missIds) {
         result.putIfAbsent(playlistId, List.of());
       }
-      cacheThumbnailContents(result, missIds);
+      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
       return result;
     }
 
@@ -199,7 +199,7 @@ public class PlaylistContentLoader {
       result.put(playlistId, summary != null ? List.of(summary) : List.of());
     }
 
-    cacheThumbnailContents(result, missIds);
+    cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
     return result;
   }
 
@@ -310,7 +310,7 @@ public class PlaylistContentLoader {
       for (UUID playlistId : missIds) {
         result.putIfAbsent(playlistId, List.of());
       }
-      cacheContents(result, missIds);
+      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_CONTENTS);
       return result;
     }
 
@@ -381,32 +381,18 @@ public class PlaylistContentLoader {
     }
 
     // 캐시 저장
-    cacheContents(result, missIds);
+    cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_CONTENTS);
     return result;
   }
 
-  private void cacheContents(Map<UUID, List<ContentSummary>> result, List<UUID> missIds) {
+  private void cacheContents(
+      Map<UUID, List<ContentSummary>> result, List<UUID> missIds, String keyPrefix) {
     for (UUID playlistId : missIds) {
       try {
         redisTemplateForObject
             .opsForValue()
             .set(
-                RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
-                result.getOrDefault(playlistId, List.of()),
-                Duration.ofMinutes(30));
-      } catch (Exception e) {
-        log.debug("Redis 캐시 저장 실패 playlistId={} error={}", playlistId, e.getMessage());
-      }
-    }
-  }
-
-  private void cacheThumbnailContents(Map<UUID, List<ContentSummary>> result, List<UUID> missIds) {
-    for (UUID playlistId : missIds) {
-      try {
-        redisTemplateForObject
-            .opsForValue()
-            .set(
-                RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + playlistId,
+                keyPrefix + playlistId,
                 result.getOrDefault(playlistId, List.of()),
                 Duration.ofMinutes(30));
       } catch (Exception e) {

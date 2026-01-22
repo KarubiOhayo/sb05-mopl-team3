@@ -71,14 +71,6 @@ public class PlaylistSubscriptionLoader {
     for (PlaylistSubscription sub : subs) {
       subscribedIds.add(sub.getId().getPlaylistId());
     }
-
-    // 요청된 playlistIds 중 구독된 것만 반환
-    for (UUID playlistId : playlistIds) {
-      if (subscribedIds.contains(playlistId)) {
-        result.add(playlistId);
-      }
-    }
-
-    return result;
+    return subscribedIds;
   }
 }
