@@ -86,6 +86,9 @@ public class PlaylistQueryService {
       UUID playlistId = playlist.getId();
 
       UserSummary owner = ownerMap.get(playlist.getOwnerId());
+      if (owner == null) {
+        owner = userService.getUserSummary(playlist.getOwnerId());
+      }
       boolean subscribedByMe = subscribedPlaylistIds.contains(playlistId);
 
       List<ContentSummary> contents = contentsMap.get(playlistId);
