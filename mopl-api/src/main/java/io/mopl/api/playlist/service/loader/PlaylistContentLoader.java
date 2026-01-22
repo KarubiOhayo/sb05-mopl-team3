@@ -40,13 +40,16 @@ public class PlaylistContentLoader {
     List<String> keys =
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + id).toList();
 
-    List<Object> cached = new ArrayList<>(keys.size());
-    for (String key : keys) {
-      try {
-        cached.add(redisTemplateForObject.opsForValue().get(key));
-      } catch (Exception e) {
-        log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
-        redisTemplateForObject.delete(key);
+    List<Object> cached;
+    try {
+      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+    } catch (Exception e) {
+      log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
+      cached = null;
+    }
+    if (cached == null) {
+      cached = new ArrayList<>(keys.size());
+      for (int i = 0; i < keys.size(); i++) {
         cached.add(null);
       }
     }
@@ -211,13 +214,16 @@ public class PlaylistContentLoader {
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_CONTENTS + id).toList();
 
     // 개별 조회로 역직렬화 문제 키만 제거
-    List<Object> cached = new ArrayList<>(keys.size());
-    for (String key : keys) {
-      try {
-        cached.add(redisTemplateForObject.opsForValue().get(key));
-      } catch (Exception e) {
-        log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
-        redisTemplateForObject.delete(key);
+    List<Object> cached;
+    try {
+      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+    } catch (Exception e) {
+      log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
+      cached = null;
+    }
+    if (cached == null) {
+      cached = new ArrayList<>(keys.size());
+      for (int i = 0; i < keys.size(); i++) {
         cached.add(null);
       }
     }
