@@ -9,7 +9,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -34,10 +36,25 @@ public class PlaylistSubscriptionLoader {
     // Redis set이 존재하면 캐시에서 구독 여부를 확인
     try {
       if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-        for (UUID playlistId : playlistIds) {
-          Boolean isMember = redisTemplate.opsForSet().isMember(key, playlistId.toString());
-          if (Boolean.TRUE.equals(isMember)) {
-            result.add(playlistId);
+        @SuppressWarnings("unchecked")
+        RedisSerializer<String> serializer =
+            (RedisSerializer<String>) redisTemplate.getStringSerializer();
+        byte[] keyBytes = serializer.serialize(key);
+        List<Object> rawResults =
+            redisTemplate.executePipelined(
+                (RedisCallback<Object>)
+                    connection -> {
+                      for (UUID playlistId : playlistIds) {
+                        byte[] valueBytes = serializer.serialize(playlistId.toString());
+                        connection.sIsMember(keyBytes, valueBytes);
+                      }
+                      return null;
+                    });
+
+        for (int i = 0; i < playlistIds.size(); i++) {
+          Object raw = rawResults.get(i);
+          if (Boolean.TRUE.equals(raw)) {
+            result.add(playlistIds.get(i));
           }
         }
         return result;
