@@ -1,6 +1,10 @@
 package io.mopl.worker.notification;
 
 import io.mopl.core.db.DbConstraintNames;
+import io.mopl.worker.notification.domain.Notification;
+import io.mopl.worker.notification.domain.NotificationRepository;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -34,5 +38,36 @@ public final class NotificationListenerSupport {
       log.error("UUID 형식이 올바르지 않습니다: {} (eventId={})", fieldName, eventId, e);
       throw e;
     }
+  }
+
+  static void saveAndPublishBatch(
+      Logger log,
+      List<Notification> notifications,
+      String eventId,
+      NotificationRepository notificationRepository,
+      NotificationEventPublisher notificationEventPublisher) {
+    if (notifications.isEmpty()) {
+      return;
+    }
+
+    try {
+      List<Notification> saved = notificationRepository.saveAll(notifications);
+      saved.forEach(notificationEventPublisher::publish);
+    } catch (DataIntegrityViolationException ex) {
+      for (Notification notification : notifications) {
+        try {
+          Notification saved = notificationRepository.save(notification);
+          notificationEventPublisher.publish(saved);
+        } catch (DataIntegrityViolationException inner) {
+          NotificationListenerSupport.handleDataIntegrityViolation(
+              log, inner, eventId + ":" + notification.getReceiverId());
+        }
+      }
+    }
+  }
+
+  static UUID toPerReceiverEventId(String eventId, UUID receiverId) {
+    String source = eventId + ":" + receiverId;
+    return UUID.nameUUIDFromBytes(source.getBytes(StandardCharsets.UTF_8));
   }
 }

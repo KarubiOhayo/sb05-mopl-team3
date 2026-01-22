@@ -47,6 +47,7 @@ public class PlaylistService {
   private final RedisTemplate<String, String> redisTemplate;
 
   @Transactional
+  // 플레이리스트 생성 및 생성 이벤트 발행
   public PlaylistDto create(PlaylistCreateRequest request, UUID userId) {
     if (userId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
@@ -79,6 +80,7 @@ public class PlaylistService {
   }
 
   @Transactional
+  // 플레이리스트 구독 처리 및 카운트 갱신
   public void subscribe(UUID playlistId, UUID userId) {
     validatePlaylistAndUserIds(playlistId, userId);
 
@@ -99,7 +101,6 @@ public class PlaylistService {
           playlistId,
           userId);
     }
-    // 커밋 후 구독 캐시 갱신
     runAfterCommit(
         () -> {
           try {
@@ -121,6 +122,7 @@ public class PlaylistService {
   }
 
   @Transactional
+  // 플레이리스트 구독 해제 및 카운트 갱신
   public void unsubscribe(UUID playlistId, UUID userId) {
     validatePlaylistAndUserIds(playlistId, userId);
 
@@ -155,6 +157,7 @@ public class PlaylistService {
   }
 
   @Transactional
+  // 플레이리스트에 콘텐츠 추가 및 캐시 무효화
   public void addContent(UUID playlistId, UUID contentId, UUID userId) {
     validatePlaylistContentInputs(playlistId, contentId, userId);
 
@@ -177,19 +180,12 @@ public class PlaylistService {
     // 커밋 후 콘텐츠 캐시 삭제
     runAfterCommit(
         () -> {
-          try {
-            String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
-            redisTemplate.delete(key);
-          } catch (Exception e) {
-            log.warn(
-                "레디스 캐시 삭제 실패 key={} error={}",
-                RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
-                e.getMessage());
-          }
+          deletePlaylistContentCaches(playlistId);
         });
   }
 
   @Transactional
+  // 플레이리스트에서 콘텐츠 삭제 및 캐시 무효화
   public void removeContent(UUID playlistId, UUID contentId, UUID userId) {
     validatePlaylistContentInputs(playlistId, contentId, userId);
 
@@ -207,19 +203,12 @@ public class PlaylistService {
     // 커밋 후 콘텐츠 캐시 삭제
     runAfterCommit(
         () -> {
-          try {
-            String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
-            redisTemplate.delete(key);
-          } catch (Exception e) {
-            log.warn(
-                "레디스 캐시 삭제 실패 key={} error={}",
-                RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
-                e.getMessage());
-          }
+          deletePlaylistContentCaches(playlistId);
         });
   }
 
   @Transactional
+  // 플레이리스트 삭제 및 캐시 무효화
   public void removePlaylist(UUID playlistId, UUID userId) {
     validatePlaylistAndUserIds(playlistId, userId);
 
@@ -230,19 +219,12 @@ public class PlaylistService {
     // 커밋 후 콘텐츠 캐시 삭제
     runAfterCommit(
         () -> {
-          try {
-            String key = RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId;
-            redisTemplate.delete(key);
-          } catch (Exception e) {
-            log.warn(
-                "레디스 캐시 삭제 실패 key={} error={}",
-                RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId,
-                e.getMessage());
-          }
+          deletePlaylistContentCaches(playlistId);
         });
   }
 
   @Transactional
+  // 플레이리스트 기본 정보 수정
   public PlaylistDto updatePlaylist(
       UUID playlistId, @Valid PlaylistUpdateRequest request, UUID userId) {
     validatePlaylistAndUserIds(playlistId, userId);
@@ -253,6 +235,16 @@ public class PlaylistService {
     playlist.update(request.getTitle(), request.getDescription());
 
     return playlistQueryService.findPlaylist(playlistId, userId);
+  }
+
+  // 플레이리스트 콘텐츠 관련 캐시 삭제
+  private void deletePlaylistContentCaches(UUID playlistId) {
+    try {
+      redisTemplate.delete(RedisKeyPrefix.PLAYLIST_CONTENTS + playlistId);
+      redisTemplate.delete(RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + playlistId);
+    } catch (Exception e) {
+      log.warn("레디스 캐시 삭제 실패 playlistId={} error={}", playlistId, e.getMessage());
+    }
   }
 
   // 트랜잭션 커밋 이후에만 캐시 작업을 실행
@@ -270,30 +262,35 @@ public class PlaylistService {
     }
   }
 
+  // 플레이리스트와 사용자 식별자 검증
   private void validatePlaylistAndUserIds(UUID playlistId, UUID userId) {
     if (userId == null || playlistId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
   }
 
+  // 플레이리스트 존재 여부 확인
   private void assertPlaylistExists(UUID playlistId) {
     if (!playlistRepository.existsById(playlistId)) {
       throw new BusinessException(CommonErrorCode.NOT_FOUND);
     }
   }
 
+  // 플레이리스트-콘텐츠 입력값 검증
   private void validatePlaylistContentInputs(UUID playlistId, UUID contentId, UUID userId) {
     if (userId == null || playlistId == null || contentId == null) {
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
   }
 
+  // 플레이리스트 조회 후 없으면 예외
   private Playlist findPlaylistOrThrow(UUID playlistId) {
     return playlistRepository
         .findById(playlistId)
         .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND));
   }
 
+  // 플레이리스트 소유자 검증
   private void assertOwner(Playlist playlist, UUID userId) {
     if (!playlist.getOwnerId().equals(userId)) {
       throw new BusinessException(CommonErrorCode.FORBIDDEN);

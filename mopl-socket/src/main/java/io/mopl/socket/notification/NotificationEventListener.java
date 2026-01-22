@@ -3,12 +3,15 @@ package io.mopl.socket.notification;
 import io.mopl.core.event.notification.NotificationCreatedEvent;
 import io.mopl.core.event.notification.NotificationType;
 import io.mopl.core.kafka.KafkaTopics;
+import io.mopl.redis.constants.RedisKeyPrefix;
 import io.mopl.socket.dm.DirectMessageSubscriptionRegistry;
 import io.mopl.socket.notification.dto.NotificationDto;
 import io.mopl.socket.sse.SseService;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -18,8 +21,12 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class NotificationEventListener {
 
+  private static final Duration UNREAD_COUNT_TTL = Duration.ofHours(1);
+  private static final Duration UNREAD_DEDUP_TTL = Duration.ofDays(1);
+
   private final SseService sseService;
   private final DirectMessageSubscriptionRegistry dmSubscriptionRegistry;
+  private final RedisTemplate<String, String> redisTemplate;
 
   // 알림 생성 이벤트를 수신해 SSE로 전송한다.
   @KafkaListener(
@@ -29,6 +36,7 @@ public class NotificationEventListener {
           "spring.json.value.default.type=io.mopl.core.event.notification.NotificationCreatedEvent")
   public void handleCreatedEvent(NotificationCreatedEvent event) {
     try {
+      incrementUnreadCount(event.receiverId(), event.notificationId());
       log.info("알림 생성 이벤트 수신: notificationId={}", event.notificationId());
 
       if (event.type() != null
@@ -71,6 +79,27 @@ public class NotificationEventListener {
     } catch (RuntimeException e) {
       log.warn("알림 이벤트 UUID 형식 오류로 무시: {}={}", fieldName, value);
       return null;
+    }
+  }
+
+  private void incrementUnreadCount(String receiverId, String notificationId) {
+    if (!StringUtils.hasText(receiverId) || !StringUtils.hasText(notificationId)) {
+      return;
+    }
+    try {
+      String dedupKey = RedisKeyPrefix.NOTIFICATION_UNREAD_DEDUP + notificationId;
+      Boolean first = redisTemplate.opsForValue().setIfAbsent(dedupKey, "1", UNREAD_DEDUP_TTL);
+      if (first == null || !first) {
+        return;
+      }
+
+      String key = RedisKeyPrefix.NOTIFICATION_UNREAD_COUNT + receiverId;
+      Long value = redisTemplate.opsForValue().increment(key);
+      if (value != null && value == 1L) {
+        redisTemplate.expire(key, UNREAD_COUNT_TTL);
+      }
+    } catch (Exception e) {
+      log.warn("미읽음 알림 카운트 증가 실패: receiverId={}", receiverId, e);
     }
   }
 }
