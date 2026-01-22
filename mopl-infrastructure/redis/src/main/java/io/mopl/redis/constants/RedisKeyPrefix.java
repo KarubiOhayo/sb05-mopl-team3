@@ -33,10 +33,10 @@ public final class RedisKeyPrefix {
   public static final String USER_SUMMARY = "user:summary:";
 
   /** 플레이리스트 콘텐츠 캐시: playlist:contents:{playlistId} */
-  public static final String PLAYLIST_CONTENTS = "playlist:contents:v2:";
+  public static final String PLAYLIST_CONTENTS = "playlist:contents:v3:";
 
   /** 플레이리스트 썸네일 콘텐츠 캐시: playlist:thumbnail-content:{playlistId} */
-  public static final String PLAYLIST_THUMBNAIL_CONTENT = "playlist:thumbnail-content:v2:";
+  public static final String PLAYLIST_THUMBNAIL_CONTENT = "playlist:thumbnail-content:v3:";
 
   /** 플레이리스트 총 개수 캐시: playlist:count:{filterHash} */
   public static final String PLAYLIST_COUNT = "playlist:count:";
