@@ -41,6 +41,41 @@ function loadAccounts() {
 
 const ACCOUNTS = loadAccounts();
 const MODE = __ENV.K6_MODE || 'vus';
+const RPS_START_RATE = Number(__ENV.K6_RPS_START_RATE || 50);
+const RPS_TIME_UNIT = __ENV.K6_RPS_TIME_UNIT || '1s';
+const RPS_PREALLOCATED_VUS = Number(__ENV.K6_RPS_PREALLOCATED_VUS || 120);
+const RPS_MAX_VUS = Number(__ENV.K6_RPS_MAX_VUS || 240);
+
+function parseRpsStages(value, fallbackStages) {
+  if (!value) {
+    return fallbackStages;
+  }
+  const stages = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [targetRaw, durationRaw] = entry.split(':').map((part) => part.trim());
+      const target = Number(targetRaw);
+      if (!Number.isFinite(target) || !durationRaw) {
+        console.warn(`Invalid K6_RPS_STAGES entry: "${entry}"`);
+        return null;
+      }
+      return { target, duration: durationRaw };
+    })
+    .filter(Boolean);
+
+  return stages.length > 0 ? stages : fallbackStages;
+}
+
+function loadContentIdsFromEnv() {
+  if (!__ENV.K6_CONTENT_IDS) {
+    return [];
+  }
+  return __ENV.K6_CONTENT_IDS.split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
 
 const VUS_SCENARIOS = {
   baseline: {
@@ -65,16 +100,16 @@ const VUS_SCENARIOS = {
 const RPS_SCENARIOS = {
   rps_probe: {
     executor: 'ramping-arrival-rate',
-    startRate: 150,
-    timeUnit: '1s',
-    preAllocatedVUs: 120,
-    maxVUs: 240,
-    stages: [
+    startRate: RPS_START_RATE,
+    timeUnit: RPS_TIME_UNIT,
+    preAllocatedVUs: RPS_PREALLOCATED_VUS,
+    maxVUs: RPS_MAX_VUS,
+    stages: parseRpsStages(__ENV.K6_RPS_STAGES, [
       { target: 150, duration: '5m' },
       { target: 200, duration: '5m' },
       { target: 250, duration: '5m' },
       { target: 300, duration: '5m' },
-    ],
+    ]),
   },
 };
 
@@ -114,9 +149,28 @@ function signIn(account) {
 export function setup() {
   if (!ACCOUNTS.length) {
     console.warn('No accounts configured for k6.');
-    return [];
+    return { auths: [], contentIds: [] };
   }
-  return ACCOUNTS.map((account) => signIn(account));
+  const auths = ACCOUNTS.map((account) => signIn(account));
+  const envContentIds = loadContentIdsFromEnv();
+  if (envContentIds.length > 0) {
+    return { auths, contentIds: envContentIds };
+  }
+
+  const seedAuth = auths[0];
+  if (!seedAuth || !seedAuth.token) {
+    console.warn('No auth token for contentId discovery.');
+    return { auths, contentIds: [] };
+  }
+
+  const res = listContents(seedAuth.token);
+  const json = res && typeof res.json === 'function' ? res.json() : {};
+  const data = json && json.data ? json.data : [];
+  const contentIds = data.map((item) => item.id).filter(Boolean);
+  if (!contentIds.length) {
+    console.warn('No contentIds discovered from contents list.');
+  }
+  return { auths, contentIds };
 }
 
 function authHeaders(token) {
@@ -167,6 +221,17 @@ function listConversations(token) {
   return res;
 }
 
+function listReviews(token, contentId) {
+  if (!contentId) return;
+  const params = `contentId=${contentId}&limit=20&sortDirection=DESCENDING&sortBy=createdAt`;
+  const res = http.get(`${BASE_URL}/api/reviews?${params}`, {
+    ...authHeaders(token),
+    tags: { name: 'reviews_list' },
+  });
+  check(res, { 'reviews list ok': (r) => r.status === 200 });
+  return res;
+}
+
 function getProfile(token, userId) {
   if (!userId) return;
   const res = http.get(`${BASE_URL}/api/users/${userId}`, {
@@ -177,11 +242,14 @@ function getProfile(token, userId) {
 }
 
 export default function (data) {
-  if (!data || !data.length) {
+  const payload = data || {};
+  const auths = Array.isArray(payload) ? payload : payload.auths || [];
+  const contentIds = Array.isArray(payload) ? [] : payload.contentIds || [];
+  if (!auths.length) {
     sleep(1);
     return;
   }
-  const auth = data[(__VU - 1) % data.length] || {};
+  const auth = auths[(__VU - 1) % auths.length] || {};
   const token = auth.token;
   const userId = auth.userId;
 
@@ -190,13 +258,20 @@ export default function (data) {
   }
 
   const roll = Math.random();
-  if (roll < 0.35) {
+  if (roll < 0.3) {
     listContents(token);
-  } else if (roll < 0.55) {
+  } else if (roll < 0.5) {
     listPlaylists(token);
-  } else if (roll < 0.75) {
+  } else if (roll < 0.65) {
+    if (contentIds.length > 0) {
+      const contentId = contentIds[Math.floor(Math.random() * contentIds.length)];
+      listReviews(token, contentId);
+    } else {
+      listContents(token);
+    }
+  } else if (roll < 0.8) {
     listNotifications(token);
-  } else if (roll < 0.9) {
+  } else if (roll < 0.93) {
     listConversations(token);
   } else {
     getProfile(token, userId);
