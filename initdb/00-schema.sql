@@ -79,6 +79,9 @@ CREATE TABLE playlists (
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
+  KEY idx_playlists_owner_id (owner_id),
+  KEY idx_playlists_updated_id (updated_at, id),
+  KEY idx_playlists_subscriber_id (subscriber_count, id),
   CONSTRAINT fk_playlists_owner
     FOREIGN KEY (owner_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -90,6 +93,7 @@ CREATE TABLE playlist_contents (
   content_id CHAR(36) NOT NULL,
   added_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (playlist_id, content_id),
+  KEY idx_playlist_contents_playlist_added (playlist_id, added_at),
   CONSTRAINT fk_playlist_contents_playlist
     FOREIGN KEY (playlist_id) REFERENCES playlists(id)
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -104,6 +108,7 @@ CREATE TABLE playlist_subscriptions (
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (playlist_id, user_id),
   KEY idx_playlist_subscriptions_playlist_created_user (playlist_id, created_at, user_id),
+  KEY idx_playlist_subscriptions_user_playlist (user_id, playlist_id),
   CONSTRAINT fk_playlist_subscriptions_playlist
     FOREIGN KEY (playlist_id) REFERENCES playlists(id)
     ON DELETE CASCADE ON UPDATE CASCADE,
