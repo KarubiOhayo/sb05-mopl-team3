@@ -3,6 +3,9 @@ package io.mopl.batch.content.domain;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /** 콘텐츠 엔티티에 대한 JPA 리포지토리. */
@@ -25,4 +28,12 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
    * @return 존재 여부
    */
   boolean existsByExternalIdAndType(String externalId, ContentType type);
+
+  @Modifying
+  @Query("update Content c set c.watcherCount = 0 where c.watcherCount <> 0")
+  int resetWatcherCounts();
+
+  @Modifying
+  @Query("update Content c set c.watcherCount = :count where c.id = :id")
+  int updateWatcherCount(@Param("id") UUID id, @Param("count") long count);
 }

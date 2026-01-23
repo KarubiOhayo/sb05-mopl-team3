@@ -1,0 +1,163 @@
+package io.mopl.batch.scheduler;
+
+import io.mopl.batch.content.domain.ContentRepository;
+import io.mopl.redis.constants.RedisKeyPrefix;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class WatchingSessionSnapshotScheduler {
+
+  private static final int SCAN_COUNT = 100;
+  private static final String SNAPSHOT_PREFIX = "watching:snapshot:";
+  private static final Duration SNAPSHOT_TTL = Duration.ofHours(24);
+
+  private final RedisTemplate<String, String> redisTemplate;
+  private final ContentRepository contentRepository;
+
+  @Scheduled(fixedDelayString = "${batch.schedule.watcher-snapshot-interval-ms:30000}")
+  @Transactional
+  public void syncWatcherCounts() {
+    long startedAt = System.currentTimeMillis();
+
+    int updated = 0;
+    int cleared = 0;
+    int invalidKeys = 0;
+
+    log.info(
+        "Watching session snapshot sync started: cleared={}, updated={}, invalidKeys={}, startedAt={}",
+        cleared,
+        updated,
+        invalidKeys,
+        startedAt);
+
+    Set<String> contentKeys = scanContentKeys();
+    java.util.Set<String> currentContentIds = new java.util.HashSet<>();
+
+    for (String key : contentKeys) {
+      String contentId = key.substring(RedisKeyPrefix.CONTENT_PREFIX.length());
+      UUID contentUuid;
+      try {
+        contentUuid = UUID.fromString(contentId);
+      } catch (IllegalArgumentException e) {
+        invalidKeys++;
+        continue;
+      }
+      Long count = redisTemplate.opsForZSet().zCard(key);
+      if (count == null) {
+        continue;
+      }
+
+      String snapshotKey = SNAPSHOT_PREFIX + contentId;
+      Long prevCount = parseLong(redisTemplate.opsForValue().get(snapshotKey));
+      if (prevCount == null || prevCount.longValue() != count) {
+        contentRepository.updateWatcherCount(contentUuid, count);
+        redisTemplate.opsForValue().set(snapshotKey, Long.toString(count), SNAPSHOT_TTL);
+        updated++;
+      }
+      currentContentIds.add(contentId);
+    }
+
+    for (String snapshotKey : scanSnapshotKeys()) {
+      String contentId = snapshotKey.substring(SNAPSHOT_PREFIX.length());
+      if (currentContentIds.contains(contentId)) {
+        continue;
+      }
+      UUID contentUuid;
+      try {
+        contentUuid = UUID.fromString(contentId);
+      } catch (IllegalArgumentException e) {
+        invalidKeys++;
+        continue;
+      }
+      contentRepository.updateWatcherCount(contentUuid, 0);
+      redisTemplate.delete(snapshotKey);
+      cleared++;
+    }
+
+    long elapsed = System.currentTimeMillis() - startedAt;
+    log.info(
+        "Watching session snapshot sync finished: cleared={}, updated={}, invalidKeys={}, elapsedMs={}",
+        cleared,
+        updated,
+        invalidKeys,
+        elapsed);
+  }
+
+  private Set<String> scanContentKeys() {
+    RedisCallback<Set<String>> callback =
+        connection -> {
+          ScanOptions options =
+              ScanOptions.scanOptions()
+                  .match(RedisKeyPrefix.CONTENT_PREFIX + "*")
+                  .count(SCAN_COUNT)
+                  .build();
+          StringRedisSerializer serializer = new StringRedisSerializer();
+          Set<String> keys = new HashSet<>();
+          try (Cursor<byte[]> cursor = connection.scan(options)) {
+            while (cursor.hasNext()) {
+              String key = serializer.deserialize(cursor.next());
+              if (key != null) {
+                keys.add(key);
+              }
+            }
+          } catch (RuntimeException e) {
+            log.warn("Watching session key scan failed", e);
+          }
+          return keys;
+        };
+
+    Set<String> result = redisTemplate.execute(callback);
+    return result == null ? Collections.emptySet() : result;
+  }
+
+  private Set<String> scanSnapshotKeys() {
+    RedisCallback<Set<String>> callback =
+        connection -> {
+          ScanOptions options =
+              ScanOptions.scanOptions().match(SNAPSHOT_PREFIX + "*").count(SCAN_COUNT).build();
+          StringRedisSerializer serializer = new StringRedisSerializer();
+          Set<String> keys = new HashSet<>();
+          try (Cursor<byte[]> cursor = connection.scan(options)) {
+            while (cursor.hasNext()) {
+              String key = serializer.deserialize(cursor.next());
+              if (key != null) {
+                keys.add(key);
+              }
+            }
+          } catch (RuntimeException e) {
+            log.warn("Watching snapshot key scan failed", e);
+          }
+          return keys;
+        };
+
+    Set<String> result = redisTemplate.execute(callback);
+    return result == null ? Collections.emptySet() : result;
+  }
+
+  private Long parseLong(Object value) {
+    if (value == null) {
+      return null;
+    }
+    try {
+      return Long.valueOf(value.toString());
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+}
