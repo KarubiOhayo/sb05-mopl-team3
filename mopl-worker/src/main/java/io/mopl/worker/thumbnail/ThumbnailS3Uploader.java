@@ -1,5 +1,8 @@
 package io.mopl.worker.thumbnail;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.mopl.core.error.BusinessException;
 import io.mopl.worker.common.WorkerErrorCode;
 import io.mopl.worker.s3.S3Properties;
@@ -34,6 +37,7 @@ public class ThumbnailS3Uploader {
 
   private final S3Client s3Client;
   private final S3Properties s3Properties;
+  private final MeterRegistry meterRegistry;
   private final HttpClient httpClient =
       HttpClient.newBuilder()
           .connectTimeout(CONNECT_TIMEOUT)
@@ -48,33 +52,55 @@ public class ThumbnailS3Uploader {
    * @throws Exception 다운로드/업로드 실패 시
    */
   public void uploadFromUrl(String sourceUrl, String s3Key) throws Exception {
+    Timer.Sample sample = Timer.start(meterRegistry);
     String bucket = requireBucket();
 
     if (objectExists(bucket, s3Key)) {
       log.info("업로드 건너뜀: 이미 객체가 존재합니다. s3Key={}", s3Key);
+      Counter.builder("worker.thumbnail.upload.skipped").register(meterRegistry).increment();
+      sample.stop(
+          Timer.builder("worker.thumbnail.upload.duration")
+              .tags("result", "skipped")
+              .register(meterRegistry));
       return;
     }
 
-    HttpRequest request =
-        HttpRequest.newBuilder(URI.create(sourceUrl)).timeout(REQUEST_TIMEOUT).GET().build();
+    try {
+      HttpRequest request =
+          HttpRequest.newBuilder(URI.create(sourceUrl)).timeout(REQUEST_TIMEOUT).GET().build();
 
-    HttpResponse<byte[]> response =
-        httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+      HttpResponse<byte[]> response =
+          httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-    if (response.statusCode() / 100 != 2) {
-      throw new BusinessException(WorkerErrorCode.THUMBNAIL_DOWNLOAD_FAILED)
-          .addDetail("status", String.valueOf(response.statusCode()));
+      if (response.statusCode() / 100 != 2) {
+        throw new BusinessException(WorkerErrorCode.THUMBNAIL_DOWNLOAD_FAILED)
+            .addDetail("status", String.valueOf(response.statusCode()));
+      }
+
+      byte[] body = response.body();
+      if (body == null || body.length == 0) {
+        throw new BusinessException(WorkerErrorCode.THUMBNAIL_EMPTY_BODY);
+      }
+
+      String contentType = resolveContentType(response, s3Key);
+      PutObjectRequest putObjectRequest =
+          PutObjectRequest.builder().bucket(bucket).key(s3Key).contentType(contentType).build();
+      s3Client.putObject(putObjectRequest, RequestBody.fromBytes(body));
+      sample.stop(
+          Timer.builder("worker.thumbnail.upload.duration")
+              .tags("result", "success")
+              .register(meterRegistry));
+    } catch (Exception ex) {
+      Counter.builder("worker.thumbnail.upload.errors")
+          .tags("type", ex.getClass().getSimpleName())
+          .register(meterRegistry)
+          .increment();
+      sample.stop(
+          Timer.builder("worker.thumbnail.upload.duration")
+              .tags("result", "failed")
+              .register(meterRegistry));
+      throw ex;
     }
-
-    byte[] body = response.body();
-    if (body == null || body.length == 0) {
-      throw new BusinessException(WorkerErrorCode.THUMBNAIL_EMPTY_BODY);
-    }
-
-    String contentType = resolveContentType(response, s3Key);
-    PutObjectRequest putObjectRequest =
-        PutObjectRequest.builder().bucket(bucket).key(s3Key).contentType(contentType).build();
-    s3Client.putObject(putObjectRequest, RequestBody.fromBytes(body));
   }
 
   /** S3에 동일 키의 객체가 존재하는지 확인한다. */

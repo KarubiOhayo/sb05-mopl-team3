@@ -1,5 +1,8 @@
 package io.mopl.batch.client.tsdb;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.mopl.batch.client.tsdb.dto.TsdbEventsResponse;
 import io.mopl.batch.client.tsdb.dto.TsdbSoccerResponse;
 import io.mopl.batch.common.BatchErrorCode;
@@ -23,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 public class TsdbApiClient {
 
   private final RestTemplate restTemplate;
+  private final MeterRegistry meterRegistry;
 
   @Value("${tsdb.api-key}")
   private String apiKey;
@@ -38,6 +42,7 @@ public class TsdbApiClient {
   public List<TsdbSoccerResponse> fetchTodaySoccerMatches(String date) {
     String url = String.format("%s/%s/eventsday.php?d=%s&s=Soccer", BASE_URL, apiKey, date);
 
+    Timer.Sample sample = Timer.start(meterRegistry);
     try {
       ResponseEntity<TsdbEventsResponse<TsdbSoccerResponse>> response =
           restTemplate.exchange(
@@ -48,8 +53,17 @@ public class TsdbApiClient {
       }
       return Collections.emptyList();
     } catch (Exception e) {
+      Counter.builder("batch.external.api.errors")
+          .tags("client", "tsdb", "operation", "soccer_today")
+          .register(meterRegistry)
+          .increment();
       log.error("TSDB API 호출 실패: {}", e.getMessage(), e);
       throw new BusinessException(BatchErrorCode.TSDB_API_CALL_ERROR);
+    } finally {
+      sample.stop(
+          Timer.builder("batch.external.api.duration")
+              .tags("client", "tsdb", "operation", "soccer_today")
+              .register(meterRegistry));
     }
   }
 }

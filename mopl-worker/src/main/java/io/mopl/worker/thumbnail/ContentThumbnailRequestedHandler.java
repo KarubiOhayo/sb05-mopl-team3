@@ -1,5 +1,8 @@
 package io.mopl.worker.thumbnail;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.mopl.core.event.thumbnail.ContentThumbnailCompletedEvent;
 import io.mopl.core.event.thumbnail.ContentThumbnailFailedEvent;
 import io.mopl.core.event.thumbnail.ContentThumbnailRequestedEvent;
@@ -28,6 +31,7 @@ public class ContentThumbnailRequestedHandler {
   private final ThumbnailEventPublisher thumbnailEventPublisher;
   private final KafkaTemplate<String, Object> kafkaTemplate;
   private final KafkaRetryProperties retryProperties;
+  private final MeterRegistry meterRegistry;
 
   /**
    * 비동기로 썸네일 업로드를 처리한다.
@@ -39,6 +43,9 @@ public class ContentThumbnailRequestedHandler {
    */
   @Async("kafkaTaskExecutor")
   public void handleAsync(ContentThumbnailRequestedEvent event, Acknowledgment acknowledgment) {
+    Timer.Sample sample = Timer.start(meterRegistry);
+    String status = "failed";
+    Counter retryCounter = Counter.builder("worker.thumbnail.retries").register(meterRegistry);
     int maxAttempts = retryProperties.maxAttempts() == null ? 3 : retryProperties.maxAttempts();
     long backoffMs =
         retryProperties.initialBackoffMs() == null ? 1000L : retryProperties.initialBackoffMs();
@@ -57,6 +64,7 @@ public class ContentThumbnailRequestedHandler {
 
       if (event.sourceUrl() == null || event.sourceUrl().isBlank()) {
         log.warn("썸네일 업로드 건너뜀: sourceUrl이 비어 있습니다. contentId={}", event.contentId());
+        status = "skipped";
         return;
       }
 
@@ -80,6 +88,7 @@ public class ContentThumbnailRequestedHandler {
               event.contentId(),
               event.s3Key(),
               event.sourceUrl());
+          status = "success";
           return;
         } catch (Exception ex) {
           lastFailure = ex;
@@ -91,6 +100,7 @@ public class ContentThumbnailRequestedHandler {
               event.s3Key(),
               ex);
           if (attempt < maxAttempts) {
+            retryCounter.increment();
             try {
               Thread.sleep(currentBackoff);
             } catch (InterruptedException interruptedException) {
@@ -132,6 +142,14 @@ public class ContentThumbnailRequestedHandler {
     } catch (Exception ex) {
       log.error("썸네일 요청 처리 중 예상치 못한 오류 발생: contentId={}", event.contentId(), ex);
     } finally {
+      Counter.builder("worker.thumbnail.requests")
+          .tags("status", status)
+          .register(meterRegistry)
+          .increment();
+      sample.stop(
+          Timer.builder("worker.thumbnail.handle.duration")
+              .tags("status", status)
+              .register(meterRegistry));
       acknowledgment.acknowledge();
     }
   }

@@ -1,5 +1,8 @@
 package io.mopl.batch.client.tmdb;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.mopl.batch.client.tmdb.dto.TmdbMovieResponse;
 import io.mopl.batch.client.tmdb.dto.TmdbPageResponse;
 import io.mopl.batch.client.tmdb.dto.TmdbTvSeriesResponse;
@@ -25,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 public class TmdbApiClient {
 
   private final RestTemplate restTemplate;
+  private final MeterRegistry meterRegistry;
 
   @Value("${tmdb.access-token}")
   private String accessToken;
@@ -49,6 +53,7 @@ public class TmdbApiClient {
     headers.set("accept", "application/json");
     HttpEntity<String> entity = new HttpEntity<>(headers);
 
+    Timer.Sample sample = Timer.start(meterRegistry);
     try {
       ResponseEntity<TmdbPageResponse<TmdbMovieResponse>> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, new ParameterizedTypeReference<>() {});
@@ -58,9 +63,18 @@ public class TmdbApiClient {
       }
       return Collections.emptyList();
     } catch (Exception e) {
+      Counter.builder("batch.external.api.errors")
+          .tags("client", "tmdb", "operation", "popular_movies")
+          .register(meterRegistry)
+          .increment();
       log.error("TMDB API 호출 실패: {}", e.getMessage(), e);
       throw new BusinessException(BatchErrorCode.TMDB_API_CALL_ERROR)
           .addDetail("page", String.valueOf(page));
+    } finally {
+      sample.stop(
+          Timer.builder("batch.external.api.duration")
+              .tags("client", "tmdb", "operation", "popular_movies")
+              .register(meterRegistry));
     }
   }
 
@@ -79,6 +93,7 @@ public class TmdbApiClient {
     headers.set("accept", "application/json");
     HttpEntity<String> entity = new HttpEntity<>(headers);
 
+    Timer.Sample sample = Timer.start(meterRegistry);
     try {
       ResponseEntity<TmdbPageResponse<TmdbTvSeriesResponse>> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, new ParameterizedTypeReference<>() {});
@@ -88,9 +103,18 @@ public class TmdbApiClient {
       }
       return Collections.emptyList();
     } catch (Exception e) {
+      Counter.builder("batch.external.api.errors")
+          .tags("client", "tmdb", "operation", "popular_tv_series")
+          .register(meterRegistry)
+          .increment();
       log.error("TMDB API 호출 실패: {}", e.getMessage(), e);
       throw new BusinessException(BatchErrorCode.TMDB_API_CALL_ERROR)
           .addDetail("page", String.valueOf(page));
+    } finally {
+      sample.stop(
+          Timer.builder("batch.external.api.duration")
+              .tags("client", "tmdb", "operation", "popular_tv_series")
+              .register(meterRegistry));
     }
   }
 }
