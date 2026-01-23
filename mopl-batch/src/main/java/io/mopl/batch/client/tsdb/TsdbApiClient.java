@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.Timer;
 import io.mopl.batch.client.tsdb.dto.TsdbEventsResponse;
 import io.mopl.batch.client.tsdb.dto.TsdbSoccerResponse;
 import io.mopl.batch.common.BatchErrorCode;
+import io.mopl.batch.metrics.BatchMetricsSupport;
 import io.mopl.core.error.BusinessException;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +44,7 @@ public class TsdbApiClient {
     String url = String.format("%s/%s/eventsday.php?d=%s&s=Soccer", BASE_URL, apiKey, date);
 
     Timer.Sample sample = Timer.start(meterRegistry);
+    String runTag = resolveRunTag();
     try {
       ResponseEntity<TsdbEventsResponse<TsdbSoccerResponse>> response =
           restTemplate.exchange(
@@ -54,7 +56,7 @@ public class TsdbApiClient {
       return Collections.emptyList();
     } catch (Exception e) {
       Counter.builder("batch.external.api.errors")
-          .tags("client", "tsdb", "operation", "soccer_today")
+          .tags("client", "tsdb", "operation", "soccer_today", "run_id", runTag)
           .register(meterRegistry)
           .increment();
       log.error("TSDB API 호출 실패: {}", e.getMessage(), e);
@@ -62,8 +64,13 @@ public class TsdbApiClient {
     } finally {
       sample.stop(
           Timer.builder("batch.external.api.duration")
-              .tags("client", "tsdb", "operation", "soccer_today")
+              .tags("client", "tsdb", "operation", "soccer_today", "run_id", runTag)
               .register(meterRegistry));
     }
+  }
+
+  private static String resolveRunTag() {
+    String runId = BatchMetricsSupport.resolveJobParameter("runId");
+    return runId == null || runId.isBlank() ? "none" : runId;
   }
 }

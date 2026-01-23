@@ -53,14 +53,18 @@ public class ThumbnailS3Uploader {
    */
   public void uploadFromUrl(String sourceUrl, String s3Key) throws Exception {
     Timer.Sample sample = Timer.start(meterRegistry);
+    String runTag = RunIdResolver.resolveFromKey(s3Key);
     String bucket = requireBucket();
 
     if (objectExists(bucket, s3Key)) {
       log.info("업로드 건너뜀: 이미 객체가 존재합니다. s3Key={}", s3Key);
-      Counter.builder("worker.thumbnail.upload.skipped").register(meterRegistry).increment();
+      Counter.builder("worker.thumbnail.upload.skipped")
+          .tags("run_id", runTag)
+          .register(meterRegistry)
+          .increment();
       sample.stop(
           Timer.builder("worker.thumbnail.upload.duration")
-              .tags("result", "skipped")
+              .tags("result", "skipped", "run_id", runTag)
               .register(meterRegistry));
       return;
     }
@@ -88,16 +92,16 @@ public class ThumbnailS3Uploader {
       s3Client.putObject(putObjectRequest, RequestBody.fromBytes(body));
       sample.stop(
           Timer.builder("worker.thumbnail.upload.duration")
-              .tags("result", "success")
+              .tags("result", "success", "run_id", runTag)
               .register(meterRegistry));
     } catch (Exception ex) {
       Counter.builder("worker.thumbnail.upload.errors")
-          .tags("type", ex.getClass().getSimpleName())
+          .tags("type", ex.getClass().getSimpleName(), "run_id", runTag)
           .register(meterRegistry)
           .increment();
       sample.stop(
           Timer.builder("worker.thumbnail.upload.duration")
-              .tags("result", "failed")
+              .tags("result", "failed", "run_id", runTag)
               .register(meterRegistry));
       throw ex;
     }

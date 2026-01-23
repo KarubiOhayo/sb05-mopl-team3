@@ -58,14 +58,16 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
   public void write(Chunk<? extends Content> chunk) {
     String jobName = BatchMetricsSupport.resolveJobName();
     String stepName = BatchMetricsSupport.resolveStepName();
+    String runId = BatchMetricsSupport.resolveJobParameter("runId");
+    String runTag = runId == null || runId.isBlank() ? "none" : runId;
     Timer.Sample sample = Timer.start(meterRegistry);
     DistributionSummary.builder("batch.content.write.items")
-        .tags("job", jobName, "step", stepName)
+        .tags("job", jobName, "step", stepName, "run_id", runTag)
         .register(meterRegistry)
         .record(chunk.size());
     Counter thumbnailEventCounter =
         Counter.builder("batch.thumbnail.events.published")
-            .tags("job", jobName, "step", stepName)
+            .tags("job", jobName, "step", stepName, "run_id", runTag)
             .register(meterRegistry);
 
     try {
@@ -121,7 +123,7 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
     } finally {
       sample.stop(
           Timer.builder("batch.content.write.duration")
-              .tags("job", jobName, "step", stepName)
+              .tags("job", jobName, "step", stepName, "run_id", runTag)
               .register(meterRegistry));
     }
   }

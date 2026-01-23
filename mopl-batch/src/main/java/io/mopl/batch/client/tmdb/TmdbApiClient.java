@@ -7,6 +7,7 @@ import io.mopl.batch.client.tmdb.dto.TmdbMovieResponse;
 import io.mopl.batch.client.tmdb.dto.TmdbPageResponse;
 import io.mopl.batch.client.tmdb.dto.TmdbTvSeriesResponse;
 import io.mopl.batch.common.BatchErrorCode;
+import io.mopl.batch.metrics.BatchMetricsSupport;
 import io.mopl.core.error.BusinessException;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +55,7 @@ public class TmdbApiClient {
     HttpEntity<String> entity = new HttpEntity<>(headers);
 
     Timer.Sample sample = Timer.start(meterRegistry);
+    String runTag = resolveRunTag();
     try {
       ResponseEntity<TmdbPageResponse<TmdbMovieResponse>> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, new ParameterizedTypeReference<>() {});
@@ -64,7 +66,7 @@ public class TmdbApiClient {
       return Collections.emptyList();
     } catch (Exception e) {
       Counter.builder("batch.external.api.errors")
-          .tags("client", "tmdb", "operation", "popular_movies")
+          .tags("client", "tmdb", "operation", "popular_movies", "run_id", runTag)
           .register(meterRegistry)
           .increment();
       log.error("TMDB API 호출 실패: {}", e.getMessage(), e);
@@ -73,7 +75,7 @@ public class TmdbApiClient {
     } finally {
       sample.stop(
           Timer.builder("batch.external.api.duration")
-              .tags("client", "tmdb", "operation", "popular_movies")
+              .tags("client", "tmdb", "operation", "popular_movies", "run_id", runTag)
               .register(meterRegistry));
     }
   }
@@ -94,6 +96,7 @@ public class TmdbApiClient {
     HttpEntity<String> entity = new HttpEntity<>(headers);
 
     Timer.Sample sample = Timer.start(meterRegistry);
+    String runTag = resolveRunTag();
     try {
       ResponseEntity<TmdbPageResponse<TmdbTvSeriesResponse>> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, new ParameterizedTypeReference<>() {});
@@ -104,7 +107,7 @@ public class TmdbApiClient {
       return Collections.emptyList();
     } catch (Exception e) {
       Counter.builder("batch.external.api.errors")
-          .tags("client", "tmdb", "operation", "popular_tv_series")
+          .tags("client", "tmdb", "operation", "popular_tv_series", "run_id", runTag)
           .register(meterRegistry)
           .increment();
       log.error("TMDB API 호출 실패: {}", e.getMessage(), e);
@@ -113,8 +116,13 @@ public class TmdbApiClient {
     } finally {
       sample.stop(
           Timer.builder("batch.external.api.duration")
-              .tags("client", "tmdb", "operation", "popular_tv_series")
+              .tags("client", "tmdb", "operation", "popular_tv_series", "run_id", runTag)
               .register(meterRegistry));
     }
+  }
+
+  private static String resolveRunTag() {
+    String runId = BatchMetricsSupport.resolveJobParameter("runId");
+    return runId == null || runId.isBlank() ? "none" : runId;
   }
 }
