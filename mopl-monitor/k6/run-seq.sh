@@ -4,6 +4,9 @@ set -o pipefail
 
 INTERVAL_MINUTES="${INTERVAL_MINUTES:-10}"
 SLEEP_SECONDS=$((INTERVAL_MINUTES * 60))
+REPEAT_COUNT="${REPEAT_COUNT:-1}"
+REPEAT_INTERVAL_MINUTES="${REPEAT_INTERVAL_MINUTES:-0}"
+REPEAT_SLEEP_SECONDS=$((REPEAT_INTERVAL_MINUTES * 60))
 LOG_DIR="${LOG_DIR:-mopl-monitor/k6/logs}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
@@ -52,13 +55,14 @@ mkdir -p "${LOG_DIR}"
 FAILURES=()
 
 run_k6() {
-  local name="$1"
-  local script="$2"
-  local start_rate="$3"
-  local stages="$4"
-  local pre_vus="$5"
-  local max_vus="$6"
-  local log_file="${LOG_DIR}/${TIMESTAMP}-${name}.log"
+  local run_tag="$1"
+  local name="$2"
+  local script="$3"
+  local start_rate="$4"
+  local stages="$5"
+  local pre_vus="$6"
+  local max_vus="$7"
+  local log_file="${LOG_DIR}/${TIMESTAMP}-${run_tag}-${name}.log"
 
   echo "=== $(date '+%F %T') | ${name} | ${script} ===" | tee -a "${log_file}"
   K6_MODE=rps \
@@ -74,11 +78,19 @@ run_k6() {
   fi
 }
 
-run_k6 "api" "${API_SCRIPT}" "${API_RPS_START_RATE}" "${API_RPS_STAGES}" "${API_RPS_PREALLOCATED_VUS}" "${API_RPS_MAX_VUS}"
-sleep "${SLEEP_SECONDS}"
-run_k6 "playlists" "${PLAYLIST_SCRIPT}" "${PLAYLIST_RPS_START_RATE}" "${PLAYLIST_RPS_STAGES}" "${PLAYLIST_RPS_PREALLOCATED_VUS}" "${PLAYLIST_RPS_MAX_VUS}"
-sleep "${SLEEP_SECONDS}"
-run_k6 "reviews" "${REVIEW_SCRIPT}" "${REVIEW_RPS_START_RATE}" "${REVIEW_RPS_STAGES}" "${REVIEW_RPS_PREALLOCATED_VUS}" "${REVIEW_RPS_MAX_VUS}"
+for ((run=1; run<=REPEAT_COUNT; run+=1)); do
+  run_tag="run${run}"
+  run_k6 "${run_tag}" "api" "${API_SCRIPT}" "${API_RPS_START_RATE}" "${API_RPS_STAGES}" "${API_RPS_PREALLOCATED_VUS}" "${API_RPS_MAX_VUS}"
+  sleep "${SLEEP_SECONDS}"
+  run_k6 "${run_tag}" "playlists" "${PLAYLIST_SCRIPT}" "${PLAYLIST_RPS_START_RATE}" "${PLAYLIST_RPS_STAGES}" "${PLAYLIST_RPS_PREALLOCATED_VUS}" "${PLAYLIST_RPS_MAX_VUS}"
+  sleep "${SLEEP_SECONDS}"
+  run_k6 "${run_tag}" "reviews" "${REVIEW_SCRIPT}" "${REVIEW_RPS_START_RATE}" "${REVIEW_RPS_STAGES}" "${REVIEW_RPS_PREALLOCATED_VUS}" "${REVIEW_RPS_MAX_VUS}"
+
+  if [[ ${run} -lt ${REPEAT_COUNT} && ${REPEAT_SLEEP_SECONDS} -gt 0 ]]; then
+    echo "Sleeping ${REPEAT_SLEEP_SECONDS}s before next run..."
+    sleep "${REPEAT_SLEEP_SECONDS}"
+  fi
+done
 
 if [[ ${#FAILURES[@]} -gt 0 ]]; then
   echo "Finished with failures: ${FAILURES[*]}"
