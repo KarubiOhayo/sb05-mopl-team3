@@ -1,6 +1,7 @@
 package io.mopl.api.content.event;
 
 import io.mopl.api.content.domain.EventType;
+import io.mopl.core.event.content.ContentAggregateUpdatedBatchEvent;
 import io.mopl.core.event.content.ContentAggregateUpdatedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import java.util.UUID;
@@ -36,5 +37,29 @@ public class ContentAggregateUpdatedListener {
 
     applicationEventPublisher.publishEvent(new ContentIndexEvent(contentId, EventType.UPSERT));
     log.info("ES 인덱싱 이벤트 발행 (contentId={})", contentId);
+  }
+
+  @Transactional
+  @KafkaListener(
+      topics = KafkaTopics.CONTENT_AGGREGATE_UPDATED_BATCH,
+      groupId = "content-aggregate-updated",
+      properties =
+          "spring.json.value.default.type=io.mopl.core.event.content.ContentAggregateUpdatedBatchEvent")
+  public void handleBatch(ContentAggregateUpdatedBatchEvent event) {
+    if (event.contentIds() == null || event.contentIds().isEmpty()) {
+      return;
+    }
+    log.info("배치 집계 이벤트 수신: eventId={}, size={}", event.eventId(), event.contentIds().size());
+
+    for (String contentIdRaw : event.contentIds()) {
+      UUID contentId;
+      try {
+        contentId = UUID.fromString(contentIdRaw);
+      } catch (IllegalArgumentException e) {
+        log.error("contentId UUID 파싱 실패: {} (eventId={})", contentIdRaw, event.eventId(), e);
+        continue;
+      }
+      applicationEventPublisher.publishEvent(new ContentIndexEvent(contentId, EventType.UPSERT));
+    }
   }
 }

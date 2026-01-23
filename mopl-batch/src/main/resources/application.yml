@@ -38,6 +38,10 @@ batch:
     tv-series-collect-cron: ${BATCH_TV_SERIES_COLLECT_CRON:0 0 3 * * *}
     soccer-collect-cron: ${BATCH_SOCCER_COLLECT_CRON:0 0 2 * * *}
     watcher-snapshot-interval-ms: ${BATCH_WATCHER_SNAPSHOT_INTERVAL_MS:30000}
+  watcher-es:
+#    batch-size: ${BATCH_WATCHER_ES_BATCH_SIZE:100}
+    batch-size: ${BATCH_WATCHER_ES_BATCH_SIZE:1}
+    flush-interval-ms: ${BATCH_WATCHER_ES_FLUSH_INTERVAL_MS:5000}
 
 management:
   endpoints:

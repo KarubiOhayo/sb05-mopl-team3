@@ -11,6 +11,7 @@ public final class KafkaTopics {
   public static final String CONTENT_THUMBNAIL_COMPLETED = "content.thumbnail.completed";
   public static final String CONTENT_THUMBNAIL_FAILED = "content.thumbnail.failed";
   public static final String CONTENT_AGGREGATE_UPDATED = "content.aggregate.updated";
+  public static final String CONTENT_AGGREGATE_UPDATED_BATCH = "content.aggregate.updated.batch";
 
   // ===== review =====
   public static final String REVIEW_CREATED = "review.created";

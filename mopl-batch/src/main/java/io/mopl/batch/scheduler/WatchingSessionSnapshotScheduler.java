@@ -1,19 +1,27 @@
 package io.mopl.batch.scheduler;
 
 import io.mopl.batch.content.domain.ContentRepository;
+import io.mopl.core.event.content.ContentAggregateUpdatedBatchEvent;
+import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.redis.constants.RedisKeyPrefix;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +37,16 @@ public class WatchingSessionSnapshotScheduler {
 
   private final RedisTemplate<String, String> redisTemplate;
   private final ContentRepository contentRepository;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
+
+  @Value("${batch.watcher-es.batch-size:100}")
+  private int batchSize;
+
+  @Value("${batch.watcher-es.flush-interval-ms:5000}")
+  private long flushIntervalMs;
+
+  private final Set<String> bufferedContentIds = new LinkedHashSet<>();
+  private long lastFlushAt = System.currentTimeMillis();
 
   @Scheduled(fixedDelayString = "${batch.schedule.watcher-snapshot-interval-ms:30000}")
   @Transactional
@@ -68,6 +86,7 @@ public class WatchingSessionSnapshotScheduler {
       if (prevCount == null || prevCount.longValue() != count) {
         contentRepository.updateWatcherCount(contentUuid, count);
         redisTemplate.opsForValue().set(snapshotKey, Long.toString(count), SNAPSHOT_TTL);
+        bufferContentId(contentId);
         updated++;
       }
       currentContentIds.add(contentId);
@@ -87,8 +106,11 @@ public class WatchingSessionSnapshotScheduler {
       }
       contentRepository.updateWatcherCount(contentUuid, 0);
       redisTemplate.delete(snapshotKey);
+      bufferContentId(contentId);
       cleared++;
     }
+
+    flushIfDue();
 
     long elapsed = System.currentTimeMillis() - startedAt;
     log.info(
@@ -159,5 +181,36 @@ public class WatchingSessionSnapshotScheduler {
     } catch (NumberFormatException e) {
       return null;
     }
+  }
+
+  private void bufferContentId(String contentId) {
+    bufferedContentIds.add(contentId);
+    if (bufferedContentIds.size() >= batchSize) {
+      flushBuffer();
+    }
+  }
+
+  private void flushIfDue() {
+    if (bufferedContentIds.isEmpty()) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    if ((now - lastFlushAt) >= flushIntervalMs) {
+      flushBuffer();
+    }
+  }
+
+  private void flushBuffer() {
+    if (bufferedContentIds.isEmpty()) {
+      return;
+    }
+    List<String> contentIds = new ArrayList<>(bufferedContentIds);
+    bufferedContentIds.clear();
+    lastFlushAt = System.currentTimeMillis();
+
+    ContentAggregateUpdatedBatchEvent event =
+        new ContentAggregateUpdatedBatchEvent(
+            UUID.randomUUID().toString(), Instant.now(), contentIds);
+    kafkaTemplate.send(KafkaTopics.CONTENT_AGGREGATE_UPDATED_BATCH, event);
   }
 }
