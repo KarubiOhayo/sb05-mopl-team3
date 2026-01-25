@@ -13,7 +13,9 @@ import io.mopl.batch.content.domain.Tag;
 import io.mopl.batch.content.domain.TagRepository;
 import io.mopl.batch.metrics.BatchMetricsSupport;
 import io.mopl.batch.thumbnail.ThumbnailRequestedSpringEvent;
+import io.mopl.batch.thumbnail.ThumbnailUploadMode;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
+import java.util.ArrayList;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +62,10 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
     String stepName = BatchMetricsSupport.resolveStepName();
     String runId = BatchMetricsSupport.resolveJobParameter("runId");
     String runTag = runId == null || runId.isBlank() ? "none" : runId;
+    ThumbnailUploadMode uploadMode =
+        ThumbnailUploadMode.fromJobParameter(
+            BatchMetricsSupport.resolveJobParameter("thumbnailMode"));
+    boolean useSaveAll = resolveUseSaveAll(BatchMetricsSupport.resolveJobParameter("dbWriteMode"));
     Timer.Sample sample = Timer.start(meterRegistry);
     DistributionSummary.builder("batch.content.write.items")
         .tags("job", jobName, "step", stepName, "run_id", runTag)
@@ -71,14 +77,11 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
             .register(meterRegistry);
 
     try {
+      ArrayList<Content> contents = new ArrayList<>(chunk.size());
       for (Content content : chunk) {
         content.generateId();
 
         String sourceUrl = content.getSourceThumbnailUrl();
-        ThumbnailSourceType sourceType =
-            content.getThumbnailSourceType() != null
-                ? content.getThumbnailSourceType()
-                : ThumbnailSourceType.UNKNOWN;
         String s3Key =
             buildThumbnailS3Key(
                 resolveThumbnailPrefix(),
@@ -86,11 +89,20 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
                 content.getId().toString(),
                 sourceUrl);
         content.setThumbnailImageKey(s3Key);
+        contents.add(content);
+      }
 
-        // 1. 저장 (Processor에서 중복은 이미 걸러짐)
-        Content savedContent = contentRepository.save(content);
+      // 1. 저장 (Processor에서 중복은 이미 걸러짐)
+      if (useSaveAll) {
+        contentRepository.saveAll(contents);
+      } else {
+        for (Content content : contents) {
+          contentRepository.save(content);
+        }
+      }
 
-        // 2. Tag 저장 및 연결
+      // 2. Tag 저장 및 연결
+      for (Content content : contents) {
         if (content.getTags() != null) {
           for (String tagName : content.getTags()) {
             if (tagName == null || tagName.isBlank()) {
@@ -105,18 +117,23 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
 
             // ContentTag 연결
             ContentTag contentTag =
-                ContentTag.builder()
-                    .id(new ContentTagId(savedContent.getId(), tag.getId()))
-                    .build();
+                ContentTag.builder().id(new ContentTagId(content.getId(), tag.getId())).build();
 
             contentTagRepository.save(contentTag);
           }
         }
 
-        if (!sourceUrl.isBlank()) {
+        String sourceUrl = content.getSourceThumbnailUrl();
+        if (sourceUrl != null && !sourceUrl.isBlank()) {
           eventPublisher.publishEvent(
               new ThumbnailRequestedSpringEvent(
-                  savedContent.getId().toString(), sourceType, sourceUrl, s3Key));
+                  content.getId().toString(),
+                  content.getThumbnailSourceType() != null
+                      ? content.getThumbnailSourceType()
+                      : ThumbnailSourceType.UNKNOWN,
+                  sourceUrl,
+                  content.getThumbnailImageKey(),
+                  uploadMode));
           thumbnailEventCounter.increment();
         }
       }
@@ -149,6 +166,14 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
       return "thumbnails/";
     }
     return prefix.endsWith("/") ? prefix : prefix + "/";
+  }
+
+  private static boolean resolveUseSaveAll(String mode) {
+    if (mode == null || mode.isBlank()) {
+      return false;
+    }
+    String normalized = mode.trim().toLowerCase(Locale.ROOT);
+    return "saveall".equals(normalized) || "bulk".equals(normalized);
   }
 
   private static String extractExtension(String sourceUrl) {

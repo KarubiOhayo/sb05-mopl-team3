@@ -22,6 +22,9 @@ public class ThumbnailKafkaEventListener {
    */
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void handle(ThumbnailRequestedSpringEvent event) {
+    if (event.uploadMode() != ThumbnailUploadMode.ASYNC) {
+      return;
+    }
     ContentThumbnailRequestedEvent kafkaEvent =
         new ContentThumbnailRequestedEvent(
             UuidV7Generator.generate().toString(),

@@ -42,9 +42,12 @@ public class JobLauncherController {
   public ResponseEntity<String> runMovieCollectJob(
       @RequestParam(required = false) @Min(1) Integer maxPages,
       @RequestParam(required = false) @Min(1) Integer chunkSize,
-      @RequestParam(required = false) String runId) {
+      @RequestParam(required = false) String runId,
+      @RequestParam(required = false) String thumbnailMode,
+      @RequestParam(required = false) String dbWriteMode) {
     try {
-      JobParameters jobParameters = buildJobParameters(maxPages, chunkSize, runId);
+      JobParameters jobParameters =
+          buildJobParameters(maxPages, chunkSize, runId, thumbnailMode, dbWriteMode);
 
       jobOperator.start(movieCollectJob, jobParameters);
 
@@ -65,9 +68,12 @@ public class JobLauncherController {
   public ResponseEntity<String> runTvSeriesCollectJob(
       @RequestParam(required = false) @Min(1) Integer maxPages,
       @RequestParam(required = false) @Min(1) Integer chunkSize,
-      @RequestParam(required = false) String runId) {
+      @RequestParam(required = false) String runId,
+      @RequestParam(required = false) String thumbnailMode,
+      @RequestParam(required = false) String dbWriteMode) {
     try {
-      JobParameters jobParameters = buildJobParameters(maxPages, chunkSize, runId);
+      JobParameters jobParameters =
+          buildJobParameters(maxPages, chunkSize, runId, thumbnailMode, dbWriteMode);
 
       jobOperator.start(tvSeriesCollectJob, jobParameters);
 
@@ -87,9 +93,12 @@ public class JobLauncherController {
   @PostMapping("/soccer")
   public ResponseEntity<String> runSoccerCollectJob(
       @RequestParam(required = false) @Min(1) Integer chunkSize,
-      @RequestParam(required = false) String runId) {
+      @RequestParam(required = false) String runId,
+      @RequestParam(required = false) String thumbnailMode,
+      @RequestParam(required = false) String dbWriteMode) {
     try {
-      JobParameters jobParameters = buildJobParameters(null, chunkSize, runId);
+      JobParameters jobParameters =
+          buildJobParameters(null, chunkSize, runId, thumbnailMode, dbWriteMode);
 
       jobOperator.start(soccerCollectJob, jobParameters);
 
@@ -102,7 +111,7 @@ public class JobLauncherController {
   }
 
   private static JobParameters buildJobParameters(
-      Integer maxPages, Integer chunkSize, String runId) {
+      Integer maxPages, Integer chunkSize, String runId, String thumbnailMode, String dbWriteMode) {
     JobParametersBuilder builder =
         new JobParametersBuilder().addLong("requestTime", System.currentTimeMillis());
     if (maxPages != null) {
@@ -113,6 +122,12 @@ public class JobLauncherController {
     }
     if (runId != null && !runId.isBlank()) {
       builder.addString("runId", runId);
+    }
+    if (thumbnailMode != null && !thumbnailMode.isBlank()) {
+      builder.addString("thumbnailMode", thumbnailMode);
+    }
+    if (dbWriteMode != null && !dbWriteMode.isBlank()) {
+      builder.addString("dbWriteMode", dbWriteMode);
     }
     return builder.toJobParameters();
   }

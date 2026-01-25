@@ -19,7 +19,11 @@ public enum BatchErrorCode implements ErrorCode {
   /** 정리 요청 파라미터 오류. */
   CLEANUP_INVALID_REQUEST(400, "error.batch.cleanup-invalid-request"),
   /** S3 버킷 설정 누락. */
-  S3_BUCKET_NOT_CONFIGURED(500, "error.batch.s3-bucket-not-configured");
+  S3_BUCKET_NOT_CONFIGURED(500, "error.batch.s3-bucket-not-configured"),
+  /** 썸네일 다운로드 실패. */
+  THUMBNAIL_DOWNLOAD_FAILED(502, "error.batch.thumbnail-download-failed"),
+  /** 썸네일 다운로드 응답이 비어 있음. */
+  THUMBNAIL_EMPTY_BODY(502, "error.batch.thumbnail-empty-body");
 
   private final int status;
   private final String messageKey;
