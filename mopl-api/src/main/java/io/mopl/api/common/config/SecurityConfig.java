@@ -7,6 +7,7 @@ import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import io.mopl.api.auth.service.CustomOAuth2UserService;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -91,7 +92,7 @@ public class SecurityConfig {
                     /* ========== Swagger ========== */
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/prometheus")
+                    .requestMatchers(EndpointRequest.to("health", "prometheus"))
                     .permitAll()
 
                     /* ========== SPA 프론트엔드 라우트 ========== */

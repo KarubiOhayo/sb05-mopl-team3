@@ -1,0 +1,34 @@
+# MOPL 서비스 메트릭 수집 설정 (staging)
+# Cloud Map 네임스페이스 기반 타깃
+
+global:
+  scrape_interval: 15s
+  external_labels:
+    env: staging
+
+remote_write:
+  - url: ${GRAFANA_CLOUD_PROM_REMOTE_WRITE_URL}
+    basic_auth:
+      username: ${GRAFANA_CLOUD_PROM_USERNAME}
+      password: ${GRAFANA_CLOUD_PROM_PASSWORD}
+
+scrape_configs:
+  - job_name: mopl-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["mopl-api.mopl.staging:8080"]
+
+  - job_name: mopl-socket
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["mopl-socket.mopl.staging:8081"]
+
+  - job_name: mopl-worker
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["mopl-worker.mopl.staging:8080"]
+
+  - job_name: mopl-batch
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["mopl-batch.mopl.staging:8080"]

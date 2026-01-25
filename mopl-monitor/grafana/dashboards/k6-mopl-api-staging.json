@@ -1,0 +1,235 @@
+{
+  "title": "K6 MOPL API - 스테이징",
+  "uid": "k6-mopl-api-stg",
+  "schemaVersion": 38,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "scenario",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values({__name__=~\"k6_http_reqs(_total)?\"}, scenario)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "name",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values({__name__=~\"k6_http_reqs(_total)?\"}, name)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "초당 요청 수 (RPS)",
+      "description": "k6가 생성한 전체 HTTP 요청 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate({__name__=~\"k6_http_reqs(_total)?\"}[1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "요청 지연 p99 (ms)",
+      "description": "요청 지연의 p99 값입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(k6_http_req_duration_p99) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP 실패율",
+      "description": "k6 기준 HTTP 실패율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(k6_http_req_failed_rate)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "가상 사용자 수 (VUs)",
+      "description": "현재 실행 중인 가상 사용자 수입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "k6_vus"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "API별 초당 요청 수 (RPS)",
+      "description": "k6 요청 태그(name) 기준 API별 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate({__name__=~\"k6_http_reqs(_total)?\", name=~\"$name\"}[1m])) by (name)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "API별 요청 지연 p99 (ms)",
+      "description": "k6 요청 태그(name) 기준 API별 p99 지연입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (name) (k6_http_req_duration_p99{name=~\"$name\"}) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "요청 지연 p95 (ms)",
+      "description": "요청 지연의 p95 값입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(max(k6_http_req_duration_p95) * 1000) or (histogram_quantile(0.95, sum by (le) (rate(k6_http_req_duration_seconds_bucket[1m]))) * 1000)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "API별 요청 지연 p95 (ms)",
+      "description": "k6 요청 태그(name) 기준 API별 p95 지연입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(max by (name) (k6_http_req_duration_p95{name=~\"$name\"}) * 1000) or (histogram_quantile(0.95, sum by (le, name) (rate(k6_http_req_duration_seconds_bucket{name=~\"$name\"}[1m]))) * 1000)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+    }
+  ]
+}

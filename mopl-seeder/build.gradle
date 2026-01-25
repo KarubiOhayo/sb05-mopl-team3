@@ -1,0 +1,20 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation 'org.springframework.security:spring-security-crypto'
+    implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
+
+application {
+    mainClass = 'io.mopl.seeder.StagingSeeder'
+}
+
+tasks.register('seedStaging', JavaExec) {
+    group = 'application'
+    description = 'Seed staging RDS with heavy-load data using UUIDv7.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.mopl.seeder.StagingSeeder'
+}

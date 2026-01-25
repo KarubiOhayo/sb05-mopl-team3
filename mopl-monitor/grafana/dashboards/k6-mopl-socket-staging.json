@@ -1,0 +1,573 @@
+{
+  "title": "K6 MOPL Socket - 스테이징",
+  "uid": "k6-mopl-socket-stg",
+  "schemaVersion": 38,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "WS 연결 수 (k6 connect rate)",
+      "description": "k6가 생성한 WebSocket 연결 시도율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_ws_connects_total[1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 연결 오류율 (k6)",
+      "description": "k6 WebSocket 연결 실패율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_ws_connect_errors_total[1m])) or vector(0)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 메시지 송수신 (k6)",
+      "description": "k6 기준 WebSocket 메시지 송수신 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_ws_msgs_sent_total[1m]))"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(k6_k6_ws_msgs_received_total[1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "가상 사용자 수 (VUs)",
+      "description": "현재 실행 중인 가상 사용자 수입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "k6_vus"
+        }
+      ],
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 활성 연결 수 (서버)",
+      "description": "socket 모듈에서 관측한 WebSocket 활성 연결 수입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "mopl_socket_ws_connections_active"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 구독 요청 수 (서버)",
+      "description": "WebSocket 구독 요청 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(mopl_socket_ws_subscribe_total[1m])) by (type)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 10,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 메시지 수신 처리량 (서버)",
+      "description": "socket 모듈이 수신한 메시지 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(mopl_socket_ws_messages_in_total[1m])) by (type)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 송신 vs 서버 수신 (비교)",
+      "description": "k6 송신량과 서버 수신량을 비교해 병목을 확인합니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_ws_msgs_sent_total[1m]))",
+          "legendFormat": "k6 송신"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(mopl_socket_ws_messages_in_total[1m]))",
+          "legendFormat": "서버 수신"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 10,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSE 연결 수 (k6)",
+      "description": "k6가 생성한 SSE 연결 시도율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_sse_connects_total[1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSE 연결 오류율 (k6)",
+      "description": "k6 SSE 연결 실패율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_k6_sse_errors_total[1m])) or vector(0)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSE 활성 연결 수 (서버)",
+      "description": "socket 모듈에서 관측한 SSE 활성 연결 수입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "mopl_socket_sse_connections_active"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSE 전송 처리량 (서버)",
+      "description": "SSE 전송 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(mopl_socket_sse_send_total[1m])) by (type)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSE 전송 실패 (서버)",
+      "description": "SSE 전송 실패율입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(mopl_socket_sse_send_fail_total[1m])) by (type)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "시청 세션 조회 RPS (k6)",
+      "description": "watching-sessions REST API 요청 처리량입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(k6_http_reqs_total{name=~\"watching_sessions_.*\"}[1m])) by (name)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s"
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 28,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "시청 세션 조회 지연 p95/p99 (k6)",
+      "description": "watching-sessions REST API의 p95/p99 지연(ms)입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(max(k6_http_req_duration_p95{name=~\"watching_sessions_.*\"}) * 1000) or (histogram_quantile(0.95, sum by (le, name) (rate(k6_http_req_duration_seconds_bucket{name=~\"watching_sessions_.*\"}[1m]))) * 1000)",
+          "legendFormat": "{{name}} p95"
+        },
+        {
+          "refId": "B",
+          "expr": "(max(k6_http_req_duration_p99{name=~\"watching_sessions_.*\"}) * 1000) or (histogram_quantile(0.99, sum by (le, name) (rate(k6_http_req_duration_seconds_bucket{name=~\"watching_sessions_.*\"}[1m]))) * 1000)",
+          "legendFormat": "{{name}} p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "row",
+      "title": "WS - k6 클라이언트",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false
+    },
+    {
+      "type": "row",
+      "title": "WS - 서버",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false
+    },
+    {
+      "type": "row",
+      "title": "SSE",
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false
+    },
+    {
+      "type": "row",
+      "title": "REST (watching sessions)",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false
+    },
+    {
+      "type": "row",
+      "title": "JVM/런타임",
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "WS 메시지 처리 지연 p95/p99 (서버)",
+      "description": "socket 모듈 WebSocket 핸들러 처리 지연 (ms)입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, type) (rate(mopl_socket_ws_message_handle_seconds_bucket[1m]))) * 1000",
+          "legendFormat": "{{type}} p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le, type) (rate(mopl_socket_ws_message_handle_seconds_bucket[1m]))) * 1000",
+          "legendFormat": "{{type}} p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM GC 평균 지연 (ms)",
+      "description": "GC pause 평균 지연(ms)입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(jvm_gc_pause_seconds_sum[1m]) / rate(jvm_gc_pause_seconds_count[1m]) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 37,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM Live Threads",
+      "description": "JVM 스레드 수 (live)입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jvm_threads_live"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM Heap 사용률 (%)",
+      "description": "Heap 사용률(used/max)입니다.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / sum(jvm_memory_max_bytes{area=\"heap\"}) * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 45,
+        "w": 12,
+        "h": 8
+      }
+    }
+  ]
+}

@@ -33,16 +33,21 @@ public final class RedisKeyPrefix {
   public static final String USER_SUMMARY = "user:summary:";
 
   /** 플레이리스트 콘텐츠 캐시: playlist:contents:{playlistId} */
-  public static final String PLAYLIST_CONTENTS = "playlist:contents:v2:";
+  public static final String PLAYLIST_CONTENTS = "playlist:contents:v3:";
 
   /** 플레이리스트 썸네일 콘텐츠 캐시: playlist:thumbnail-content:{playlistId} */
-  public static final String PLAYLIST_THUMBNAIL_CONTENT = "playlist:thumbnail-content:v2:";
+  public static final String PLAYLIST_THUMBNAIL_CONTENT = "playlist:thumbnail-content:v3:";
 
   /** 플레이리스트 총 개수 캐시: playlist:count:{filterHash} */
   public static final String PLAYLIST_COUNT = "playlist:count:";
 
   /** 사용자 구독 플레이리스트 Set: playlist:subs:user:{userId} */
   public static final String PLAYLIST_SUBS_BY_USER = "playlist:subs:user:";
+
+  // ===== review =====
+
+  /** 리뷰 목록 캐시(첫 페이지): review:list:content:{contentId} */
+  public static final String REVIEW_LIST = "review:list:content:";
 
   // ===== 알림 (notification:) =====
 

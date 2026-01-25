@@ -2,6 +2,7 @@ package io.mopl.batch.controller;
 
 import io.mopl.batch.common.BatchErrorCode;
 import io.mopl.core.error.BusinessException;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.job.Job;
@@ -9,8 +10,10 @@ import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/batch")
 @RequiredArgsConstructor
+@Validated
 public class JobLauncherController {
 
   private final JobOperator jobOperator;
@@ -35,12 +39,12 @@ public class JobLauncherController {
    * @return 실행 요청 결과
    */
   @PostMapping("/movies")
-  public ResponseEntity<String> runMovieCollectJob() {
+  public ResponseEntity<String> runMovieCollectJob(
+      @RequestParam(required = false) @Min(1) Integer maxPages,
+      @RequestParam(required = false) @Min(1) Integer chunkSize,
+      @RequestParam(required = false) String runId) {
     try {
-      JobParameters jobParameters =
-          new JobParametersBuilder()
-              .addLong("requestTime", System.currentTimeMillis())
-              .toJobParameters();
+      JobParameters jobParameters = buildJobParameters(maxPages, chunkSize, runId);
 
       jobOperator.start(movieCollectJob, jobParameters);
 
@@ -58,12 +62,12 @@ public class JobLauncherController {
    * @return 실행 요청 결과
    */
   @PostMapping("/tv-series")
-  public ResponseEntity<String> runTvSeriesCollectJob() {
+  public ResponseEntity<String> runTvSeriesCollectJob(
+      @RequestParam(required = false) @Min(1) Integer maxPages,
+      @RequestParam(required = false) @Min(1) Integer chunkSize,
+      @RequestParam(required = false) String runId) {
     try {
-      JobParameters jobParameters =
-          new JobParametersBuilder()
-              .addLong("requestTime", System.currentTimeMillis())
-              .toJobParameters();
+      JobParameters jobParameters = buildJobParameters(maxPages, chunkSize, runId);
 
       jobOperator.start(tvSeriesCollectJob, jobParameters);
 
@@ -81,12 +85,11 @@ public class JobLauncherController {
    * @return 실행 요청 결과
    */
   @PostMapping("/soccer")
-  public ResponseEntity<String> runSoccerCollectJob() {
+  public ResponseEntity<String> runSoccerCollectJob(
+      @RequestParam(required = false) @Min(1) Integer chunkSize,
+      @RequestParam(required = false) String runId) {
     try {
-      JobParameters jobParameters =
-          new JobParametersBuilder()
-              .addLong("requestTime", System.currentTimeMillis())
-              .toJobParameters();
+      JobParameters jobParameters = buildJobParameters(null, chunkSize, runId);
 
       jobOperator.start(soccerCollectJob, jobParameters);
 
@@ -96,5 +99,21 @@ public class JobLauncherController {
       throw new BusinessException(BatchErrorCode.JOB_LAUNCH_FAILED)
           .addDetail("jobName", soccerCollectJob.getName());
     }
+  }
+
+  private static JobParameters buildJobParameters(
+      Integer maxPages, Integer chunkSize, String runId) {
+    JobParametersBuilder builder =
+        new JobParametersBuilder().addLong("requestTime", System.currentTimeMillis());
+    if (maxPages != null) {
+      builder.addLong("maxPages", maxPages.longValue());
+    }
+    if (chunkSize != null) {
+      builder.addLong("chunkSize", chunkSize.longValue());
+    }
+    if (runId != null && !runId.isBlank()) {
+      builder.addString("runId", runId);
+    }
+    return builder.toJobParameters();
   }
 }
