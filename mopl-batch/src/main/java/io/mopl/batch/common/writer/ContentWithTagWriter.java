@@ -125,10 +125,10 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
                   savedContent.getId().toString(), sourceType, sourceUrl, s3Key));
           thumbnailEventCounter.increment();
         }
+      }
 
-        if (!indexedIds.isEmpty()) {
-          eventPublisher.publishEvent(new ContentIndexBatchSpringEvent(indexedIds));
-        }
+      if (!indexedIds.isEmpty()) {
+        eventPublisher.publishEvent(new ContentIndexBatchSpringEvent(indexedIds));
       }
     } finally {
       sample.stop(
