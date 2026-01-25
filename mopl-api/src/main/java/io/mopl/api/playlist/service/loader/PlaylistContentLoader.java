@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -28,7 +30,8 @@ import org.springframework.stereotype.Component;
 public class PlaylistContentLoader {
 
   private final JPAQueryFactory queryFactory;
-  private final RedisTemplate<String, Object> redisTemplateForObject;
+  private final RedisTemplate<String, String> redisTemplate;
+  private final ObjectMapper objectMapper;
 
   public Map<UUID, List<ContentSummary>> loadThumbnailContentsByPlaylistIds(
       List<UUID> playlistIds) {
@@ -40,9 +43,9 @@ public class PlaylistContentLoader {
     List<String> keys =
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT + id).toList();
 
-    List<Object> cached;
+    List<String> cached;
     try {
-      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+      cached = redisTemplate.opsForValue().multiGet(keys);
     } catch (Exception e) {
       log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
       cached = null;
@@ -58,20 +61,15 @@ public class PlaylistContentLoader {
     List<UUID> missIds = new ArrayList<>();
 
     for (int i = 0; i < playlistIdList.size(); i++) {
-      Object value = cached.get(i);
-      if (value instanceof List<?> list) {
-        if (list.isEmpty()) {
-          result.put(playlistIdList.get(i), List.of());
-        } else if (list.get(0) instanceof ContentSummary) {
-          @SuppressWarnings("unchecked")
-          List<ContentSummary> summaries = (List<ContentSummary>) list;
+      String value = cached.get(i);
+      if (value != null) {
+        List<ContentSummary> summaries = parseContentSummaries(value, keys.get(i));
+        if (summaries != null) {
           result.put(playlistIdList.get(i), summaries);
-        } else {
-          missIds.add(playlistIdList.get(i));
+          continue;
         }
-      } else {
-        missIds.add(playlistIdList.get(i));
       }
+      missIds.add(playlistIdList.get(i));
     }
 
     if (missIds.isEmpty()) {
@@ -214,9 +212,9 @@ public class PlaylistContentLoader {
         playlistIdList.stream().map(id -> RedisKeyPrefix.PLAYLIST_CONTENTS + id).toList();
 
     // 개별 조회로 역직렬화 문제 키만 제거
-    List<Object> cached;
+    List<String> cached;
     try {
-      cached = redisTemplateForObject.opsForValue().multiGet(keys);
+      cached = redisTemplate.opsForValue().multiGet(keys);
     } catch (Exception e) {
       log.warn("Redis 캐시 조회 실패 keyCount={} error={}", keys.size(), e.getMessage());
       cached = null;
@@ -233,20 +231,15 @@ public class PlaylistContentLoader {
     List<UUID> missIds = new ArrayList<>();
 
     for (int i = 0; i < playlistIdList.size(); i++) {
-      Object value = cached.get(i);
-      if (value instanceof List<?> list) {
-        if (list.isEmpty()) {
-          result.put(playlistIdList.get(i), List.of());
-        } else if (list.get(0) instanceof ContentSummary) {
-          @SuppressWarnings("unchecked")
-          List<ContentSummary> summaries = (List<ContentSummary>) list;
+      String value = cached.get(i);
+      if (value != null) {
+        List<ContentSummary> summaries = parseContentSummaries(value, keys.get(i));
+        if (summaries != null) {
           result.put(playlistIdList.get(i), summaries);
-        } else {
-          missIds.add(playlistIdList.get(i));
+          continue;
         }
-      } else {
-        missIds.add(playlistIdList.get(i));
       }
+      missIds.add(playlistIdList.get(i));
     }
 
     // 전부 캐시 hit이면 바로 반환
@@ -389,15 +382,25 @@ public class PlaylistContentLoader {
       Map<UUID, List<ContentSummary>> result, List<UUID> missIds, String keyPrefix) {
     for (UUID playlistId : missIds) {
       try {
-        redisTemplateForObject
-            .opsForValue()
-            .set(
-                keyPrefix + playlistId,
-                result.getOrDefault(playlistId, List.of()),
-                Duration.ofMinutes(30));
+        String json = objectMapper.writeValueAsString(result.getOrDefault(playlistId, List.of()));
+        redisTemplate.opsForValue().set(keyPrefix + playlistId, json, Duration.ofMinutes(30));
       } catch (Exception e) {
         log.debug("Redis 캐시 저장 실패 playlistId={} error={}", playlistId, e.getMessage());
       }
+    }
+  }
+
+  private List<ContentSummary> parseContentSummaries(String json, String key) {
+    try {
+      return objectMapper.readValue(json, new TypeReference<List<ContentSummary>>() {});
+    } catch (Exception e) {
+      log.warn("Redis 캐시 역직렬화 실패 key={} error={}", key, e.getMessage());
+      try {
+        redisTemplate.delete(key);
+      } catch (Exception ignored) {
+        // ignore cleanup failure
+      }
+      return null;
     }
   }
 

@@ -4,6 +4,7 @@ import io.mopl.core.error.BusinessException;
 import io.mopl.socket.chat.dto.ContentChatDto;
 import io.mopl.socket.chat.dto.ContentChatSendRequest;
 import io.mopl.socket.common.error.SocketErrorCode;
+import io.mopl.socket.metrics.SocketMetrics;
 import io.mopl.socket.user.dto.UserSummary;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import java.security.Principal;
@@ -20,25 +21,31 @@ import org.springframework.stereotype.Controller;
 public class ContentChatController {
 
   private final SimpMessagingTemplate messagingTemplate;
+  private final SocketMetrics socketMetrics;
 
   @MessageMapping("/contents/{contentId}/chat")
   public void sendChat(
       @DestinationVariable String contentId,
       @Payload ContentChatSendRequest request,
       Principal principal) {
-    SocketUserPrincipal socketUser = resolvePrincipal(principal);
+    socketMetrics.recordWsMessageHandle(
+        "chat",
+        () -> {
+          SocketUserPrincipal socketUser = resolvePrincipal(principal);
+          socketMetrics.onWsMessageIn("chat");
 
-    UserSummary sender =
-        UserSummary.builder()
-            .userId(socketUser.userId())
-            .name(socketUser.name())
-            .profileImageUrl(socketUser.profileImageUrl())
-            .build();
+          UserSummary sender =
+              UserSummary.builder()
+                  .userId(socketUser.userId())
+                  .name(socketUser.name())
+                  .profileImageUrl(socketUser.profileImageUrl())
+                  .build();
 
-    ContentChatDto payload =
-        ContentChatDto.builder().sender(sender).content(request.content()).build();
+          ContentChatDto payload =
+              ContentChatDto.builder().sender(sender).content(request.content()).build();
 
-    messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/chat", payload);
+          messagingTemplate.convertAndSend("/sub/contents/" + contentId + "/chat", payload);
+        });
   }
 
   private SocketUserPrincipal resolvePrincipal(Principal principal) {

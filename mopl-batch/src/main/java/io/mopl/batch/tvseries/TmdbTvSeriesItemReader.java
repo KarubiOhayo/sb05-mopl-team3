@@ -29,8 +29,13 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
   private int currentPage = 1;
   private final Queue<TmdbTvSeriesResponse> buffer = new LinkedList<>();
 
+  @Value("#{jobParameters['maxPages']}")
+  private Long maxPagesOverride;
+
   @Value("${tmdb.max-pages.tv-series:10}")
-  private int maxPages;
+  private int defaultMaxPages;
+
+  private Integer resolvedMaxPages;
 
   /**
    * 다음 TV 시리즈 항목을 반환한다.
@@ -43,7 +48,7 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
       return buffer.poll();
     }
 
-    if (currentPage > maxPages) {
+    if (currentPage > resolveMaxPages()) {
       return null;
     }
 
@@ -58,5 +63,17 @@ public class TmdbTvSeriesItemReader implements ItemReader<TmdbTvSeriesResponse> 
     currentPage++;
 
     return buffer.poll();
+  }
+
+  private int resolveMaxPages() {
+    if (resolvedMaxPages != null) {
+      return resolvedMaxPages;
+    }
+    int value = defaultMaxPages;
+    if (maxPagesOverride != null && maxPagesOverride > 0) {
+      value = Math.toIntExact(maxPagesOverride);
+    }
+    resolvedMaxPages = value;
+    return resolvedMaxPages;
   }
 }

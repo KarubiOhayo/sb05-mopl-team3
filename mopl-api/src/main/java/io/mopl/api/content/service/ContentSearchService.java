@@ -155,7 +155,7 @@ public class ContentSearchService {
                           .addDetail("reason", "유효하지 않은 typeEqual 값입니다.")
                           .addDetail("typeEqual", request.getTypeEqual());
                     }
-                    b.filter(f -> f.term(t -> t.field("type.keyword").value(type.name())));
+                    b.filter(f -> f.term(t -> t.field("type").value(type.name())));
                   }
 
                   // keywordLike가 공백이면 조건 제외

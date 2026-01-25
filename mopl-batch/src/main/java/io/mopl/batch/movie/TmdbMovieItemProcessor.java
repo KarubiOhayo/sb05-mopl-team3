@@ -2,6 +2,7 @@ package io.mopl.batch.movie;
 
 import io.mopl.batch.client.tmdb.TmdbGenre;
 import io.mopl.batch.client.tmdb.dto.TmdbMovieResponse;
+import io.mopl.batch.common.ContentDeduplicationTracker;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentType;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class TmdbMovieItemProcessor implements ItemProcessor<TmdbMovieResponse, Content> {
 
   private final ContentRepository contentRepository;
+  private final ContentDeduplicationTracker deduplicationTracker;
   private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
   /**
@@ -34,16 +36,19 @@ public class TmdbMovieItemProcessor implements ItemProcessor<TmdbMovieResponse, 
    */
   @Override
   public Content process(TmdbMovieResponse item) {
+    String externalId = String.valueOf(item.getId());
+    if (deduplicationTracker.isDuplicate(externalId, ContentType.MOVIE)) {
+      return null;
+    }
     // 중복 검사: 이미 존재하면 필터링 (Writer로 넘기지 않음)
-    if (contentRepository.existsByExternalIdAndType(
-        String.valueOf(item.getId()), ContentType.MOVIE)) {
+    if (contentRepository.existsByExternalIdAndType(externalId, ContentType.MOVIE)) {
       return null;
     }
 
     Content content =
         Content.builder()
             .id(null)
-            .externalId(String.valueOf(item.getId()))
+            .externalId(externalId)
             .title(item.getTitle())
             .description(item.getOverview() != null ? item.getOverview() : "")
             .thumbnailImageKey("")

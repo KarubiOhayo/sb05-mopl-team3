@@ -1,0 +1,73 @@
+name: Deploy Elasticsearch (staging) to Amazon ECS
+
+on:
+  push:
+    branches: [ "release-*" ]
+    paths:
+      - 'mopl-monitor/elasticsearch/**'
+      - '.github/workflows/cd-elasticsearch.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: mopl-elasticsearch
+  ECS_SERVICE: mopl-elasticsearch-service
+  ECS_CLUSTER: mopl-cluster
+  ECS_TASK_DEFINITION_NAME: mopl-elasticsearch-task
+  CONTAINER_NAME: mopl-elasticsearch-container
+  DOCKERFILE_PATH: mopl-monitor/elasticsearch/Dockerfile
+
+jobs:
+  deploy:
+    name: Deploy Elasticsearch (staging)
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ env.DOCKERFILE_PATH }} .
+        docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Download Task Definition
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
+
+    - name: Sanitize Task Definition (remove unsupported keys)
+      run: |
+        jq 'del(.enableFaultInjection)' task-definition.json > task-definition.sanitized.json
+        mv task-definition.sanitized.json task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: ${{ env.CONTAINER_NAME }}
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true

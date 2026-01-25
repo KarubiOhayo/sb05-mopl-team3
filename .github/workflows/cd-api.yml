@@ -2,7 +2,7 @@ name: Deploy API to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release-*" ]
     paths:
       - 'mopl-api/**'
       - 'mopl-core/**'
@@ -10,6 +10,7 @@ on:
       - 'build.gradle'
       - 'settings.gradle'
       - '.github/workflows/cd-api.yml'
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-northeast-2
@@ -66,6 +67,11 @@ jobs:
     - name: Download Task Definition
       run: |
         aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
+
+    - name: Sanitize Task Definition (remove unsupported keys)
+      run: |
+        jq 'del(.enableFaultInjection)' task-definition.json > task-definition.sanitized.json
+        mv task-definition.sanitized.json task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def

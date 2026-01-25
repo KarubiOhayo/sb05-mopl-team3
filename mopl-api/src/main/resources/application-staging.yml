@@ -1,0 +1,58 @@
+spring:
+  config:
+    activate:
+      on-profile: staging
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_AUTH_TOKEN}
+      ssl:
+        enabled: true
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 6
+      minimum-idle: 1
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      sasl.jaas.config: >
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="${KAFKA_API_KEY}"
+        password="${KAFKA_API_SECRET}";
+
+server:
+  port: 8080
+
+security:
+  cookie:
+    secure: ${SECURITY_COOKIE_SECURE:true}
+
+logging:
+  level:
+    root: INFO
+    io.mopl: INFO
+
+search:
+  index:
+    reset-on-startup: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-validity-in-seconds: ${JWT_VALIDITY:86400}
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_VALIDITY:604800}
+

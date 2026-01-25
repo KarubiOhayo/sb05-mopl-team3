@@ -21,6 +21,6 @@ public class ReviewCursorRequest {
   private String sortBy; // 어떤 필드 기준으로 정렬할 지 - createdAt, likeCount
 
   public int getLimitOrDefault() {
-    return limit == null ? 10 : limit;
+    return limit == null ? 20 : limit;
   }
 }

@@ -17,6 +17,7 @@ public class PasswordResetEventListener {
 
   @KafkaListener(
       topics = KafkaTopics.AUTH_PASSWORD_RESET,
+      containerFactory = "manualAckKafkaListenerContainerFactory",
       properties = "spring.json.value.default.type=io.mopl.core.event.auth.PasswordResetEvent")
   public void handlePasswordResetEvent(PasswordResetEvent event, Acknowledgment ack) {
     try {

@@ -1,6 +1,7 @@
 package io.mopl.batch.soccer;
 
 import io.mopl.batch.client.tsdb.dto.TsdbSoccerResponse;
+import io.mopl.batch.common.ContentDeduplicationTracker;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentType;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse, Content> {
 
   private final ContentRepository contentRepository;
+  private final ContentDeduplicationTracker deduplicationTracker;
 
   /**
    * TheSportsDB 축구 경기 데이터를 콘텐츠로 변환한다.
@@ -32,8 +34,11 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
    */
   @Override
   public @Nullable Content process(TsdbSoccerResponse item) {
-    if (contentRepository.existsByExternalIdAndType(
-        String.valueOf(item.getId()), ContentType.SPORT)) {
+    String externalId = String.valueOf(item.getId());
+    if (deduplicationTracker.isDuplicate(externalId, ContentType.SPORT)) {
+      return null;
+    }
+    if (contentRepository.existsByExternalIdAndType(externalId, ContentType.SPORT)) {
       return null;
     }
     Content content =
@@ -41,7 +46,7 @@ public class TsdbSoccerItemProcessor implements ItemProcessor<TsdbSoccerResponse
             .id(null)
             .title(item.getTitle())
             .description(item.getDescription() != null ? item.getDescription() : "")
-            .externalId(String.valueOf(item.getId()))
+            .externalId(externalId)
             .type(ContentType.SPORT)
             .thumbnailImageKey("")
             .build();
