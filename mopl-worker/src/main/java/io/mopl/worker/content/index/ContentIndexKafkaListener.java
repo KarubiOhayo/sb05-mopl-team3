@@ -1,5 +1,7 @@
 package io.mopl.worker.content.index;
 
+import io.mopl.core.error.BusinessException;
+import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.content.ContentIndexBatchRequestedEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.worker.common.config.KafkaRetryProperties;
@@ -7,6 +9,7 @@ import io.mopl.worker.content.index.domain.ContentIndexQueryRepository;
 import io.mopl.worker.content.index.dto.ContentIndexRow;
 import io.mopl.worker.content.index.mapper.ContentIndexMapper;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -86,9 +89,12 @@ public class ContentIndexKafkaListener {
 
       if (lastFailure != null) {
         try {
-          kafkaTemplate.send(KafkaTopics.CONTENT_INDEX_REQUESTED_DLQ, event.eventId(), event);
+          kafkaTemplate
+              .send(KafkaTopics.CONTENT_INDEX_REQUESTED_DLQ, event.eventId(), event)
+              .get(5, TimeUnit.SECONDS);
         } catch (Exception ex) {
           log.error("DLQ 이벤트 발행 실패: eventId={}", event.eventId(), ex);
+          throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
         log.error("ES bulk upsert 재시도 실패: eventId={}", event.eventId(), lastFailure);
       }
