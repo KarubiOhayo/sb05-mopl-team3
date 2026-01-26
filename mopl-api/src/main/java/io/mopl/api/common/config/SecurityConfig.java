@@ -84,9 +84,7 @@ public class SecurityConfig {
                         response
                             .getWriter()
                             .write(
-                                "{\"error\":\"Unauthorized\",\"message\":\""
-                                    + authException.getMessage()
-                                    + "\"}");
+                                "{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
                       } else {
                         response.sendRedirect("/login");
                       }
