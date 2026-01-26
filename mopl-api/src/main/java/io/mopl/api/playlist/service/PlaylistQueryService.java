@@ -61,7 +61,7 @@ public class PlaylistQueryService {
     PlaylistPage page = playlistQueryRepository.findPlaylistsPage(request);
 
     // 동일 필터 조건으로 totalCount 계산(캐시 포함)
-    long totalCount = getTotalCount(request);
+    long totalCount = request.getIncludeTotalCountOrDefault() ? getTotalCount(request) : -1L;
 
     List<Playlist> playlists = page.getPlaylists();
 
