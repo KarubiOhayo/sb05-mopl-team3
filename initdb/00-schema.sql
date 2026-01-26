@@ -211,13 +211,6 @@ CREATE TABLE notifications (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-  CREATE TABLE processed_events (
-    event_id CHAR(36) NOT NULL,
-    processed_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    PRIMARY KEY (event_id),
-    UNIQUE KEY uq_processed_events_event_id (event_id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
   CREATE TABLE watching_sessions (
   id CHAR(36) NOT NULL,
   content_id CHAR(36) NOT NULL,

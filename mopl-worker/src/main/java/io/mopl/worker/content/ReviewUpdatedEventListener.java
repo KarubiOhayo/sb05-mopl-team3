@@ -1,19 +1,15 @@
 package io.mopl.worker.content;
 
-import io.mopl.core.db.DbConstraintNames;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import io.mopl.core.event.content.ContentAggregateUpdatedEvent;
 import io.mopl.core.event.review.ReviewUpdatedEvent;
 import io.mopl.core.kafka.KafkaTopics;
-import io.mopl.worker.content.domain.ProcessedEvent;
-import io.mopl.worker.content.domain.ProcessedEventRepository;
 import io.mopl.worker.content.event.ContentAggregateEventPublisher;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReviewUpdatedEventListener {
 
-  private final ProcessedEventRepository processedEventRepository;
   private final ContentAggregateRepository contentAggregateRepository;
   private final ContentAggregateEventPublisher contentAggregateEventPublisher;
 
@@ -38,28 +33,12 @@ public class ReviewUpdatedEventListener {
         event.contentId(),
         event.beforeRating(),
         event.afterRating());
-    UUID eventId;
     UUID contentId;
     try {
-      eventId = UUID.fromString(event.eventId());
       contentId = UUID.fromString(event.contentId());
     } catch (IllegalArgumentException e) {
       log.error(
           "리뷰 이벤트 UUID 파싱 실패: eventId={}, contentId={}", event.eventId(), event.contentId(), e);
-      return;
-    }
-
-    try {
-      processedEventRepository.save(
-          ProcessedEvent.builder().eventId(eventId).processedAt(Instant.now()).build());
-    } catch (DataIntegrityViolationException e) {
-      Throwable cause = e.getMostSpecificCause();
-      String message = cause != null ? cause.getMessage() : e.getMessage();
-      if (message != null && message.contains(DbConstraintNames.UQ_PROCESSED_EVENTS_EVENT_ID)) {
-        log.debug("중복 이벤트 무시 (eventId={})", event.eventId());
-        return;
-      }
-      log.error("processed_events 저장 실패 (eventId={})", event.eventId(), e);
       return;
     }
 
