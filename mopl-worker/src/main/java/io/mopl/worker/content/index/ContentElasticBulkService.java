@@ -79,4 +79,11 @@ public class ContentElasticBulkService {
 
     return existingIds;
   }
+
+  public void deleteByContentIds(List<UUID> contentIds) {
+    if (contentIds == null || contentIds.isEmpty()) {
+      return;
+    }
+    contentElasticRepository.deleteByContentIdIn(contentIds);
+  }
 }

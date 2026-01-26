@@ -8,7 +8,11 @@ import io.mopl.worker.common.config.KafkaRetryProperties;
 import io.mopl.worker.content.index.domain.ContentIndexQueryRepository;
 import io.mopl.worker.content.index.dto.ContentIndexRow;
 import io.mopl.worker.content.index.mapper.ContentIndexMapper;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,12 +44,16 @@ public class ContentIndexKafkaListener {
       return;
     }
 
-    log.info("카프카 이벤트 수신: eventId={}, ", event.eventId());
-    List<ContentIndexRow> rows = queryRepository.findAllForIndexing(event.contentIds());
+    log.info("Content index event received: eventId={}", event.eventId());
+    List<UUID> requestedIds = event.contentIds();
+    List<ContentIndexRow> rows = queryRepository.findAllForIndexing(requestedIds);
+    Set<UUID> missingIdSet = new HashSet<>(requestedIds);
+    for (ContentIndexRow row : rows) {
+      missingIdSet.remove(row.getId());
+    }
+    List<UUID> missingIds = new ArrayList<>(missingIdSet);
     if (rows.isEmpty()) {
       log.debug("No content rows found for indexing. eventId={}", event.eventId());
-      acknowledgment.acknowledge();
-      return;
     }
 
     int maxAttempts = retryProperties.maxAttempts() == null ? 3 : retryProperties.maxAttempts();
@@ -61,14 +69,19 @@ public class ContentIndexKafkaListener {
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          log.info("ES bulk upsert 호출: attempt={}/{}", attempt, maxAttempts);
-          bulkService.bulkUpsert(rows.stream().map(mapper::toDocument).toList(), BULK_SIZE);
+          log.info("ES bulk sync attempt {}/{}", attempt, maxAttempts);
+          if (!missingIds.isEmpty()) {
+            bulkService.deleteByContentIds(missingIds);
+          }
+          if (!rows.isEmpty()) {
+            bulkService.bulkUpsert(rows.stream().map(mapper::toDocument).toList(), BULK_SIZE);
+          }
           lastFailure = null;
           return;
         } catch (Exception ex) {
           lastFailure = ex;
           log.warn(
-              "ES bulk upsert 실패 (attempt {}/{}): eventId={}",
+              "ES bulk sync failed (attempt {}/{}): eventId={}",
               attempt,
               maxAttempts,
               event.eventId(),
@@ -93,10 +106,10 @@ public class ContentIndexKafkaListener {
               .send(KafkaTopics.CONTENT_INDEX_REQUESTED_DLQ, event.eventId(), event)
               .get(5, TimeUnit.SECONDS);
         } catch (Exception ex) {
-          log.error("DLQ 이벤트 발행 실패: eventId={}", event.eventId(), ex);
+          log.error("Failed to publish DLQ event: eventId={}", event.eventId(), ex);
           throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
-        log.error("ES bulk upsert 재시도 실패: eventId={}", event.eventId(), lastFailure);
+        log.error("ES bulk sync failed after retries: eventId={}", event.eventId(), lastFailure);
       }
     } finally {
       acknowledgment.acknowledge();

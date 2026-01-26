@@ -2,11 +2,13 @@ package io.mopl.worker.content;
 
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
-import io.mopl.core.event.content.ContentAggregateUpdatedEvent;
+import io.mopl.core.event.content.ContentIndexBatchRequestedEvent;
 import io.mopl.core.event.review.ReviewDeletedEvent;
 import io.mopl.core.kafka.KafkaTopics;
-import io.mopl.worker.content.event.ContentAggregateEventPublisher;
+import io.mopl.worker.common.UuidV7Generator;
+import io.mopl.worker.content.index.ContentIndexEventPublisher;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewDeletedEventListener {
 
   private final ContentAggregateRepository contentAggregateRepository;
-  private final ContentAggregateEventPublisher contentAggregateEventPublisher;
+  private final ContentIndexEventPublisher contentIndexEventPublisher;
 
   @Transactional
   @KafkaListener(
@@ -28,7 +30,7 @@ public class ReviewDeletedEventListener {
       properties = "spring.json.value.default.type=io.mopl.core.event.review.ReviewDeletedEvent")
   public void handle(ReviewDeletedEvent event) {
     log.info(
-        "리뷰 이벤트 수신: eventId={}, contentId={}, rating={}",
+        "리뷰 이벤트 수신:  eventId={}, contentId={}, rating={}",
         event.eventId(),
         event.contentId(),
         event.rating());
@@ -48,9 +50,10 @@ public class ReviewDeletedEventListener {
     }
     log.info("콘텐츠 삭제 업데이트 완료 (contentId={}, eventId={})", event.contentId(), event.eventId());
 
-    contentAggregateEventPublisher.publish(
-        new ContentAggregateUpdatedEvent(
-            UUID.randomUUID().toString(), Instant.now(), event.contentId()));
-    log.info("집계 갱신 이벤트 발행 (contentId={}, eventId={})", event.contentId(), event.eventId());
+    ContentIndexBatchRequestedEvent indexEvent =
+        new ContentIndexBatchRequestedEvent(
+            UuidV7Generator.generate().toString(), Instant.now(), List.of(contentId), 0);
+    contentIndexEventPublisher.publish(indexEvent);
+    log.info("집계 갱신 이벤트 발행 contentId={}, eventId={}", contentId, event.eventId());
   }
 }
