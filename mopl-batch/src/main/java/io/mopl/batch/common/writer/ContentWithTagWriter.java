@@ -99,14 +99,13 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
       // 1. 저장 (Processor에서 중복은 이미 걸러짐)
       if (useSaveAll) {
         contentRepository.saveAll(contents);
+        indexedIds.addAll(contents.stream().map(Content::getId).toList());
       } else {
         for (Content content : contents) {
           contentRepository.save(content);
+          indexedIds.add(content.getId());
         }
       }
-      // 1. 저장 (Processor에서 중복은 이미 걸러짐)
-      Content savedContent = contentRepository.save(content);
-      indexedIds.add(savedContent.getId());
 
       // 2. Tag 저장 및 연결
       for (Content content : contents) {
