@@ -85,7 +85,7 @@ public class SecurityConfig {
             exception ->
                 exception.authenticationEntryPoint(
                     (request, response, authException) -> {
-                      if (request.getRequestURI().startsWith("/api/")) {
+                      if (request.getRequestURI().startsWith("/api")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType("application/json;charset=UTF-8");
 
