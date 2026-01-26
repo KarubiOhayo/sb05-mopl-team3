@@ -246,7 +246,11 @@ public class SecurityConfig {
 
     // 허용할 Origin (프론트엔드 URL)
     configuration.setAllowedOrigins(
-        Arrays.asList("http://localhost:8085", "http://192.168.219.105:8085"));
+        Arrays.asList(
+            "http://localhost:8085",
+            "http://192.168.219.105:8085",
+            "https://www.mopl.store",
+            "https://mopl.store"));
 
     // 허용할 HTTP 메서드
     configuration.setAllowedMethods(
