@@ -35,7 +35,8 @@ public class PlaylistSubscriptionLoader {
 
     // Redis set이 있으면 캐시로 구독 여부 확인
     try {
-      if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+      Boolean keyExists = redisTemplate.hasKey(key);
+      if (Boolean.TRUE.equals(keyExists)) {
         @SuppressWarnings("unchecked")
         RedisSerializer<String> serializer =
             (RedisSerializer<String>) redisTemplate.getStringSerializer();
@@ -64,7 +65,12 @@ public class PlaylistSubscriptionLoader {
             result.add(playlistIds.get(i));
           }
         }
-        return result;
+        // 키가 있었는데 결과가 비어있으면 만료/삭제 경합 가능성 → DB 조회로 대체
+        if (result.isEmpty() && !playlistIds.isEmpty()) {
+          log.debug("Redis 키는 존재했으나 결과가 비어있어 DB 조회로 대체 key={}", key);
+        } else {
+          return result;
+        }
       }
     } catch (Exception e) {
       log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
