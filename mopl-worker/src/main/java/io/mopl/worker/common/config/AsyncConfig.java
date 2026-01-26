@@ -1,5 +1,6 @@
 package io.mopl.worker.common.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.Executor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +19,15 @@ public class AsyncConfig {
    * @return Executor 인스턴스
    */
   @Bean(name = "kafkaTaskExecutor")
-  public Executor kafkaTaskExecutor(AsyncExecutorProperties properties) {
+  public Executor kafkaTaskExecutor(
+      AsyncExecutorProperties properties, MeterRegistry meterRegistry) {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     executor.setCorePoolSize(properties.corePoolSize());
     executor.setMaxPoolSize(properties.maxPoolSize());
     executor.setQueueCapacity(properties.queueCapacity());
     executor.setThreadNamePrefix(properties.threadNamePrefix());
+    executor.setRejectedExecutionHandler(
+        new MeteredCallerRunsPolicy(meterRegistry, "kafkaTaskExecutor"));
     executor.initialize();
     return executor;
   }

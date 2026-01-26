@@ -14,7 +14,7 @@ public interface ContentMapper {
   @Mapping(target = "type", source = "type")
   @Mapping(target = "title", source = "title")
   @Mapping(target = "description", source = "description")
-  @Mapping(target = "thumbnailImageKey", source = "thumbnailImageKey")
+  @Mapping(target = "thumbnailUrl", source = "thumbnailImageKey")
   @Mapping(target = "tags", source = "tags")
   @Mapping(target = "averageRating", source = "averageRating")
   @Mapping(target = "reviewCount", source = "reviewCount")

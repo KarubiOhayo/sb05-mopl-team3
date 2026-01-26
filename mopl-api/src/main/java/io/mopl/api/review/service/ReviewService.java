@@ -11,6 +11,7 @@ import io.mopl.api.review.event.ReviewEventPublisher;
 import io.mopl.api.review.mapper.ReviewMapper;
 import io.mopl.api.review.repository.ReviewQueryRepository;
 import io.mopl.api.review.repository.ReviewRepository;
+import io.mopl.api.review.service.cache.ReviewCacheService;
 import io.mopl.api.user.domain.User;
 import io.mopl.api.user.domain.UserRepository;
 import io.mopl.api.user.dto.UserSummary;
@@ -46,6 +47,7 @@ public class ReviewService {
   // private final UserService userService; // UserService 구현 전까지 주석 처리
   private final UserService userService;
   private final UserRepository userRepository;
+  private final ReviewCacheService reviewCacheService;
 
   @Transactional
   public ReviewDto create(ReviewCreateRequest request, UUID authorId) {
@@ -77,6 +79,8 @@ public class ReviewService {
               savedReview.getRating());
         });
     UserSummary author = userService.getUserSummary(authorId);
+
+    reviewCacheService.evictFirstPage(savedReview.getContentId());
 
     return reviewMapper.toDto(savedReview, author);
   }
@@ -128,6 +132,11 @@ public class ReviewService {
 
   @Transactional(readOnly = true)
   public CursorResponse<ReviewDto> getReviews(UUID contentId, ReviewCursorRequest request) {
+    CursorResponse<ReviewDto> cached = reviewCacheService.getFirstPage(contentId, request);
+    if (cached != null) {
+      return cached;
+    }
+
     // 1. QueryRepository를 통해 페이징된 리뷰 엔티티 조회
     CursorResponse<Review> entityResponse =
         reviewQueryRepository.findReviewsPage(contentId, request);
@@ -156,15 +165,20 @@ public class ReviewService {
             .toList();
 
     // 5. CursorResponse<ReviewDto> 생성 및 반환
-    return CursorResponse.<ReviewDto>builder()
-        .data(dtos)
-        .nextCursor(entityResponse.getNextCursor())
-        .nextIdAfter(entityResponse.getNextIdAfter())
-        .hasNext(entityResponse.isHasNext())
-        .totalCount(entityResponse.getTotalCount())
-        .sortBy(entityResponse.getSortBy())
-        .sortDirection(entityResponse.getSortDirection())
-        .build();
+    CursorResponse<ReviewDto> response =
+        CursorResponse.<ReviewDto>builder()
+            .data(dtos)
+            .nextCursor(entityResponse.getNextCursor())
+            .nextIdAfter(entityResponse.getNextIdAfter())
+            .hasNext(entityResponse.isHasNext())
+            .totalCount(entityResponse.getTotalCount())
+            .sortBy(entityResponse.getSortBy())
+            .sortDirection(entityResponse.getSortDirection())
+            .build();
+
+    reviewCacheService.cacheFirstPage(contentId, request, response);
+
+    return response;
   }
 
   @Transactional
@@ -198,6 +212,8 @@ public class ReviewService {
               review.getContentId(),
               review.getRating());
         });
+
+    reviewCacheService.evictFirstPage(review.getContentId());
   }
 
   @Transactional
@@ -239,8 +255,12 @@ public class ReviewService {
 
     UserSummary author = userService.getUserSummary(authorId);
 
+    ReviewDto dto = reviewMapper.toDto(review, author);
+
+    reviewCacheService.evictFirstPage(review.getContentId());
+
     // 4. 응답 (dirty checking으로 자동 저장됨)
-    return reviewMapper.toDto(review, author);
+    return dto;
   }
 
   // 트랜잭션 커밋 이후에만 캐시 작업을 실행

@@ -23,6 +23,10 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
         spring.json.trusted.packages: io.mopl.core.event.*
+    listener:
+      ack-mode: manual
+  elasticsearch:
+    uris: ${MOPL_ELASTICSEARCH_URIS:http://localhost:9200}
 
   jackson:
     time-zone: UTC

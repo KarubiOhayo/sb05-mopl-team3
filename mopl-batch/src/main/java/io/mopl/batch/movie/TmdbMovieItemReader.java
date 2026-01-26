@@ -28,8 +28,13 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
   private int currentPage = 1;
   private final Queue<TmdbMovieResponse> buffer = new LinkedList<>();
 
+  @Value("#{jobParameters['maxPages']}")
+  private Long maxPagesOverride;
+
   @Value("${tmdb.max-pages.movie:10}")
-  private int maxPages;
+  private int defaultMaxPages;
+
+  private Integer resolvedMaxPages;
 
   /**
    * 다음 영화 항목을 반환한다.
@@ -44,7 +49,7 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
     }
 
     // 2. 버퍼가 비었고, 최대 페이지에 도달했다면 종료 (null 반환)
-    if (currentPage > maxPages) {
+    if (currentPage > resolveMaxPages()) {
       return null;
     }
 
@@ -63,5 +68,17 @@ public class TmdbMovieItemReader implements ItemReader<TmdbMovieResponse> {
 
     // 6. 방금 채운 버퍼에서 하나 꺼내서 반환
     return buffer.poll();
+  }
+
+  private int resolveMaxPages() {
+    if (resolvedMaxPages != null) {
+      return resolvedMaxPages;
+    }
+    int value = defaultMaxPages;
+    if (maxPagesOverride != null && maxPagesOverride > 0) {
+      value = Math.toIntExact(maxPagesOverride);
+    }
+    resolvedMaxPages = value;
+    return resolvedMaxPages;
   }
 }

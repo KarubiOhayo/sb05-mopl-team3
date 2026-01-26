@@ -1,0 +1,1335 @@
+{
+  "title": "MOPL Batch - Benchmark",
+  "uid": "mopl-batch-benchmark",
+  "schemaVersion": 38,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "batch_app",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_job_duration_seconds_count, application)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "mopl-batch",
+          "value": "mopl-batch"
+        }
+      },
+      {
+        "name": "worker_app",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(worker_thumbnail_handle_duration_seconds_count, application)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "mopl-worker",
+          "value": "mopl-worker"
+        }
+      },
+      {
+        "name": "run_id",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_job_duration_seconds_count, run_id)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "kafka_job",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(confluent_kafka_server_received_records, job)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "prometheus.scrape.confluent_scraper",
+          "value": "prometheus.scrape.confluent_scraper"
+        }
+      },
+      {
+        "name": "consumer_group_id",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(confluent_kafka_server_consumer_lag_offsets{job=~\"$kafka_job\"}, consumer_group_id)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "topic",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(confluent_kafka_server_consumer_lag_offsets{job=~\"$kafka_job\"}, topic)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_job_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\"}, job)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "status",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_job_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\"}, status)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "step",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_content_write_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\"}, step)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "client",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_external_api_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\"}, client)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "operation",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-pens9053-prom"
+        },
+        "refresh": 2,
+        "query": "label_values(batch_external_api_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\"}, operation)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Job 평균 처리 시간 (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(rate(batch_job_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m]) / rate(batch_job_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Job 실행 횟수 (per min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(batch_job_executions_total{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m]) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops/min"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Items 처리량 (read/write/filter/skip per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(batch_job_items_read_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m])"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(batch_job_items_written_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m])"
+        },
+        {
+          "refId": "C",
+          "expr": "rate(batch_job_items_filtered_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m])"
+        },
+        {
+          "refId": "D",
+          "expr": "rate(batch_job_items_skipped_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Chunk 평균 처리 시간 (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(rate(batch_content_write_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[5m]) / rate(batch_content_write_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[5m])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Chunk 처리 아이템 수 (per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(batch_content_write_items_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Thumbnail 이벤트 발행 (per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(batch_thumbnail_events_published_total{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "외부 API 평균 지연 (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(rate(batch_external_api_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[5m]) / rate(batch_external_api_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[5m])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "외부 API 에러 (per min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(batch_external_api_errors_total{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[5m]) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops/min"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker 처리량 (success/failed/skipped per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(worker_thumbnail_requests_total{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker 처리시간 평균 (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum by (status) (rate(worker_thumbnail_handle_duration_seconds_sum{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m])) / sum by (status) (rate(worker_thumbnail_handle_duration_seconds_count{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m]))) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker 재시도 횟수 (per min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(worker_thumbnail_retries_total{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m]) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops/min"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker 업로드 평균 지연 (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum by (result) (rate(worker_thumbnail_upload_duration_seconds_sum{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m])) / sum by (result) (rate(worker_thumbnail_upload_duration_seconds_count{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m]))) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker 업로드 스킵/에러 (per min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(worker_thumbnail_upload_skipped_total{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m]) * 60"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(worker_thumbnail_upload_errors_total{application=~\"$worker_app\",run_id=~\"$run_id\"}[5m]) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops/min"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Consumer Lag (top 10)",
+      "description": "consumer_group_id/topic 필터 적용 가능. topk는 group-by 없이 전체 시계열에서 상위 10개.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, confluent_kafka_server_consumer_lag_offsets{job=~\"$kafka_job\",consumer_group_id=~\"$consumer_group_id\",topic=~\"$topic\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Records In/Out (per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(confluent_kafka_server_received_records{job=~\"$kafka_job\"}[5m])"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(confluent_kafka_server_sent_records{job=~\"$kafka_job\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Request/Response Bytes (per sec)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(confluent_kafka_server_request_bytes{job=~\"$kafka_job\"}[5m])"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(confluent_kafka_server_response_bytes{job=~\"$kafka_job\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Producer Latency Avg (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(confluent_kafka_server_producer_latency_avg_milliseconds{job=~\"$kafka_job\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Active Connections",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(confluent_kafka_server_active_connection_count{job=~\"$kafka_job\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Retained Bytes",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(confluent_kafka_server_retained_bytes{job=~\"$kafka_job\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 72,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "text",
+      "title": "Benchmark Matrix",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "### A. S3 sync vs async (DB single 고정)\n- LOW: maxPages=10, chunkSize=20\n- MED: maxPages=30, chunkSize=50\n- HIGH: maxPages=50, chunkSize=100\n\n### B. DB single vs saveAll (S3 async 고정)\n- MED: maxPages=30, chunkSize=10/50/100\n- 옵션: maxPages=30, chunkSize=200 (스트레스)\n\n**운영 규칙**\n- 각 조합 3회(1회 워밍업 + 2~3회 평균)\n- 비교할 때는 환경/데이터셋 고정\n\n**Kafka lag 확인**\n- kafka_job/consumer_group_id/topic 변수로 필터링\n- Explore 예: `label_values(confluent_kafka_server_consumer_lag_offsets, topic)`"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 80,
+        "w": 24,
+        "h": 10
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Job 평균 처리 시간 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(increase(batch_job_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range]) / increase(batch_job_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 90,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Items Read (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_job_items_read_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 90,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Items Written (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_job_items_written_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 90,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Items Filtered (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_job_items_filtered_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 90,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Items Skipped (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_job_items_skipped_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",status=~\"$status\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 96,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Chunk 평균 처리 시간 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(increase(batch_content_write_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[$__range]) / increase(batch_content_write_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[$__range])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 96,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Chunk 처리 아이템 수 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_content_write_items_sum{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 96,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Thumbnail 이벤트 발행 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_thumbnail_events_published_total{application=~\"$batch_app\",run_id=~\"$run_id\",job=~\"$job\",step=~\"$step\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 96,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "외부 API 평균 지연 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(increase(batch_external_api_duration_seconds_sum{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[$__range]) / increase(batch_external_api_duration_seconds_count{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[$__range])) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 102,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "외부 API 에러 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(batch_external_api_errors_total{application=~\"$batch_app\",run_id=~\"$run_id\",client=~\"$client\",operation=~\"$operation\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 102,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker 성공 건수 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(worker_thumbnail_requests_total{application=~\"$worker_app\",run_id=~\"$run_id\",status=\"success\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 102,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker 실패 건수 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(worker_thumbnail_requests_total{application=~\"$worker_app\",run_id=~\"$run_id\",status=\"failed\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 102,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker 처리시간 평균 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(increase(worker_thumbnail_handle_duration_seconds_sum{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range])) / sum(increase(worker_thumbnail_handle_duration_seconds_count{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range]))) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 108,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker 업로드 평균 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(increase(worker_thumbnail_upload_duration_seconds_sum{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range])) / sum(increase(worker_thumbnail_upload_duration_seconds_count{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range]))) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 108,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker End-to-End 평균 (ms, range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(increase(worker_thumbnail_end_to_end_duration_seconds_sum{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range])) / sum(increase(worker_thumbnail_end_to_end_duration_seconds_count{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range]))) * 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 108,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Worker 재시도 횟수 (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(worker_thumbnail_retries_total{application=~\"$worker_app\",run_id=~\"$run_id\"}[$__range])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 108,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Kafka Lag Max (5m)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max_over_time(confluent_kafka_server_consumer_lag_offsets{job=~\"$kafka_job\",consumer_group_id=~\"$consumer_group_id\",topic=~\"$topic\"}[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 114,
+        "w": 6,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "End-to-End Total (ms, run)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-pens9053-prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(worker_thumbnail_last_completion_epoch_ms{run_id=~\"$run_id\"}) - max(batch_job_start_epoch_ms{run_id=~\"$run_id\",job=~\"$job\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 114,
+        "w": 6,
+        "h": 6
+      }
+    }
+  ]
+}

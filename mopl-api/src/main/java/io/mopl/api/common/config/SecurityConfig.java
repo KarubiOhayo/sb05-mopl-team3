@@ -7,6 +7,7 @@ import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import io.mopl.api.auth.service.CustomOAuth2UserService;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -91,7 +92,7 @@ public class SecurityConfig {
                     /* ========== Swagger ========== */
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**")
                     .permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/prometheus")
+                    .requestMatchers(EndpointRequest.to("health", "prometheus"))
                     .permitAll()
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
@@ -245,7 +246,11 @@ public class SecurityConfig {
 
     // 허용할 Origin (프론트엔드 URL)
     configuration.setAllowedOrigins(
-        Arrays.asList("http://localhost:8085", "http://192.168.219.105:8085"));
+        Arrays.asList(
+            "http://localhost:8085",
+            "http://192.168.219.105:8085",
+            "https://www.mopl.store",
+            "https://mopl.store"));
 
     // 허용할 HTTP 메서드
     configuration.setAllowedMethods(

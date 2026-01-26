@@ -2,6 +2,7 @@ package io.mopl.batch.tvseries;
 
 import io.mopl.batch.client.tmdb.TmdbGenre;
 import io.mopl.batch.client.tmdb.dto.TmdbTvSeriesResponse;
+import io.mopl.batch.common.ContentDeduplicationTracker;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentType;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Component;
 public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResponse, Content> {
 
   private final ContentRepository contentRepository;
+  private final ContentDeduplicationTracker deduplicationTracker;
   private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
   /**
@@ -35,15 +37,18 @@ public class TmdbTvSeriesItemProcessor implements ItemProcessor<TmdbTvSeriesResp
    */
   @Override
   public @Nullable Content process(TmdbTvSeriesResponse item) {
-    if (contentRepository.existsByExternalIdAndType(
-        String.valueOf(item.getId()), ContentType.TV_SERIES)) {
+    String externalId = String.valueOf(item.getId());
+    if (deduplicationTracker.isDuplicate(externalId, ContentType.TV_SERIES)) {
+      return null;
+    }
+    if (contentRepository.existsByExternalIdAndType(externalId, ContentType.TV_SERIES)) {
       return null;
     }
 
     Content content =
         Content.builder()
             .id(null)
-            .externalId(String.valueOf(item.getId()))
+            .externalId(externalId)
             .title(item.getName())
             .description(item.getOverview() != null ? item.getOverview() : "")
             .thumbnailImageKey("")

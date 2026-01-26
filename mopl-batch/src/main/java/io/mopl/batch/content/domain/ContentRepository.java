@@ -1,5 +1,7 @@
 package io.mopl.batch.content.domain;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,6 +30,10 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
    * @return 존재 여부
    */
   boolean existsByExternalIdAndType(String externalId, ContentType type);
+
+  List<Content> findAllByCreatedAtBetween(Instant from, Instant to);
+
+  List<Content> findAllByThumbnailImageKeyStartingWith(String prefix);
 
   @Modifying
   @Query("update Content c set c.watcherCount = 0 where c.watcherCount <> 0")

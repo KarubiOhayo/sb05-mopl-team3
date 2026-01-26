@@ -5,6 +5,7 @@ import io.mopl.core.event.conversation.DirectMessageSendEvent;
 import io.mopl.core.kafka.KafkaTopics;
 import io.mopl.socket.common.error.SocketErrorCode;
 import io.mopl.socket.dm.dto.DirectMessageSendRequest;
+import io.mopl.socket.metrics.SocketMetrics;
 import io.mopl.socket.websocket.security.SocketUserPrincipal;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -25,26 +26,31 @@ import org.springframework.stereotype.Controller;
 public class DirectMessageController {
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final SocketMetrics socketMetrics;
 
   @MessageMapping("/conversations/{conversationId}/direct-messages")
   public void sendDirectMessage(
       @DestinationVariable String conversationId,
       @Payload @Valid DirectMessageSendRequest request,
       Principal principal) {
+    socketMetrics.recordWsMessageHandle(
+        "dm",
+        () -> {
+          SocketUserPrincipal user = resolvePrincipal(principal);
+          socketMetrics.onWsMessageIn("dm");
 
-    SocketUserPrincipal user = resolvePrincipal(principal);
+          DirectMessageSendEvent event =
+              new DirectMessageSendEvent(
+                  UUID.randomUUID().toString(),
+                  Instant.now(),
+                  conversationId,
+                  user.userId().toString(),
+                  request.content());
 
-    DirectMessageSendEvent event =
-        new DirectMessageSendEvent(
-            UUID.randomUUID().toString(),
-            Instant.now(),
-            conversationId,
-            user.userId().toString(),
-            request.content());
+          kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, conversationId, event);
 
-    kafkaTemplate.send(KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST, conversationId, event);
-
-    log.info("DM 전송 요청 발행 완료: conversationId={}, senderId={}", conversationId, user.userId());
+          log.info("DM 전송 요청 발행 완료: conversationId={}, senderId={}", conversationId, user.userId());
+        });
   }
 
   private SocketUserPrincipal resolvePrincipal(Principal principal) {

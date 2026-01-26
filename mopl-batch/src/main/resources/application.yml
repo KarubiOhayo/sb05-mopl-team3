@@ -32,7 +32,16 @@ tmdb:
 tsdb:
   api-key: ${TSDB_API_KEY:123} # TSDB의 무료 API key는 123
 
+aws:
+  s3:
+    bucket: ${MOPL_S3_BUCKET:mopl-bucket}
+    region: ${MOPL_S3_REGION:ap-northeast-2}
+    access-key: ${AWS_S3_ACCESS_KEY:}
+    secret-key: ${AWS_S3_SECRET_KEY:}
+
 batch:
+  chunk-size:
+    default: ${BATCH_CHUNK_SIZE:10}
   schedule:
     movie-collect-cron: ${BATCH_MOVIE_COLLECT_CRON:0 0 4 * * *}
     tv-series-collect-cron: ${BATCH_TV_SERIES_COLLECT_CRON:0 0 3 * * *}
