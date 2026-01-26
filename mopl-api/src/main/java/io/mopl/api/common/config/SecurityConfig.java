@@ -103,8 +103,6 @@ public class SecurityConfig {
 
                         String jsonResponse = objectMapper.writeValueAsString(errorResponse);
                         response.getWriter().write(jsonResponse);
-                      } else {
-                        response.sendRedirect("/login");
                       }
                     }))
         .authorizeHttpRequests(
@@ -131,6 +129,7 @@ public class SecurityConfig {
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
                     .requestMatchers(
+                        "/login",
                         "/profiles/**",
                         "/playlists/**",
                         "/contents/**",
@@ -144,8 +143,6 @@ public class SecurityConfig {
 
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
-                    .requestMatchers(HttpMethod.GET, "/api/auth/refresh")
-                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/sign-in", "/api/auth/refresh")
                     .permitAll()
                     .requestMatchers("/api/auth/**")
