@@ -121,6 +121,11 @@ public class WatchingSessionSnapshotScheduler {
         elapsed);
   }
 
+  @Scheduled(fixedDelayString = "${batch.watcher-es.flush-interval-ms:5=15000}")
+  public void flushBufferedUpdates() {
+    flushIfDue();
+  }
+
   private Set<String> scanContentKeys() {
     RedisCallback<Set<String>> callback =
         connection -> {
