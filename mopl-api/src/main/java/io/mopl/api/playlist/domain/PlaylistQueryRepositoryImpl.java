@@ -24,12 +24,12 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
 
   @Override
   public PlaylistPage findPlaylistsPage(PlaylistSearchRequest request) {
-    // 기본 페이징/정렬 값
+    // 기본 페이지 정렬 값
     int limit = request.getLimitOrDefault();
     String sortByRaw = request.getSortByOrDefault();
     String sortDirectionRaw = request.getSortDirectionOrDefault();
 
-    // 내부 enum 변환
+    // 정렬 enum 변환
     SortBy sortBy = SortBy.from(sortByRaw);
     SortDirection sortDirection = SortDirection.from(sortDirectionRaw);
 
@@ -97,14 +97,14 @@ public class PlaylistQueryRepositoryImpl implements PlaylistQueryRepository {
     return count != null ? count.longValue() : 0L;
   }
 
-  // 기본 필터 구성 shared by list/count.
+  // 기본 필터 구성 (list/count 공통)
   private BooleanBuilder buildBaseWhere(
       String keywordLike, UUID ownerIdEqual, UUID subscriberIdEqual, QPlaylist p) {
     BooleanBuilder where = new BooleanBuilder();
 
-    // 제목 검색 (대소문자 무시)
+    // 제목 검색(prefix)
     if (keywordLike != null && !keywordLike.isBlank()) {
-      where.and(p.title.containsIgnoreCase(keywordLike));
+      where.and(p.title.startsWithIgnoreCase(keywordLike));
     }
 
     // 소유자 필터
