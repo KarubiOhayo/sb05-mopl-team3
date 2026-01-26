@@ -33,7 +33,7 @@ public class PlaylistSubscriptionLoader {
     String key = RedisKeyPrefix.PLAYLIST_SUBS_BY_USER + me;
     Set<UUID> result = new HashSet<>();
 
-    // Redis set??鈺곕똻???롢늺 筌?Ŋ??癒?퐣 ?닌됰즴 ??????類ㅼ뵥
+    // Redis set이 있으면 캐시로 구독 여부 확인
     try {
       if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
         @SuppressWarnings("unchecked")
