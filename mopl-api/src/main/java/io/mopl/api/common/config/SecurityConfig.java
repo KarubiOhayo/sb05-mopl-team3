@@ -103,8 +103,6 @@ public class SecurityConfig {
 
                         String jsonResponse = objectMapper.writeValueAsString(errorResponse);
                         response.getWriter().write(jsonResponse);
-                      } else {
-                        response.sendRedirect("/login");
                       }
                     }))
         .authorizeHttpRequests(
@@ -131,6 +129,7 @@ public class SecurityConfig {
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
                     .requestMatchers(
+                        "/login",
                         "/profiles/**",
                         "/playlists/**",
                         "/contents/**",
