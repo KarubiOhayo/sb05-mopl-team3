@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.mopl.batch.common.event.ContentIndexBatchSpringEvent;
 import io.mopl.batch.content.domain.Content;
 import io.mopl.batch.content.domain.ContentRepository;
 import io.mopl.batch.content.domain.ContentTag;
@@ -16,7 +17,9 @@ import io.mopl.batch.thumbnail.ThumbnailRequestedSpringEvent;
 import io.mopl.batch.thumbnail.ThumbnailUploadMode;
 import io.mopl.core.event.thumbnail.ThumbnailSourceType;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.Chunk;
@@ -78,6 +81,7 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
 
     try {
       ArrayList<Content> contents = new ArrayList<>(chunk.size());
+      List<UUID> indexedIds = new ArrayList<>();
       for (Content content : chunk) {
         content.generateId();
 
@@ -100,6 +104,9 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
           contentRepository.save(content);
         }
       }
+      // 1. 저장 (Processor에서 중복은 이미 걸러짐)
+      Content savedContent = contentRepository.save(content);
+      indexedIds.add(savedContent.getId());
 
       // 2. Tag 저장 및 연결
       for (Content content : contents) {
@@ -136,6 +143,10 @@ public class ContentWithTagWriter implements ItemWriter<Content> {
                   uploadMode));
           thumbnailEventCounter.increment();
         }
+      }
+
+      if (!indexedIds.isEmpty()) {
+        eventPublisher.publishEvent(new ContentIndexBatchSpringEvent(indexedIds));
       }
     } finally {
       sample.stop(

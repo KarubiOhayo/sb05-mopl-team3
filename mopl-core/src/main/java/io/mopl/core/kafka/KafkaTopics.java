@@ -10,6 +10,8 @@ public final class KafkaTopics {
   public static final String CONTENT_THUMBNAIL_REQUESTED_DLQ = "content.thumbnail.requested.dlq";
   public static final String CONTENT_THUMBNAIL_COMPLETED = "content.thumbnail.completed";
   public static final String CONTENT_THUMBNAIL_FAILED = "content.thumbnail.failed";
+  public static final String CONTENT_INDEX_REQUESTED = "content.index.requested";
+  public static final String CONTENT_INDEX_REQUESTED_DLQ = "content.index.requested.dlq";
 
   // ===== user =====
   public static final String USER_FOLLOWED = "user.followed";
