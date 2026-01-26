@@ -47,6 +47,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
 
+    String path = request.getRequestURI();
+    String method = request.getMethod();
+
+    if ((method.equals("POST") && path.equals("/api/auth/refresh"))
+        || (method.equals("POST") && path.equals("/api/auth/sign-in"))
+        || (method.equals("GET") && path.equals("/api/auth/csrf-token"))) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     try {
       String token = getTokenFromRequest(request);
 
