@@ -3,7 +3,6 @@ package io.mopl.api.playlist.service.loader;
 import io.mopl.api.playlist.domain.PlaylistSubscription;
 import io.mopl.api.playlist.domain.PlaylistSubscriptionRepository;
 import io.mopl.redis.constants.RedisKeyPrefix;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,7 +33,7 @@ public class PlaylistSubscriptionLoader {
     String key = RedisKeyPrefix.PLAYLIST_SUBS_BY_USER + me;
     Set<UUID> result = new HashSet<>();
 
-    // Redis set이 존재하면 캐시에서 구독 여부를 확인
+    // Redis set??鈺곕똻???롢늺 筌?Ŋ??癒?퐣 ?닌됰즴 ??????類ㅼ뵥
     try {
       if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
         @SuppressWarnings("unchecked")
@@ -69,32 +68,14 @@ public class PlaylistSubscriptionLoader {
       }
     } catch (Exception e) {
       log.warn("Redis 캐시 조회 실패 key={} error={}", key, e.getMessage());
-      // fallback to DB query below
+      // Redis 장애 시 DB 조회로 대체
     }
 
-    // 캐시가 없으면 사용자가 구독한 전체 플레이리스트를 DB에서 조회
-    List<PlaylistSubscription> allSubs = subscriptionRepository.findByIdUserId(me);
-    Set<UUID> allSubscribedIds = new HashSet<>();
-    for (PlaylistSubscription sub : allSubs) {
-      allSubscribedIds.add(sub.getId().getPlaylistId());
-    }
-
-    // 전체 구독 목록을 Redis에 저장
-    if (!allSubscribedIds.isEmpty()) {
-      try {
-        String[] values = allSubscribedIds.stream().map(UUID::toString).toArray(String[]::new);
-        redisTemplate.opsForSet().add(key, values);
-        redisTemplate.expire(key, Duration.ofHours(6));
-      } catch (Exception e) {
-        log.warn("Redis 캐시 저장 실패 key={} error={}", key, e.getMessage());
-      }
-    }
-
-    // 요청한 playlistIds 중 구독된 것만 반환
-    for (UUID playlistId : playlistIds) {
-      if (allSubscribedIds.contains(playlistId)) {
-        result.add(playlistId);
-      }
+    // 캐시가 없으면 요청된 playlistIds만 DB 조회
+    List<PlaylistSubscription> subs =
+        subscriptionRepository.findByIdUserIdAndIdPlaylistIdIn(me, playlistIds);
+    for (PlaylistSubscription sub : subs) {
+      result.add(sub.getId().getPlaylistId());
     }
 
     return result;
