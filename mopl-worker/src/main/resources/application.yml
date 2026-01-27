@@ -60,6 +60,9 @@ mopl:
       initial-backoff-ms: 1000
       backoff-multiplier: 2.0
       max-backoff-ms: 10000
+    concurrency:
+      dm_send_request: ${MOPL_KAFKA_CONCURRENCY_DM_SEND_REQUEST:8}
+      dm_received: ${MOPL_KAFKA_CONCURRENCY_DM_RECEIVED:8}
 
 management:
   endpoints:

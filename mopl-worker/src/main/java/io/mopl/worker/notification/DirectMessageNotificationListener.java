@@ -30,7 +30,7 @@ public class DirectMessageNotificationListener {
   // DM 수신 이벤트를 수신해 알림을 저장한다.
   @KafkaListener(
       topics = KafkaTopics.DIRECT_MESSAGE_RECEIVED,
-      concurrency = "3",
+      concurrency = "${mopl.kafka.concurrency.dm_received:8}",
       properties =
           "spring.json.value.default.type=io.mopl.core.event.dm.DirectMessageReceivedEvent")
   @Async("kafkaTaskExecutor")
