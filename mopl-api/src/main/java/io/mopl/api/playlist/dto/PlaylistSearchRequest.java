@@ -18,6 +18,7 @@ public class PlaylistSearchRequest {
   private UUID subscriberIdEqual;
   private String cursor;
   private UUID idAfter;
+  private Boolean includeTotalCount;
 
   @Min(1)
   @Max(100)
@@ -43,6 +44,10 @@ public class PlaylistSearchRequest {
 
   public String getSortByOrDefault() {
     return (sortBy == null || sortBy.isBlank()) ? "updatedAt" : sortBy;
+  }
+
+  public boolean getIncludeTotalCountOrDefault() {
+    return includeTotalCount == null || includeTotalCount;
   }
 
   @AssertTrue(message = "cursor and idAfter must be provided together")

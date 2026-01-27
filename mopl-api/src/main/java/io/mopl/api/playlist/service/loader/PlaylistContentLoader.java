@@ -82,18 +82,8 @@ public class PlaylistContentLoader {
 
     List<Tuple> rows =
         queryFactory
-            .select(
-                pc.id.playlistId,
-                pc.id.contentId,
-                c.type,
-                c.title,
-                c.description,
-                c.thumbnailImageKey,
-                c.averageRating,
-                c.reviewCount)
+            .select(pc.id.playlistId, pc.id.contentId)
             .from(pc)
-            .join(c)
-            .on(pc.id.contentId.eq(c.id))
             .where(
                 pc.id
                     .playlistId
@@ -107,7 +97,6 @@ public class PlaylistContentLoader {
             .fetch();
 
     Map<UUID, UUID> thumbnailContentIdByPlaylistId = new HashMap<>();
-    Map<UUID, ContentBase> baseByContentId = new HashMap<>();
     Set<UUID> allContentIds = new HashSet<>();
 
     for (Tuple row : rows) {
@@ -119,7 +108,33 @@ public class PlaylistContentLoader {
       UUID contentId = row.get(pc.id.contentId);
       thumbnailContentIdByPlaylistId.put(playlistId, contentId);
       allContentIds.add(contentId);
+    }
 
+    if (allContentIds.isEmpty()) {
+      for (UUID playlistId : missIds) {
+        result.putIfAbsent(playlistId, List.of());
+      }
+      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
+      return result;
+    }
+
+    List<Tuple> contentRows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                c.averageRating,
+                c.reviewCount)
+            .from(c)
+            .where(c.id.in(allContentIds))
+            .fetch();
+
+    Map<UUID, ContentBase> baseByContentId = new HashMap<>();
+    for (Tuple row : contentRows) {
+      UUID contentId = row.get(c.id);
       Double avg = row.get(c.averageRating);
       double avgValue = avg != null ? avg.doubleValue() : 0.0d;
       Integer reviewCount = row.get(c.reviewCount);
@@ -134,14 +149,6 @@ public class PlaylistContentLoader {
               avgValue,
               reviewCount != null ? reviewCount.intValue() : 0);
       baseByContentId.put(contentId, base);
-    }
-
-    if (allContentIds.isEmpty()) {
-      for (UUID playlistId : missIds) {
-        result.putIfAbsent(playlistId, List.of());
-      }
-      cacheContents(result, missIds, RedisKeyPrefix.PLAYLIST_THUMBNAIL_CONTENT);
-      return result;
     }
 
     QContentTag ct = QContentTag.contentTag;

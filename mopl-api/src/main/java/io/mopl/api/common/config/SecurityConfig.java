@@ -5,11 +5,16 @@ import io.mopl.api.auth.oauth2.CustomOAuth2AuthorizationRequestResolver;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import io.mopl.api.auth.service.CustomOAuth2UserService;
+import io.mopl.core.error.CommonErrorCode;
+import io.mopl.core.error.ErrorResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,6 +26,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +39,8 @@ public class SecurityConfig {
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
   private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
   private final CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver;
+  private final MessageSource messageSource;
+  private final ObjectMapper objectMapper;
 
   // 개발 중 테스트를 위한 csrf 비활성화 메서드
   //  @Bean
@@ -73,6 +81,30 @@ public class SecurityConfig {
                         }))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(
+            exception ->
+                exception.authenticationEntryPoint(
+                    (request, response, authException) -> {
+                      if (request.getRequestURI().startsWith("/api")) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+
+                        String message =
+                            messageSource.getMessage(
+                                CommonErrorCode.UNAUTHORIZED.getMessageKey(),
+                                null,
+                                LocaleContextHolder.getLocale());
+
+                        ErrorResponse errorResponse =
+                            ErrorResponse.builder()
+                                .exceptionName("AuthenticationException")
+                                .message(message)
+                                .build();
+
+                        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+                        response.getWriter().write(jsonResponse);
+                      }
+                    }))
         .authorizeHttpRequests(
             auth ->
                 auth
@@ -97,6 +129,7 @@ public class SecurityConfig {
 
                     /* ========== SPA 프론트엔드 라우트 ========== */
                     .requestMatchers(
+                        "/login",
                         "/profiles/**",
                         "/playlists/**",
                         "/contents/**",
@@ -110,8 +143,6 @@ public class SecurityConfig {
 
                     /* ========== 인증 관리 ========== */
                     // 전체: 모든 기능
-                    .requestMatchers(HttpMethod.GET, "/api/auth/refresh")
-                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/sign-in", "/api/auth/refresh")
                     .permitAll()
                     .requestMatchers("/api/auth/**")
