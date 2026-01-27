@@ -44,7 +44,7 @@ public class ContentIndexKafkaListener {
       return;
     }
 
-    log.info("Content index event received: eventId={}", event.eventId());
+    log.debug("Content index event received: eventId={}", event.eventId());
     List<UUID> requestedIds = event.contentIds();
     List<ContentIndexRow> rows = queryRepository.findAllForIndexing(requestedIds);
     Set<UUID> missingIdSet = new HashSet<>(requestedIds);
@@ -69,7 +69,7 @@ public class ContentIndexKafkaListener {
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          log.info("ES bulk sync attempt {}/{}", attempt, maxAttempts);
+          log.debug("ES bulk sync attempt {}/{}", attempt, maxAttempts);
           if (!missingIds.isEmpty()) {
             bulkService.deleteByContentIds(missingIds);
           }

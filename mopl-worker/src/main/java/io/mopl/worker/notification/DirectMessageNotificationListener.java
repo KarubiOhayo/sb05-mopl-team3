@@ -60,7 +60,7 @@ public class DirectMessageNotificationListener {
                 log, event.conversationId(), "conversationId", event.eventId());
 
         if (activeConversationTracker.isActive(receiverIdUuid, conversationIdUuid)) {
-          log.info(
+          log.debug(
               "활성 대화는 DM 알림 저장을 건너뜁니다: receiverId={}, conversationId={}",
               receiverIdUuid,
               conversationIdUuid);

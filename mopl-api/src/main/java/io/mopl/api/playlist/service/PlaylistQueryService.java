@@ -87,7 +87,8 @@ public class PlaylistQueryService {
 
       UserSummary owner = ownerMap.get(playlist.getOwnerId());
       if (owner == null) {
-        owner = userService.getUserSummary(playlist.getOwnerId());
+        // 배치 로딩 실패 시 DB 재조회 대신 기본값 사용 (N+1 방지)
+        owner = new UserSummary(playlist.getOwnerId(), "Unknown", null);
       }
       boolean subscribedByMe = subscribedPlaylistIds.contains(playlistId);
 

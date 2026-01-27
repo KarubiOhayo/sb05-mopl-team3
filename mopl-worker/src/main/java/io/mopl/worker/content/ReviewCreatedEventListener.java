@@ -29,7 +29,7 @@ public class ReviewCreatedEventListener {
       topics = KafkaTopics.REVIEW_CREATED,
       properties = "spring.json.value.default.type=io.mopl.core.event.review.ReviewCreatedEvent")
   public void handle(ReviewCreatedEvent event) {
-    log.info(
+    log.debug(
         "리뷰 이벤트 수신: eventId={}, contentId={}, rating={}",
         event.eventId(),
         event.contentId(),
@@ -48,12 +48,12 @@ public class ReviewCreatedEventListener {
       log.warn("콘텐츠 집계 업데이트 실패 (contentId={}, eventId={})", event.contentId(), event.eventId());
       throw new BusinessException(CommonErrorCode.INVALID_REQUEST);
     }
-    log.info("콘텐츠 집계 업데이트 완료 (contentId={}, eventId={})", event.contentId(), event.eventId());
+    log.debug("콘텐츠 집계 업데이트 완료 (contentId={}, eventId={})", event.contentId(), event.eventId());
 
     ContentIndexBatchRequestedEvent indexEvent =
         new ContentIndexBatchRequestedEvent(
             UuidV7Generator.generate().toString(), Instant.now(), List.of(contentId), 0);
     contentIndexEventPublisher.publish(indexEvent);
-    log.info("집계 갱신 이벤트 발행: contentId={}, eventId={}", contentId, event.eventId());
+    log.debug("집계 갱신 이벤트 발행: contentId={}, eventId={}", contentId, event.eventId());
   }
 }

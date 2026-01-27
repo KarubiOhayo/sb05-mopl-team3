@@ -45,7 +45,7 @@ public class FollowNotificationListener {
 
     for (UserFollowedEvent event : events) {
       try {
-        log.info("팔로우 이벤트 수신: eventId={}", event.eventId());
+        log.debug("팔로우 이벤트 수신: eventId={}", event.eventId());
 
         UUID eventIdUuid =
             NotificationListenerSupport.parseUuid(log, event.eventId(), "eventId", event.eventId());
