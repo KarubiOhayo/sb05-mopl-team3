@@ -2,6 +2,7 @@ package io.mopl.api.review.dto;
 
 import io.mopl.api.user.dto.UserSummary;
 import jakarta.annotation.Nullable;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,4 +21,5 @@ public class ReviewDto {
   private UserSummary author;
   private String text;
   private double rating;
+  private Instant createdAt;
 }

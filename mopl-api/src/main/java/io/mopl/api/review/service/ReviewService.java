@@ -1,6 +1,7 @@
 package io.mopl.api.review.service;
 
 import io.mopl.api.common.dto.CursorResponse;
+import io.mopl.api.content.service.ContentThumbnailUploadService;
 import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCreateRequest;
 import io.mopl.api.review.dto.ReviewCursorRequest;
@@ -48,6 +49,7 @@ public class ReviewService {
   private final UserService userService;
   private final UserRepository userRepository;
   private final ReviewCacheService reviewCacheService;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
 
   @Transactional
   public ReviewDto create(ReviewCreateRequest request, UUID authorId) {
@@ -137,48 +139,46 @@ public class ReviewService {
       return cached;
     }
 
-    // 1. QueryRepository를 통해 페이징된 리뷰 엔티티 조회
-    CursorResponse<Review> entityResponse =
-        reviewQueryRepository.findReviewsPage(contentId, request);
+    // 1. QueryRepository를 통해 페이징된 ReviewDto 조회 (DTO 직접 조회 + Join)
+    CursorResponse<ReviewDto> response = reviewQueryRepository.findReviewsPage(contentId, request);
 
-    // 2. 조회된 리뷰들에서 작성자 ID 추출
-    List<UUID> authorIds =
-        entityResponse.getData().stream().map(Review::getAuthorId).distinct().toList();
-
-    // 3. 작성자 정보 일괄 조회 (N+1 문제 방지)
-    Map<UUID, UserSummary> authorMap =
-        userRepository.findAllById(authorIds).stream()
-            .map(user -> new UserSummary(user.getId(), user.getName(), user.getProfileImageKey()))
-            .collect(Collectors.toMap(UserSummary::getUserId, Function.identity()));
-
-    // 4. 엔티티 -> DTO 변환 (작성자 정보 매핑 포함)
-    List<ReviewDto> dtos =
-        entityResponse.getData().stream()
+    // 2. 프로필 이미지 URL 변환 (S3 Key -> Presigned URL)
+    List<ReviewDto> processedDtos =
+        response.getData().stream()
             .map(
-                review -> {
-                  UserSummary author = authorMap.get(review.getAuthorId());
-                  if (author == null) {
-                    author = new UserSummary(review.getAuthorId(), "Unknown", null);
-                  }
-                  return reviewMapper.toDto(review, author);
+                dto -> {
+                  UserSummary author = dto.getAuthor();
+                  String presignedUrl =
+                      contentThumbnailUploadService.generatePresignedUrl(
+                          author.getProfileImageUrl()); // 현재 DTO에는 Key가 들어있음
+
+                  UserSummary newAuthor =
+                      new UserSummary(author.getUserId(), author.getName(), presignedUrl);
+
+                  return new ReviewDto(
+                      dto.getId(),
+                      dto.getContentId(),
+                      newAuthor,
+                      dto.getText(),
+                      dto.getRating(),
+                      dto.getCreatedAt());
                 })
             .toList();
 
-    // 5. CursorResponse<ReviewDto> 생성 및 반환
-    CursorResponse<ReviewDto> response =
+    CursorResponse<ReviewDto> processedResponse =
         CursorResponse.<ReviewDto>builder()
-            .data(dtos)
-            .nextCursor(entityResponse.getNextCursor())
-            .nextIdAfter(entityResponse.getNextIdAfter())
-            .hasNext(entityResponse.isHasNext())
-            .totalCount(entityResponse.getTotalCount())
-            .sortBy(entityResponse.getSortBy())
-            .sortDirection(entityResponse.getSortDirection())
+            .data(processedDtos)
+            .nextCursor(response.getNextCursor())
+            .nextIdAfter(response.getNextIdAfter())
+            .hasNext(response.isHasNext())
+            .totalCount(response.getTotalCount())
+            .sortBy(response.getSortBy())
+            .sortDirection(response.getSortDirection())
             .build();
 
-    reviewCacheService.cacheFirstPage(contentId, request, response);
+    reviewCacheService.cacheFirstPage(contentId, request, processedResponse);
 
-    return response;
+    return processedResponse;
   }
 
   @Transactional

@@ -1,15 +1,18 @@
 package io.mopl.api.review.repository;
 
 import static io.mopl.api.review.domain.QReview.review;
+import static io.mopl.api.user.domain.QUser.user;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.mopl.api.common.dto.CursorResponse;
 import io.mopl.api.common.dto.SortDirection;
-import io.mopl.api.review.domain.Review;
 import io.mopl.api.review.dto.ReviewCursorRequest;
+import io.mopl.api.review.dto.ReviewDto;
+import io.mopl.api.user.dto.UserSummary;
 import io.mopl.core.error.BusinessException;
 import io.mopl.core.error.CommonErrorCode;
 import java.time.Instant;
@@ -28,7 +31,8 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
   private final JPAQueryFactory queryFactory;
 
   @Override
-  public CursorResponse<Review> findReviewsPage(UUID contentId, ReviewCursorRequest cursorRequest) {
+  public CursorResponse<ReviewDto> findReviewsPage(
+      UUID contentId, ReviewCursorRequest cursorRequest) {
 
     int limit = cursorRequest.getLimitOrDefault();
     if (limit < MIN_LIMIT || limit > MAX_LIMIT) {
@@ -40,16 +44,28 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
     String cursor = cursorRequest.getCursor();
     UUID idAfter = cursorRequest.getIdAfter();
 
-    // 1. 데이터 조회
-    List<Review> reviews =
+    // 1. 데이터 조회 (DTO Projection + Join)
+    List<ReviewDto> reviews =
         queryFactory
-            .selectFrom(review)
+            .select(
+                Projections.constructor(
+                    ReviewDto.class,
+                    review.id,
+                    review.contentId,
+                    Projections.constructor(
+                        UserSummary.class, user.id, user.name, user.profileImageKey),
+                    review.text,
+                    review.rating,
+                    review.createdAt))
+            .from(review)
+            .join(user)
+            .on(review.authorId.eq(user.id))
             .where(
                 review.contentId.eq(contentId),
                 cursorCondition(cursor, idAfter, sortBy, sortDirection))
             .orderBy(getOrderSpecifier(sortBy, sortDirection))
-            .limit(limit + 1) // 다음 페이지 존재 확인
-            .fetch(); // 쿼리를 실제 db로 날리는 실행 버튼
+            .limit(limit + 1)
+            .fetch();
 
     // 2. hasNext 확인 및 데이터 슬라이싱
     boolean hasNext = reviews.size() > limit;
@@ -60,14 +76,14 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
     // 3. 다음 커서 생성
     String nextCursor = null;
     UUID nextIdAfter = null;
-    if (!reviews.isEmpty()) { // 리뷰 데이터 있을 경우
-      Review lastReview = reviews.get(reviews.size() - 1); // 마지막 리뷰
+    if (!reviews.isEmpty()) {
+      ReviewDto lastReview = reviews.get(reviews.size() - 1);
       nextIdAfter = lastReview.getId();
 
-      if ("rating".equalsIgnoreCase(sortBy)) { // rating = 별점순
-        nextCursor = String.valueOf(lastReview.getRating()); // 마지막 리뷰, 별점순으로 저장
+      if ("rating".equalsIgnoreCase(sortBy)) {
+        nextCursor = String.valueOf(lastReview.getRating());
       } else {
-        nextCursor = lastReview.getCreatedAt().toString(); // 정렬 기준 != 별점순, 최신순으로 실행
+        nextCursor = lastReview.getCreatedAt().toString();
       }
     }
 
@@ -75,14 +91,12 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
     long totalCount = countReviews(contentId);
 
     // 5. 응답 객체 빌드
-    // String보다 미리 정의된 ENUM 쓰는 게 더 안전
     SortDirection directionEnum =
-        "ASCENDING".equalsIgnoreCase(sortDirection) // 하드코딩한 이유 + enum
+        "ASCENDING".equalsIgnoreCase(sortDirection)
             ? SortDirection.ASCENDING
             : SortDirection.DESCENDING;
 
-    // 응답 객체에 담아 클라이언트에게 전달 + 빌더 패턴 사용
-    return CursorResponse.<Review>builder()
+    return CursorResponse.<ReviewDto>builder()
         .data(reviews)
         .nextCursor(nextCursor)
         .nextIdAfter(nextIdAfter)
