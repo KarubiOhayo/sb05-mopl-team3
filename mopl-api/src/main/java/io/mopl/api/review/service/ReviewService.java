@@ -265,16 +265,25 @@ public class ReviewService {
 
   // 트랜잭션 커밋 이후에만 캐시 작업을 실행
   private void runAfterCommit(Runnable action) {
+    Runnable safeAction =
+        () -> {
+          try {
+            action.run();
+          } catch (Exception e) {
+            log.error("afterCommit 작업 실패", e);
+          }
+        };
+
     if (TransactionSynchronizationManager.isActualTransactionActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-              action.run();
+              safeAction.run();
             }
           });
     } else {
-      action.run();
+      safeAction.run();
     }
   }
 }
