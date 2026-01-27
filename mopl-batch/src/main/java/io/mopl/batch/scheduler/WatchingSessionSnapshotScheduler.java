@@ -121,7 +121,7 @@ public class WatchingSessionSnapshotScheduler {
         elapsed);
   }
 
-  @Scheduled(fixedDelayString = "${batch.watcher-es.flush-interval-ms:5=15000}")
+  @Scheduled(fixedDelayString = "${batch.watcher-es.flush-interval-ms:15000}")
   public void flushBufferedUpdates() {
     flushIfDue();
   }
