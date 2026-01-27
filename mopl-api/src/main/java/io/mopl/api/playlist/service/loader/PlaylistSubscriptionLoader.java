@@ -9,9 +9,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -37,27 +37,20 @@ public class PlaylistSubscriptionLoader {
     try {
       Boolean keyExists = redisTemplate.hasKey(key);
       if (Boolean.TRUE.equals(keyExists)) {
-        @SuppressWarnings("unchecked")
-        RedisSerializer<String> serializer =
-            (RedisSerializer<String>) redisTemplate.getStringSerializer();
-        byte[] keyBytes = serializer.serialize(key);
-        if (keyBytes == null) {
-          throw new IllegalStateException("Failed to serialize Redis key");
-        }
         List<Object> rawResults =
             redisTemplate.executePipelined(
-                (RedisCallback<Object>)
-                    connection -> {
-                      for (UUID playlistId : playlistIds) {
-                        byte[] valueBytes = serializer.serialize(playlistId.toString());
-                        if (valueBytes == null) {
-                          throw new IllegalStateException(
-                              "Failed to serialize playlistId: " + playlistId);
-                        }
-                        connection.sIsMember(keyBytes, valueBytes);
-                      }
-                      return null;
-                    });
+                new SessionCallback<List<Object>>() {
+                  @Override
+                  @SuppressWarnings("unchecked")
+                  public <K, V> List<Object> execute(RedisOperations<K, V> operations) {
+                    RedisOperations<String, String> ops =
+                        (RedisOperations<String, String>) operations;
+                    for (UUID playlistId : playlistIds) {
+                      ops.opsForSet().isMember(key, playlistId.toString());
+                    }
+                    return null;
+                  }
+                });
 
         for (int i = 0; i < playlistIds.size(); i++) {
           Object raw = rawResults.get(i);
