@@ -9,4 +9,5 @@ public record DirectMessageSavedEvent(
     UUID senderId,
     UUID receiverId,
     String content,
-    Instant createdAt) {}
+    Instant createdAt,
+    Instant occurredAt) {}

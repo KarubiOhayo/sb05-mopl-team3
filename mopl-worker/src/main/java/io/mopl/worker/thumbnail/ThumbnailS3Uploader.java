@@ -57,7 +57,7 @@ public class ThumbnailS3Uploader {
     String bucket = requireBucket();
 
     if (objectExists(bucket, s3Key)) {
-      log.info("업로드 건너뜀: 이미 객체가 존재합니다. s3Key={}", s3Key);
+      log.debug("업로드 건너뜀: 이미 객체가 존재합니다. s3Key={}", s3Key);
       Counter.builder("worker.thumbnail.upload.skipped")
           .tags("run_id", runTag)
           .register(meterRegistry)

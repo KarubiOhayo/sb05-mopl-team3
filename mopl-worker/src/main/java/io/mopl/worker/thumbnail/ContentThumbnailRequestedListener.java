@@ -35,7 +35,7 @@ public class ContentThumbnailRequestedListener {
         .tags("run_id", runTag)
         .register(meterRegistry)
         .increment();
-    log.info(
+    log.debug(
         "썸네일 요청 이벤트 수신: eventId={}, contentId={}, s3Key={}, attempt={}",
         event.eventId(),
         event.contentId(),

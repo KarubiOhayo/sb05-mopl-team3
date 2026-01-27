@@ -63,7 +63,7 @@ public class ContentThumbnailRequestedHandler {
         retryProperties.maxBackoffMs() == null ? 10000L : retryProperties.maxBackoffMs();
 
     try {
-      log.info(
+      log.debug(
           "썸네일 요청 수신: contentId={}, s3Key={}, sourceUrl={}, attempt={}",
           event.contentId(),
           event.s3Key(),
@@ -91,7 +91,7 @@ public class ContentThumbnailRequestedHandler {
                   event.s3Key(),
                   event.attempt());
           thumbnailEventPublisher.publishCompleted(completedEvent);
-          log.info(
+          log.debug(
               "썸네일 업로드 완료: contentId={}, s3Key={}, sourceUrl={}",
               event.contentId(),
               event.s3Key(),
