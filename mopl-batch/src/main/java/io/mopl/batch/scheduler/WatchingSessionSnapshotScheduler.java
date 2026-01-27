@@ -45,6 +45,7 @@ public class WatchingSessionSnapshotScheduler {
   @Value("${batch.watcher-es.flush-interval-ms:5000}")
   private long flushIntervalMs;
 
+  private final Object bufferLock = new Object();
   private final Set<String> bufferedContentIds = new LinkedHashSet<>();
   private long lastFlushAt = System.currentTimeMillis();
 
@@ -189,26 +190,45 @@ public class WatchingSessionSnapshotScheduler {
   }
 
   private void bufferContentId(String contentId) {
-    bufferedContentIds.add(contentId);
-    if (bufferedContentIds.size() >= batchSize) {
-      flushBuffer();
+    synchronized (bufferLock) {
+      bufferedContentIds.add(contentId);
+      if (bufferedContentIds.size() >= batchSize) {
+        flushBufferLocked();
+      }
     }
   }
 
   private void flushIfDue() {
-    if (bufferedContentIds.isEmpty()) {
-      return;
-    }
-    long now = System.currentTimeMillis();
-    if ((now - lastFlushAt) >= flushIntervalMs) {
-      flushBuffer();
+    synchronized (bufferLock) {
+      if (bufferedContentIds.isEmpty()) {
+        return;
+      }
+      long now = System.currentTimeMillis();
+      if ((now - lastFlushAt) >= flushIntervalMs) {
+        flushBufferLocked();
+      }
     }
   }
 
   private void flushBuffer() {
-    if (bufferedContentIds.isEmpty()) {
-      return;
+    List<String> contentIds;
+    synchronized (bufferLock) {
+      if (bufferedContentIds.isEmpty()) {
+        return;
+      }
+      contentIds = new ArrayList<>(bufferedContentIds);
+      bufferedContentIds.clear();
+      lastFlushAt = System.currentTimeMillis();
     }
+
+    ContentAggregateUpdatedBatchEvent event =
+        new ContentAggregateUpdatedBatchEvent(
+            UUID.randomUUID().toString(), Instant.now(), contentIds);
+    kafkaTemplate.send(KafkaTopics.CONTENT_AGGREGATE_UPDATED_BATCH, event);
+  }
+
+  // lock 안에서만 호출
+  private void flushBufferLocked() {
     List<String> contentIds = new ArrayList<>(bufferedContentIds);
     bufferedContentIds.clear();
     lastFlushAt = System.currentTimeMillis();
