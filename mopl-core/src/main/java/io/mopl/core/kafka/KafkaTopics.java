@@ -12,6 +12,13 @@ public final class KafkaTopics {
   public static final String CONTENT_THUMBNAIL_FAILED = "content.thumbnail.failed";
   public static final String CONTENT_INDEX_REQUESTED = "content.index.requested";
   public static final String CONTENT_INDEX_REQUESTED_DLQ = "content.index.requested.dlq";
+  public static final String CONTENT_AGGREGATE_UPDATED = "content.aggregate.updated";
+  public static final String CONTENT_AGGREGATE_UPDATED_BATCH = "content.aggregate.updated.batch";
+
+  // ===== review =====
+  public static final String REVIEW_CREATED = "review.created";
+  public static final String REVIEW_DELETED = "review.deleted";
+  public static final String REVIEW_UPDATED = "review.updated";
 
   // ===== user =====
   public static final String USER_FOLLOWED = "user.followed";
