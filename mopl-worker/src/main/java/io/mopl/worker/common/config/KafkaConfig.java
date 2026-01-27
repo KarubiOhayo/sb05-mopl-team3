@@ -56,4 +56,17 @@ public class KafkaConfig {
     factory.getContainerProperties().setAsyncAcks(true);
     return factory;
   }
+
+  @Bean
+  public ConcurrentKafkaListenerContainerFactory<String, Object>
+      notificationBatchKafkaListenerContainerFactory(
+          ConsumerFactory<String, Object> consumerFactory, CommonErrorHandler errorHandler) {
+    ConcurrentKafkaListenerContainerFactory<String, Object> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(consumerFactory);
+    factory.setCommonErrorHandler(errorHandler);
+    factory.setBatchListener(true);
+    factory.getContainerProperties().setPollTimeout(200L);
+    return factory;
+  }
 }
