@@ -230,7 +230,7 @@ public class ReviewService {
 
     double beforeRating = review.getRating();
     Double rating = request.getRating();
-    double safeRating = rating == null ? 0.0 : rating;
+    double safeRating = rating == null ? beforeRating : rating;
     review.update(request.getText(), safeRating);
 
     if (Double.compare(beforeRating, safeRating) != 0) {
