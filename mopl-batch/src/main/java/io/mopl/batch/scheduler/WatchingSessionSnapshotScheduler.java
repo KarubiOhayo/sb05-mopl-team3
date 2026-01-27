@@ -208,23 +208,6 @@ public class WatchingSessionSnapshotScheduler {
     }
   }
 
-  private void flushBuffer() {
-    List<String> contentIds;
-    synchronized (bufferLock) {
-      if (bufferedContentIds.isEmpty()) {
-        return;
-      }
-      contentIds = new ArrayList<>(bufferedContentIds);
-      bufferedContentIds.clear();
-      lastFlushAt = System.currentTimeMillis();
-    }
-
-    ContentAggregateUpdatedBatchEvent event =
-        new ContentAggregateUpdatedBatchEvent(
-            UUID.randomUUID().toString(), Instant.now(), contentIds);
-    kafkaTemplate.send(KafkaTopics.CONTENT_AGGREGATE_UPDATED_BATCH, event);
-  }
-
   // lock 안에서만 호출
   private void flushBufferLocked() {
     List<String> contentIds = new ArrayList<>(bufferedContentIds);
