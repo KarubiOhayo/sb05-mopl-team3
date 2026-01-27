@@ -7,9 +7,17 @@ import io.mopl.api.content.domain.QContent;
 import io.mopl.api.content.domain.QContentTag;
 import io.mopl.api.content.domain.QTag;
 import io.mopl.api.content.dto.ContentSummary;
+import io.mopl.api.content.service.ContentThumbnailUploadService;
 import io.mopl.api.playlist.domain.QPlaylistContent;
 import io.mopl.redis.constants.RedisKeyPrefix;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +40,10 @@ public class PlaylistContentLoader {
   private final JPAQueryFactory queryFactory;
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
+  private final ContentThumbnailUploadService contentThumbnailUploadService;
+
+  private static final DateTimeFormatter AWS_AMZ_DATE_FORMAT =
+      DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
 
   public Map<UUID, List<ContentSummary>> loadThumbnailContentsByPlaylistIds(
       List<UUID> playlistIds) {
@@ -145,7 +157,7 @@ public class PlaylistContentLoader {
               row.get(c.type),
               row.get(c.title),
               row.get(c.description),
-              row.get(c.thumbnailImageKey),
+              resolveThumbnailUrl(row.get(c.thumbnailImageKey)),
               avgValue,
               reviewCount != null ? reviewCount.intValue() : 0);
       baseByContentId.put(contentId, base);
@@ -299,7 +311,7 @@ public class PlaylistContentLoader {
                 row.get(c.type),
                 row.get(c.title),
                 row.get(c.description),
-                row.get(c.thumbnailImageKey),
+                resolveThumbnailUrl(row.get(c.thumbnailImageKey)),
                 avgValue,
                 reviewCount != null ? reviewCount.intValue() : 0);
         baseByContentId.put(contentId, base);
@@ -419,6 +431,76 @@ public class PlaylistContentLoader {
       String thumbnailUrl,
       double averageRating,
       int reviewCount) {}
+
+  private String resolveThumbnailUrl(String keyOrUrl) {
+    if (keyOrUrl == null || keyOrUrl.isBlank()) {
+      return null;
+    }
+    if (keyOrUrl.startsWith("http://") || keyOrUrl.startsWith("https://")) {
+      if (isExpiredPresignedUrl(keyOrUrl)) {
+        String key = extractKeyFromUrl(keyOrUrl);
+        if (key != null) {
+          String refreshed = contentThumbnailUploadService.generatePresignedUrl(key);
+          return refreshed != null ? refreshed : keyOrUrl;
+        }
+      }
+      return keyOrUrl;
+    }
+    return contentThumbnailUploadService.generatePresignedUrl(keyOrUrl);
+  }
+
+  private boolean isExpiredPresignedUrl(String url) {
+    try {
+      URI uri = URI.create(url);
+      Map<String, String> query = parseQueryParams(uri.getRawQuery());
+      String amzDate = query.get("X-Amz-Date");
+      String amzExpires = query.get("X-Amz-Expires");
+      if (amzDate == null || amzExpires == null) {
+        return false;
+      }
+      long expiresSeconds = Long.parseLong(amzExpires);
+      LocalDateTime dateTime = LocalDateTime.parse(amzDate, AWS_AMZ_DATE_FORMAT);
+      Instant signedAt = dateTime.toInstant(ZoneOffset.UTC);
+      Instant expiresAt = signedAt.plusSeconds(expiresSeconds);
+      return Instant.now().isAfter(expiresAt);
+    } catch (Exception e) {
+      // presign 파라미터가 있는 경우 파싱 실패는 만료로 간주
+      return url.contains("X-Amz-");
+    }
+  }
+
+  private String extractKeyFromUrl(String url) {
+    try {
+      URI uri = URI.create(url);
+      String path = uri.getRawPath();
+      if (path == null || path.isBlank()) {
+        return null;
+      }
+      String rawKey = path.startsWith("/") ? path.substring(1) : path;
+      String key = URLDecoder.decode(rawKey, StandardCharsets.UTF_8);
+      return key.isBlank() ? null : key;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private Map<String, String> parseQueryParams(String rawQuery) {
+    Map<String, String> params = new HashMap<>();
+    if (rawQuery == null || rawQuery.isBlank()) {
+      return params;
+    }
+    String[] pairs = rawQuery.split("&");
+    for (String pair : pairs) {
+      int idx = pair.indexOf('=');
+      if (idx <= 0) {
+        continue;
+      }
+      String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+      String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+      params.put(key, value);
+    }
+    return params;
+  }
 
   public List<ContentSummary> loadContentsByPlaylistId(UUID playlistId) {
     if (playlistId == null) {
