@@ -24,7 +24,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -50,7 +49,6 @@ public class WatchingSessionSnapshotScheduler {
   private long lastFlushAt = System.currentTimeMillis();
 
   @Scheduled(fixedDelayString = "${batch.schedule.watcher-snapshot-interval-ms:30000}")
-  @Transactional
   public void syncWatcherCounts() {
     long startedAt = System.currentTimeMillis();
 
