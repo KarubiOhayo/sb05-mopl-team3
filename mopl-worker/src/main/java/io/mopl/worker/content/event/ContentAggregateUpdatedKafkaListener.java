@@ -40,7 +40,7 @@ public class ContentAggregateUpdatedKafkaListener {
     }
 
     ContentIndexBatchRequestedEvent indexEvent =
-        new ContentIndexBatchRequestedEvent(event.eventId(), Instant.now(), List.of(contentId), 1);
+        new ContentIndexBatchRequestedEvent(event.eventId(), Instant.now(), List.of(contentId), 0);
     contentIndexEventPublisher.publish(indexEvent);
   }
 
