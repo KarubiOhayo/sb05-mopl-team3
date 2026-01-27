@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -27,12 +28,14 @@ public class WatchingSessionNotificationListener {
   private final NotificationRecipientQuery recipientQuery;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
+  private final NotificationMetrics notificationMetrics;
 
   // 시청 시작 이벤트를 팔로워에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.WATCHING_SESSION_STARTED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.watching.WatchingSessionStartedEvent")
+  @Async("kafkaTaskExecutor")
   public void handle(WatchingSessionStartedEvent event) {
     try {
       UUID watcherIdUuid =
@@ -82,7 +85,9 @@ public class WatchingSessionNotificationListener {
               notifications,
               event.eventId(),
               notificationRepository,
-              notificationEventPublisher);
+              notificationEventPublisher,
+              notificationMetrics,
+              "watching_session_started");
         }
 
         if (!page.hasNext() || page.nextCreatedAt() == null || page.nextCursorId() == null) {
@@ -92,6 +97,7 @@ public class WatchingSessionNotificationListener {
         cursorId = page.nextCursorId();
       }
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("watching_session_started", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리된다.
       return;
     }

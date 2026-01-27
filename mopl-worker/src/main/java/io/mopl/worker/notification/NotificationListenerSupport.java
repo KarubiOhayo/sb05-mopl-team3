@@ -14,18 +14,31 @@ import org.springframework.dao.DataIntegrityViolationException;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NotificationListenerSupport {
 
-  static void handleDataIntegrityViolation(
-      Logger log, DataIntegrityViolationException e, String eventId) {
+  static String classifyDataIntegrityViolation(DataIntegrityViolationException e) {
     Throwable cause = e.getMostSpecificCause();
     String message = cause != null ? cause.getMessage() : e.getMessage();
 
     if (message != null && message.contains(DbConstraintNames.UQ_NOTIFICATIONS_EVENT_ID)) {
-      log.debug("중복 이벤트 무시 (eventId={})", eventId);
-    } else if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
-      log.error("수신자 참조 오류 (eventId={})", eventId, e);
-    } else {
-      log.error("알림 저장 중 오류 (eventId={})", eventId, e);
+      return "duplicate";
     }
+    if (message != null && message.contains(DbConstraintNames.FK_NOTIFICATIONS_RECEIVER)) {
+      return "invalid_receiver";
+    }
+    return "data_integrity";
+  }
+
+  static void handleDataIntegrityViolation(
+      Logger log, DataIntegrityViolationException e, String eventId) {
+    String reason = classifyDataIntegrityViolation(e);
+    if ("duplicate".equals(reason)) {
+      log.debug("중복 이벤트 무시 (eventId={})", eventId);
+      return;
+    }
+    if ("invalid_receiver".equals(reason)) {
+      log.error("수신자 참조 오류 (eventId={})", eventId, e);
+      return;
+    }
+    log.error("알림 저장 중 오류 (eventId={})", eventId, e);
   }
 
   static UUID parseUuid(Logger log, String value, String fieldName, String eventId) {
@@ -45,7 +58,9 @@ public final class NotificationListenerSupport {
       List<Notification> notifications,
       String eventId,
       NotificationRepository notificationRepository,
-      NotificationEventPublisher notificationEventPublisher) {
+      NotificationEventPublisher notificationEventPublisher,
+      NotificationMetrics notificationMetrics,
+      String type) {
     if (notifications.isEmpty()) {
       return;
     }
@@ -59,6 +74,7 @@ public final class NotificationListenerSupport {
           Notification saved = notificationRepository.save(notification);
           notificationEventPublisher.publish(saved);
         } catch (DataIntegrityViolationException inner) {
+          notificationMetrics.recordFailure(type, classifyDataIntegrityViolation(inner));
           NotificationListenerSupport.handleDataIntegrityViolation(
               log, inner, eventId + ":" + notification.getReceiverId());
         }

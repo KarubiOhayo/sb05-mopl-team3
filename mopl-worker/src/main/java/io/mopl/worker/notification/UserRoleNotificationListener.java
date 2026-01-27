@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,11 +23,13 @@ public class UserRoleNotificationListener {
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
+  private final NotificationMetrics notificationMetrics;
 
   // 사용자 권한 변경 이벤트를 수신해 알림을 저장한다.
   @KafkaListener(
       topics = KafkaTopics.USER_ROLE_CHANGED,
       properties = "spring.json.value.default.type=io.mopl.core.event.user.UserRoleChangedEvent")
+  @Async("kafkaTaskExecutor")
   public void handle(UserRoleChangedEvent event) {
     try {
       UUID eventIdUuid =
@@ -52,8 +55,11 @@ public class UserRoleNotificationListener {
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
+      notificationMetrics.recordFailure(
+          "user_role_changed", NotificationListenerSupport.classifyDataIntegrityViolation(e));
       NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("user_role_changed", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }

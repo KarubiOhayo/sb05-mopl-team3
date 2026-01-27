@@ -33,6 +33,7 @@ public class DirectMessageListener {
   @KafkaListener(
       topics = KafkaTopics.DIRECT_MESSAGE_SEND_REQUEST,
       groupId = "mopl-worker-dm-group",
+      concurrency = "3",
       properties =
           "spring.json.value.default.type=io.mopl.core.event.conversation.DirectMessageSendEvent")
   @Transactional

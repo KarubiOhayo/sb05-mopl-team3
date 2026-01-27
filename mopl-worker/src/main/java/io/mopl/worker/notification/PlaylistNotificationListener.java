@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -30,12 +31,14 @@ public class PlaylistNotificationListener {
   private final NotificationRecipientQuery recipientQuery;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
+  private final NotificationMetrics notificationMetrics;
 
   // 플레이리스트 구독 이벤트를 소유자에게 알림으로 저장한다.
   @KafkaListener(
       topics = KafkaTopics.PLAYLIST_SUBSCRIBED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistSubscribedEvent")
+  @Async("kafkaTaskExecutor")
   public void handleSubscribed(PlaylistSubscribedEvent event) {
     try {
       UUID eventIdUuid =
@@ -61,8 +64,11 @@ public class PlaylistNotificationListener {
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
+      notificationMetrics.recordFailure(
+          "playlist_subscribed", NotificationListenerSupport.classifyDataIntegrityViolation(e));
       NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("playlist_subscribed", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리한다.
     }
   }
@@ -72,6 +78,7 @@ public class PlaylistNotificationListener {
       topics = KafkaTopics.PLAYLIST_CONTENT_ADDED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistContentAddedEvent")
+  @Async("kafkaTaskExecutor")
   public void handleContentAdded(PlaylistContentAddedEvent event) {
     try {
       UUID playlistIdUuid =
@@ -113,7 +120,9 @@ public class PlaylistNotificationListener {
               notifications,
               event.eventId(),
               notificationRepository,
-              notificationEventPublisher);
+              notificationEventPublisher,
+              notificationMetrics,
+              "playlist_content_added");
         }
 
         if (!page.hasNext() || page.nextCreatedAt() == null || page.nextCursorId() == null) {
@@ -123,6 +132,7 @@ public class PlaylistNotificationListener {
         cursorUserId = page.nextCursorId();
       }
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("playlist_content_added", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리한다.
     }
   }
@@ -132,6 +142,7 @@ public class PlaylistNotificationListener {
       topics = KafkaTopics.PLAYLIST_CREATED,
       properties =
           "spring.json.value.default.type=io.mopl.core.event.playlist.PlaylistCreatedEvent")
+  @Async("kafkaTaskExecutor")
   public void handleCreated(PlaylistCreatedEvent event) {
     try {
       UUID ownerIdUuid =
@@ -171,7 +182,9 @@ public class PlaylistNotificationListener {
               notifications,
               event.eventId(),
               notificationRepository,
-              notificationEventPublisher);
+              notificationEventPublisher,
+              notificationMetrics,
+              "playlist_created");
         }
 
         if (!page.hasNext() || page.nextCreatedAt() == null || page.nextCursorId() == null) {
@@ -181,6 +194,7 @@ public class PlaylistNotificationListener {
         cursorId = page.nextCursorId();
       }
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("playlist_created", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리한다.
     }
   }

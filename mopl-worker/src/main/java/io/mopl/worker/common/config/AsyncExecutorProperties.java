@@ -18,7 +18,7 @@ public record AsyncExecutorProperties(
     @Min(0) Integer queueCapacity,
     @NotBlank String threadNamePrefix) {
 
-  private static final int DEFAULT_QUEUE_CAPACITY = 200;
+  private static final int DEFAULT_QUEUE_CAPACITY = 1000;
   private static final String DEFAULT_THREAD_NAME_PREFIX = "kafka-async-";
 
   /**
@@ -28,7 +28,7 @@ public record AsyncExecutorProperties(
    */
   public AsyncExecutorProperties {
     int processors = Runtime.getRuntime().availableProcessors();
-    int defaultCorePoolSize = Math.max(2, processors);
+    int defaultCorePoolSize = Math.max(4, processors * 4);
     int resolvedCorePoolSize = corePoolSize == null ? defaultCorePoolSize : corePoolSize;
     int defaultMaxPoolSize = Math.max(resolvedCorePoolSize, defaultCorePoolSize * 2);
     int resolvedMaxPoolSize = maxPoolSize == null ? defaultMaxPoolSize : maxPoolSize;

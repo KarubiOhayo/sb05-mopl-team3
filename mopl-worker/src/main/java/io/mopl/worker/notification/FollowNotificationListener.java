@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,10 +23,12 @@ public class FollowNotificationListener {
   private final NotificationRepository notificationRepository;
   private final MessageSource messageSource;
   private final NotificationEventPublisher notificationEventPublisher;
+  private final NotificationMetrics notificationMetrics;
 
   @KafkaListener(
       topics = KafkaTopics.USER_FOLLOWED,
       properties = "spring.json.value.default.type=io.mopl.core.event.follow.UserFollowedEvent")
+  @Async("kafkaTaskExecutor")
   public void handle(UserFollowedEvent event) {
     try {
       log.info("팔로우 이벤트 수신: eventId={}", event.eventId());
@@ -54,9 +57,12 @@ public class FollowNotificationListener {
       Notification saved = notificationRepository.save(notification);
       notificationEventPublisher.publish(saved);
     } catch (DataIntegrityViolationException e) {
+      notificationMetrics.recordFailure(
+          "follow", NotificationListenerSupport.classifyDataIntegrityViolation(e));
       // 이미 처리된 이벤트는 무시한다.
       NotificationListenerSupport.handleDataIntegrityViolation(log, e, event.eventId());
     } catch (IllegalArgumentException e) {
+      notificationMetrics.recordFailure("follow", "invalid_payload");
       // UUID 파싱 오류는 parseUuid에서 로그 처리.
     }
   }
