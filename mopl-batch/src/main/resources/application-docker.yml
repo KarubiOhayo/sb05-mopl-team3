@@ -14,6 +14,10 @@ spring:
       ddl-auto: ${MOPL_DDL_AUTO:update}
   kafka:
     bootstrap-servers: ${MOPL_KAFKA_BOOTSTRAP:kafka:29092}
+  data:
+    redis:
+      host: ${MOPL_REDIS_HOST:redis}
+      port: ${MOPL_REDIS_PORT:6379}
   batch:
     job:
       enabled: ${MOPL_BATCH_JOB_ENABLED:false}

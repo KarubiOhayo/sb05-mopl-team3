@@ -211,7 +211,7 @@ CREATE TABLE notifications (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE watching_sessions (
+  CREATE TABLE watching_sessions (
   id CHAR(36) NOT NULL,
   content_id CHAR(36) NOT NULL,
   watcher_id CHAR(36) NOT NULL,

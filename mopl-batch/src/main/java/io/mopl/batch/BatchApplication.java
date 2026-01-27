@@ -1,8 +1,10 @@
 package io.mopl.batch;
 
+import io.mopl.redis.config.RedisConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -15,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableJpaAuditing
 @ConfigurationPropertiesScan
+@Import(RedisConfig.class)
 public class BatchApplication {
   /** 애플리케이션을 부트스트랩한다. */
   public static void main(String[] args) {
