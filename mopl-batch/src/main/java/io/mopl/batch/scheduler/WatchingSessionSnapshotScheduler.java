@@ -41,7 +41,7 @@ public class WatchingSessionSnapshotScheduler {
   @Value("${batch.watcher-es.batch-size:100}")
   private int batchSize;
 
-  @Value("${batch.watcher-es.flush-interval-ms:5000}")
+  @Value("${batch.watcher-es.flush-interval-ms:15000}")
   private long flushIntervalMs;
 
   private final Object bufferLock = new Object();
