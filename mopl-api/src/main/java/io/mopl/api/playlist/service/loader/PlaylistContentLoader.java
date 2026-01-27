@@ -464,18 +464,20 @@ public class PlaylistContentLoader {
       Instant expiresAt = signedAt.plusSeconds(expiresSeconds);
       return Instant.now().isAfter(expiresAt);
     } catch (Exception e) {
-      return false;
+      // presign 파라미터가 있는 경우 파싱 실패는 만료로 간주
+      return url.contains("X-Amz-");
     }
   }
 
   private String extractKeyFromUrl(String url) {
     try {
       URI uri = URI.create(url);
-      String path = uri.getPath();
+      String path = uri.getRawPath();
       if (path == null || path.isBlank()) {
         return null;
       }
-      String key = path.startsWith("/") ? path.substring(1) : path;
+      String rawKey = path.startsWith("/") ? path.substring(1) : path;
+      String key = URLDecoder.decode(rawKey, StandardCharsets.UTF_8);
       return key.isBlank() ? null : key;
     } catch (Exception e) {
       return null;
