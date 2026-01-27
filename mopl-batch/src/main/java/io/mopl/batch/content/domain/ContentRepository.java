@@ -45,4 +45,36 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
   @Transactional
   @Query("update Content c set c.watcherCount = :count where c.id = :id")
   int updateWatcherCount(@Param("id") UUID id, @Param("count") long count);
+
+  @Modifying
+  @Transactional
+  @Query(
+      value =
+          "update contents c "
+              + "left join ("
+              + "  select content_id, count(*) as review_count, avg(rating) as average_rating "
+              + "  from reviews "
+              + "  group by content_id"
+              + ") r on c.id = r.content_id "
+              + "set c.review_count = coalesce(r.review_count, 0), "
+              + "    c.average_rating = coalesce(r.average_rating, 0)",
+      nativeQuery = true)
+  int refreshReviewAggregates();
+
+  @Modifying
+  @Transactional
+  @Query(
+      value =
+          "update contents c "
+              + "left join ("
+              + "  select content_id, count(*) as review_count, avg(rating) as average_rating "
+              + "  from reviews "
+              + "  where content_id in (:ids) "
+              + "  group by content_id"
+              + ") r on c.id = r.content_id "
+              + "set c.review_count = coalesce(r.review_count, 0), "
+              + "    c.average_rating = coalesce(r.average_rating, 0) "
+              + "where c.id in (:ids)",
+      nativeQuery = true)
+  int refreshReviewAggregatesForContentIds(@Param("ids") List<String> contentIds);
 }
