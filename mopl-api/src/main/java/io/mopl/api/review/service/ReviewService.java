@@ -64,6 +64,11 @@ public class ReviewService {
 
     Review review = reviewMapper.toEntity(request, authorId);
     Review savedReview = reviewRepository.save(review);
+    log.info(
+        "리뷰 등록 완료: reviewId={}, contentId={}, rating={}",
+        savedReview.getId(),
+        savedReview.getContentId(),
+        savedReview.getRating());
 
     runAfterCommit(
         () -> {
@@ -194,6 +199,11 @@ public class ReviewService {
     if (!review.getAuthorId().equals(authorId)) {
       throw new BusinessException(ReviewErrorCode.NOT_AUTHOR);
     }
+    log.info(
+        "리뷰 삭제 동작: reviewId={}, contentId={}, rating={}",
+        review.getId(),
+        review.getContentId(),
+        review.getRating());
     // 3. 삭제
     reviewRepository.delete(review);
 
@@ -232,6 +242,11 @@ public class ReviewService {
     Double rating = request.getRating();
     double safeRating = rating == null ? beforeRating : rating;
     review.update(request.getText(), safeRating);
+    log.info(
+        "리뷰 수정 완료: reviewId={}, contentId={}, rating={}",
+        review.getId(),
+        review.getContentId(),
+        review.getRating());
 
     if (Double.compare(beforeRating, safeRating) != 0) {
       runAfterCommit(
