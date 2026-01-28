@@ -25,6 +25,7 @@ public class DirectMessageEventListener {
   @KafkaListener(
       topics = KafkaTopics.DIRECT_MESSAGE_CREATED,
       groupId = "mopl-socket-dm-group",
+      concurrency = "10",
       properties =
           "spring.json.value.default.type=io.mopl.core.event.conversation.DirectMessageCreatedEvent")
   @Transactional(readOnly = true)
