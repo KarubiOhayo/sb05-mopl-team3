@@ -38,9 +38,17 @@ public class ContentElasticInitInitializer {
     boolean indexExists = indexOps.exists();
     log.info("Elastic index init start: index=contents exists={}", indexExists);
     if (!indexExists) {
-      indexOps.create();
+      try {
+        indexOps.create();
+        log.info("Elastic index created: index=contents");
+      } catch (RuntimeException ex) {
+        if (!isAlreadyExists(ex)) {
+          throw ex;
+        }
+        log.warn("Elastic index already exists (race). Continue applying mapping: index=contents");
+      }
       indexOps.putMapping(indexOps.createMapping(ContentDocument.class));
-      log.info("Elastic index created and mapping applied: index=contents");
+      log.info("Elastic mapping applied: index=contents");
     }
 
     if (resetOnStartup && indexExists) {
@@ -57,5 +65,17 @@ public class ContentElasticInitInitializer {
       contentElasticRepository.saveAll(documents);
       log.info("Elastic index seeded: index=contents count={}", documents.size());
     }
+  }
+
+  private boolean isAlreadyExists(Throwable ex) {
+    Throwable current = ex;
+    while (current != null) {
+      String message = current.getMessage();
+      if (message != null && message.contains("resource_already_exists_exception")) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
   }
 }

@@ -19,7 +19,7 @@ import org.springframework.data.elasticsearch.annotations.MultiField;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Document(indexName = "contents")
+@Document(indexName = "contents", createIndex = false)
 public class ContentDocument {
   @Id private String id;
 
