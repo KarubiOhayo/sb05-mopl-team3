@@ -1,6 +1,7 @@
 package io.mopl.api.common.config;
 
 import io.mopl.api.auth.jwt.JwtAuthenticationFilter;
+import io.mopl.api.auth.oauth2.CookieOAuth2AuthorizationRequestRepository;
 import io.mopl.api.auth.oauth2.CustomOAuth2AuthorizationRequestResolver;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import io.mopl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
@@ -39,6 +40,8 @@ public class SecurityConfig {
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
   private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
   private final CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver;
+  private final CookieOAuth2AuthorizationRequestRepository
+      cookieOAuth2AuthorizationRequestRepository;
   private final MessageSource messageSource;
   private final ObjectMapper objectMapper;
 
@@ -261,7 +264,9 @@ public class SecurityConfig {
                             authorization
                                 .baseUri("/oauth2/authorization")
                                 .authorizationRequestResolver(
-                                    customOAuth2AuthorizationRequestResolver))
+                                    customOAuth2AuthorizationRequestResolver)
+                                .authorizationRequestRepository(
+                                    cookieOAuth2AuthorizationRequestRepository))
                     .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
                     .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                     .successHandler(oAuth2AuthenticationSuccessHandler)
