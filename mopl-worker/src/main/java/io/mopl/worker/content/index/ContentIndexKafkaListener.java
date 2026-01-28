@@ -37,7 +37,8 @@ public class ContentIndexKafkaListener {
   @KafkaListener(
       topics = KafkaTopics.CONTENT_INDEX_REQUESTED,
       properties =
-          "spring.json.value.default.type=io.mopl.core.event.content.ContentIndexBatchRequestedEvent")
+          "spring.json.value.default.type=io.mopl.core.event.content.ContentIndexBatchRequestedEvent",
+      containerFactory = "manualAckKafkaListenerContainerFactory")
   public void handle(ContentIndexBatchRequestedEvent event, Acknowledgment acknowledgment) {
     if (event.contentIds() == null || event.contentIds().isEmpty()) {
       acknowledgment.acknowledge();
