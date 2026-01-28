@@ -96,6 +96,8 @@
 
 ## 🛠️ 기술 스택
 
+## 🛠️ 기술 스택
+
 ### Front-end
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
@@ -111,6 +113,7 @@
 ![Spring Batch](https://img.shields.io/badge/Spring%20Batch-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)
 ![OAuth2](https://img.shields.io/badge/OAuth2-3C873A?style=for-the-badge&logo=auth0&logoColor=white)
+![MapStruct](https://img.shields.io/badge/MapStruct-DC382D?style=for-the-badge)
 
 ### Database & Cache
 
@@ -130,6 +133,11 @@
 ![STOMP](https://img.shields.io/badge/STOMP-000000?style=for-the-badge&logo=apache&logoColor=white)
 ![SSE](https://img.shields.io/badge/SSE-FF6C37?style=for-the-badge&logo=eventbrite&logoColor=white)
 
+### External API
+
+![TMDB](https://img.shields.io/badge/TMDB%20API-01D277?style=for-the-badge&logo=themoviedatabase&logoColor=white)
+![SportsDB](https://img.shields.io/badge/Sports%20DB%20API-FF6C37?style=for-the-badge)
+
 ### Cloud & Infrastructure
 
 ![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
@@ -144,6 +152,7 @@
 
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![SonarQube](https://img.shields.io/badge/SonarQube-4E9BCD?style=for-the-badge&logo=sonarqube&logoColor=white)
+![CodeRabbit](https://img.shields.io/badge/CodeRabbit-FF6C37?style=for-the-badge&logo=rabbit&logoColor=white)
 
 ### Monitoring
 
@@ -161,6 +170,7 @@
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 ![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)
 ![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+![ZEP](https://img.shields.io/badge/ZEP-5B4FFF?style=for-the-badge)
 
 ---
 
