@@ -88,6 +88,85 @@ public class ContentQueryRepositoryImpl implements ContentQueryRepository {
   }
 
   @Override
+  public List<ContentSearchRow> findBatchForIndexing(UUID lastId, int limit) {
+    if (limit <= 0) {
+      return List.of();
+    }
+
+    BooleanExpression cursor = (lastId != null) ? c.id.gt(lastId) : null;
+
+    List<Tuple> baseRows =
+        queryFactory
+            .select(
+                c.id,
+                c.type,
+                c.title,
+                c.description,
+                c.thumbnailImageKey,
+                c.averageRating,
+                c.reviewCount,
+                c.watcherCount,
+                c.createdAt)
+            .from(c)
+            .where(cursor)
+            .orderBy(c.id.asc())
+            .limit(limit)
+            .fetch();
+
+    if (baseRows.isEmpty()) {
+      return List.of();
+    }
+
+    Map<UUID, ContentSearchRow> byId = new LinkedHashMap<>(baseRows.size());
+    List<UUID> ids = new ArrayList<>(baseRows.size());
+    for (Tuple row : baseRows) {
+      UUID id = row.get(c.id);
+      ids.add(id);
+
+      Double avg = row.get(c.averageRating);
+      Integer rc = row.get(c.reviewCount);
+      Long wc = row.get(c.watcherCount);
+
+      byId.put(
+          id,
+          ContentSearchRow.builder()
+              .id(id)
+              .type(row.get(c.type))
+              .title(row.get(c.title))
+              .description(row.get(c.description))
+              .thumbnailImageKey((row.get(c.thumbnailImageKey)))
+              .tags(new ArrayList<>())
+              .averageRating((avg != null ? avg : 0.0))
+              .reviewCount(rc != null ? rc : 0)
+              .watcherCount(wc != null ? wc : 0L)
+              .createdAt(row.get(c.createdAt))
+              .build());
+    }
+
+    List<Tuple> tagRows =
+        queryFactory
+            .select(ct.id.contentId, t.name)
+            .from(ct)
+            .leftJoin(t)
+            .on(ct.id.tagId.eq(t.id))
+            .where(ct.id.contentId.in(ids))
+            .fetch();
+
+    for (Tuple row : tagRows) {
+      UUID contentId = row.get(ct.id.contentId);
+      String tagName = row.get(t.name);
+      if (tagName != null && contentId != null) {
+        ContentSearchRow content = byId.get(contentId);
+        if (content != null) {
+          content.getTags().add(tagName);
+        }
+      }
+    }
+
+    return new ArrayList<>(byId.values());
+  }
+
+  @Override
   public Optional<ContentSearchRow> findOneForIndexing(UUID contentId) {
     List<Tuple> rows =
         queryFactory

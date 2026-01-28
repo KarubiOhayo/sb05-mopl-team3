@@ -31,6 +31,9 @@ public class ContentElasticInitInitializer {
   @Value("${search.index.reset-on-startup:false}")
   private boolean resetOnStartup;
 
+  @Value("${search.index.batch-size:1000}")
+  private int batchSize;
+
   @EventListener(ApplicationReadyEvent.class)
   @Transactional
   public void init() {
@@ -57,13 +60,30 @@ public class ContentElasticInitInitializer {
     }
 
     if (!indexExists || resetOnStartup) {
-      List<ContentSearchRow> rows = contentRepository.findAllForIndexing();
+      int safeBatchSize = Math.max(batchSize, 1);
+      int total = 0;
+      java.util.UUID lastId = null;
 
-      List<ContentDocument> documents =
-          rows.stream().map(contentMapper::toContentDocument).toList();
+      while (true) {
+        List<ContentSearchRow> rows = contentRepository.findBatchForIndexing(lastId, safeBatchSize);
+        if (rows.isEmpty()) {
+          break;
+        }
 
-      contentElasticRepository.saveAll(documents);
-      log.info("Elastic index seeded: index=contents count={}", documents.size());
+        List<ContentDocument> documents =
+            rows.stream().map(contentMapper::toContentDocument).toList();
+        contentElasticRepository.saveAll(documents);
+
+        total += documents.size();
+        lastId = rows.get(rows.size() - 1).getId();
+        log.info(
+            "Elastic index batch seeded: index=contents batchCount={} totalCount={} lastId={}",
+            documents.size(),
+            total,
+            lastId);
+      }
+
+      log.info("Elastic index seeded: index=contents totalCount={}", total);
     }
   }
 

@@ -11,6 +11,8 @@ public interface ContentQueryRepository {
 
   List<ContentSearchRow> findAllForIndexing();
 
+  List<ContentSearchRow> findBatchForIndexing(UUID lastId, int limit);
+
   Optional<ContentSearchRow> findOneForIndexing(UUID contentId);
 
   ContentPage findContentPage(ContentSearchRequest request);
