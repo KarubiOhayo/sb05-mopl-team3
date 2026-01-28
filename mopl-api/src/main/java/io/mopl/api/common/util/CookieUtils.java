@@ -10,7 +10,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -19,6 +19,7 @@ public class CookieUtils {
 
   private final CookieSecurityProperties cookieSecurityProperties;
   private final JwtTokenProvider jwtTokenProvider;
+  private final ObjectMapper objectMapper;
 
   /** Refresh Token 쿠키 설정 */
   public void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
@@ -88,6 +89,11 @@ public class CookieUtils {
           cookie.setValue("");
           cookie.setPath("/");
           cookie.setMaxAge(0);
+          cookie.setSecure(cookieSecurityProperties.isSecure());
+          String sameSite = cookieSecurityProperties.getSameSite();
+          if (sameSite != null && !sameSite.isEmpty()) {
+            cookie.setAttribute("SameSite", sameSite);
+          }
           response.addCookie(cookie);
         }
       }
@@ -96,14 +102,19 @@ public class CookieUtils {
 
   /** 객체를 Base64 문자열로 직렬화 */
   public String serialize(Object object) {
-    return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(object));
+    try {
+      return Base64.getUrlEncoder().encodeToString(objectMapper.writeValueAsBytes(object));
+    } catch (Exception e) {
+      log.error("직렬화 실패", e);
+      throw new IllegalArgumentException("직렬화 실패", e);
+    }
   }
 
   /** Base64 문자열을 객체로 역직렬화 */
   public <T> T deserialize(Cookie cookie, Class<T> cls) {
     try {
       byte[] decodedBytes = Base64.getUrlDecoder().decode(cookie.getValue());
-      return cls.cast(SerializationUtils.deserialize(decodedBytes));
+      return objectMapper.readValue(decodedBytes, cls);
     } catch (Exception e) {
       log.error("쿠키 역직렬화 실패: {}", cookie.getName(), e);
       return null;
