@@ -31,12 +31,20 @@ public class ContentElasticInitInitializer {
   @Value("${search.index.reset-on-startup:false}")
   private boolean resetOnStartup;
 
+  @Value("${search.index.init-enabled:false}")
+  private boolean initEnabled;
+
   @Value("${search.index.batch-size:1000}")
   private int batchSize;
 
   @EventListener(ApplicationReadyEvent.class)
   @Transactional
   public void init() {
+    if (!initEnabled) {
+      log.info("Elastic index init skipped: index=contents initEnabled=false");
+      return;
+    }
+
     IndexOperations indexOps = elasticsearchOperations.indexOps(ContentDocument.class);
     boolean indexExists = indexOps.exists();
     log.info("Elastic index init start: index=contents exists={}", indexExists);
